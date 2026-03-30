@@ -85,7 +85,8 @@
   },
   "logo": {
     "light": "/logo/senselab-logo.png",
-    "dark": "/logo/senselab-logo.png"
+    "dark": "/logo/senselab-logo.png",
+    "width": 200
   },
   "navbar": {
     "links": [
