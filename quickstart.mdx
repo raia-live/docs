@@ -1,80 +1,112 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get your documentation site up and running in under 2 minutes"
+icon: "rocket"
 ---
 
-## Get started in three steps
+## Get started
 
-Get your documentation site running locally and make your first customization.
+Set up your docs site in two steps — no configuration required to get started.
 
-### Step 1: Set up your local environment
+### Step 1: Create your account
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+Sign up using your existing Git provider credentials. No new password needed.
 
-### Step 2: Deploy your changes
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://dashboard.mintlify.com">
+    Sign in with your GitHub account
+  </Card>
+  <Card title="GitLab" icon="gitlab" href="https://dashboard.mintlify.com">
+    Sign in with your GitLab account
+  </Card>
+  <Card title="Bitbucket" icon="bitbucket" href="https://dashboard.mintlify.com">
+    Sign in with your Bitbucket account
+  </Card>
+  <Card title="SSO / Email" icon="envelope" href="https://dashboard.mintlify.com">
+    Sign in with SSO or email
+  </Card>
+</CardGroup>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Tip>
+  Your account is tied to your Git provider — use whichever you host your docs repository on.
+</Tip>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+### Step 2: Connect your repository
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+After signing in, link the repository that contains (or will contain) your documentation.
 
-### Step 3: Go live
+<Steps>
+  <Step title="Open the dashboard">
+    Go to [dashboard.mintlify.com](https://dashboard.mintlify.com) and click **New project**.
+  </Step>
+  <Step title="Select your repository">
+    Grant Mintlify access to your Git provider and choose the repository you want to use. You can scope access to just that repository.
+  </Step>
+  <Step title="Configure your project">
+    Set your project name and the directory where your docs live (defaults to the repo root).
+  </Step>
+  <Step title="Deploy">
+    Click **Deploy**. Your docs site will be live at `yourproject.mintlify.app` within moments.
+  </Step>
+</Steps>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<Info>
+  Every push to your default branch automatically redeploys your docs — no CI configuration needed.
+</Info>
+
+---
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that your site is live, here are the three most common things to do next.
+
+<CardGroup cols={3}>
+  <Card title="Write your first page" icon="pen-to-square" href="/essentials/markdown">
+    Learn MDX syntax and start adding content to your docs.
+  </Card>
+  <Card title="Customize your brand" icon="palette" href="/essentials/settings">
+    Update your logo, colors, and navigation to match your brand.
+  </Card>
+  <Card title="Add an API reference" icon="code" href="/api-reference/introduction">
+    Auto-generate API docs from an OpenAPI spec in minutes.
+  </Card>
+</CardGroup>
+
+---
+
+## Preview changes locally
+
+Before pushing, you can preview every change live on your machine.
+
+```bash
+# Install the CLI
+npm i -g mint
+
+# Start the local preview server
+mint dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) — the preview hot-reloads as you edit files.
+
+---
+
+## Additional resources
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Navigation" icon="bars" href="/essentials/navigation">
+    Configure tabs, groups, and sidebar ordering in `docs.json`.
+  </Card>
+  <Card title="Reusable snippets" icon="puzzle-piece" href="/essentials/reusable-snippets">
+    Write content once and reuse it across multiple pages.
+  </Card>
+  <Card title="Images & media" icon="image" href="/essentials/images">
+    Add screenshots, diagrams, and videos to your docs.
+  </Card>
+  <Card title="AI tools" icon="robot" href="/ai-tools/cursor">
+    Use Cursor, Claude Code, or Windsurf to author docs faster.
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Need help?** Check the [full documentation](https://mintlify.com/docs) or reach out at [hi@mintlify.com](mailto:hi@mintlify.com).
 </Note>
