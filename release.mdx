@@ -1,0 +1,135 @@
+---
+title: "Release"
+description: "From merge to production — and back again. SBOM + AIBOM generation, deployment correlation, runtime impact tracking, full audit trail, and compliance export at $149/month."
+---
+
+## What is Release?
+
+Release is SenseLab's plan for teams that need a complete, auditable record of what AI wrote and what shipped — from the moment code merges to the moment something breaks in production.
+
+It covers the part of the SDLC that no other tool touches: the gap between merge and incident. Deployment health, runtime impact, compliance exports, and a feedback loop that makes every future review smarter.
+
+<Info>
+  Release builds on top of [AI Lineage](/ai-lineage) and [Review](/review). You get everything in both plans, plus full release-time and runtime intelligence.
+</Info>
+
+---
+
+## The problem it solves
+
+Most teams have no visibility into what happens after code merges:
+
+- No connection between what shipped and what's happening in production
+- When something breaks, there's no trail back to the source
+- SBOM and AIBOM generation is manual, slow, or non-existent
+- Compliance evidence packs have to be assembled by hand under pressure
+- Problems in production never feed back into the next review cycle
+
+Release closes the loop — automatically, at every deployment.
+
+---
+
+## What you get
+
+<CardGroup cols={2}>
+  <Card title="SBOM + AIBOM Generation" icon="file-shield">
+    Automated generation of Software and AI Bills of Materials at every release. Every dependency, every AI-generated component, every model that contributed — captured automatically, not scrambled together after the fact.
+  </Card>
+  <Card title="Deployment Correlation" icon="rocket">
+    Every deployment is linked to the PRs, commits, and AI sessions that produced it. You can always answer "what's in this deployment?" — and trace any issue back to its source.
+  </Card>
+  <Card title="Health Monitoring" icon="heart-pulse">
+    Deployment health is tracked from the moment it ships. SenseLab monitors for anomalies and surfaces issues in the context of the code that caused them — not just as generic alerts.
+  </Card>
+  <Card title="Production Impact Tracking" icon="chart-line">
+    When something breaks in production, SenseLab traces it back to the exact AI-generated line, the PR it came from, the model that wrote it, and the developer who approved it. No more four-hour incident calls with nothing to show.
+  </Card>
+  <Card title="Evidence Pack" icon="box-archive">
+    A complete, exportable evidence pack for every release — AIBOM, SBOM, deployment record, approval history, and runtime events. Ready for auditors, enterprise customers, and legal teams on demand.
+  </Card>
+  <Card title="Feedback Loop" icon="arrows-rotate">
+    Production problems don't just get resolved — they feed back into Review. The same AI-introduced issue won't slip through twice. Every incident makes the next review smarter.
+  </Card>
+</CardGroup>
+
+---
+
+## The full trust layer
+
+Release completes SenseLab's merge-to-incident lineage layer. Here's how it all connects:
+
+| Stage | What SenseLab tracks |
+|---|---|
+| **Local Dev** | AI session, model, files touched, lines written |
+| **Pull Request** | Risk score, AI provenance, AIBOM, dependency scan |
+| **Build & Artifact** | Evidence bound to the artifact |
+| **Deploy** | Deployment correlated to PRs and AI sessions |
+| **Runtime** | Health monitored, impact traced |
+| **Evidence** | Full pack assembled automatically |
+| **Feedback** | Incidents feed back into the next review |
+
+---
+
+## Agents
+
+Release includes access to SenseLab's **AI Agents** — autonomous agents that run across your SDLC to surface risk, generate compliance artifacts, and close the feedback loop without manual intervention.
+
+<CardGroup cols={2}>
+  <Card title="Deployment Timeline Agent" icon="timeline">
+    Monitors every deployment in real time, tracks health checks, and surfaces anomalies with full context — linked to the code, PR, and AI session that introduced the change.
+  </Card>
+  <Card title="Dependency Network Agent" icon="diagram-project">
+    Builds and maintains a live dependency graph across your repos. Surfaces new dependencies introduced by AI, flags risky packages, and tracks changes across releases.
+  </Card>
+  <Card title="Compliance Agent" icon="file-shield">
+    Automatically generates SBOM and AIBOM at every release. Packages the full evidence record and exports it in compliance-ready formats — on schedule or on demand.
+  </Card>
+  <Card title="Impact & Feedback Agent" icon="arrows-rotate">
+    When a production incident occurs, this agent traces it back to the source — the AI-generated line, the PR, the model, the approver — and feeds that context back into future reviews.
+  </Card>
+</CardGroup>
+
+### Agent History & Audit Trail
+
+Every agent run is logged in full. You can see exactly what each agent did, when it ran, which files it analyzed, and what it found — giving you a complete audit trail of automated actions alongside your human-driven ones.
+
+---
+
+## Why it matters
+
+<CardGroup cols={3}>
+  <Card title="For production incidents" icon="triangle-exclamation">
+    Stop spending four hours on a call with nothing to trace. When something breaks, Release gives you the exact AI-generated line, PR, model, and approver — in seconds.
+  </Card>
+  <Card title="For enterprise customers" icon="building">
+    When a customer asks for an AIBOM, you have it. When they ask what AI contributed to a release, you know. SenseLab makes you the vendor that has answers.
+  </Card>
+  <Card title="For auditors & legal" icon="scale-balanced">
+    "What dependencies shipped in release 3.1.2 and who approved them?" "Which parts of our codebase were generated by AI?" Release means you always have the answer — not nothing.
+  </Card>
+</CardGroup>
+
+---
+
+## Pricing
+
+**$149 / month**
+
+Includes everything in [AI Lineage](/ai-lineage) and [Review](/review), plus:
+
+- SBOM + AIBOM generation at every release
+- Deployment correlation
+- Health monitoring
+- Production impact tracking
+- Evidence Pack (exportable, compliance-ready)
+- Feedback loop into Review
+- Full AI Agents suite
+- Agent History & Audit Trail
+
+<Card title="Get started with Release" icon="rocket" href="https://app.raia.live" horizontal>
+  Start a free trial — no credit card required.
+</Card>
+
+<Note>
+  Not ready for Release yet? Start with [AI Lineage](/ai-lineage) for free, or try [Review](/review) at $29/user/month to get PR-level intelligence first.
+</Note>

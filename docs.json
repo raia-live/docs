@@ -36,7 +36,9 @@
             "group": "Platform",
             "pages": [
               "index",
-              "ai-lineage"
+              "ai-lineage",
+              "review",
+              "release"
             ]
           },
           {
