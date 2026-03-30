@@ -9,14 +9,38 @@
   },
   "favicon": "/logo/senselab-icon.png",
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Quickstart",
+          "icon": "rocket",
+          "href": "/quickstart"
+        },
+        {
+          "anchor": "Changelog",
+          "icon": "list",
+          "href": "/changelog"
+        },
+        {
+          "anchor": "Discord",
+          "icon": "discord",
+          "href": "https://discord.gg/KSGfQDryGg"
+        }
+      ]
+    },
     "tabs": [
       {
         "tab": "Guides",
         "groups": [
           {
+            "group": "Platform",
+            "pages": [
+              "index"
+            ]
+          },
+          {
             "group": "Getting started",
             "pages": [
-              "index",
               "quickstart",
               "development"
             ]
@@ -67,26 +91,7 @@
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Quickstart",
-          "href": "/quickstart",
-          "icon": "rocket"
-        },
-        {
-          "anchor": "Changelog",
-          "href": "/changelog",
-          "icon": "list"
-        },
-        {
-          "anchor": "Discord",
-          "href": "https://discord.gg/KSGfQDryGg",
-          "icon": "discord"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/senselab-logo.png",
