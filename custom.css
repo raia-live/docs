@@ -1,0 +1,10 @@
+/* Increase navbar logo size */
+nav img[alt="SenseLab"],
+header img[alt="SenseLab"],
+a[href="/"] img,
+.navbar-logo img,
+img[alt="SenseLab"] {
+  height: 48px !important;
+  width: auto !important;
+  max-width: none !important;
+}
