@@ -1,13 +1,13 @@
 ---
 title: "Review"
-description: "Your AI wrote the code. SenseLab makes sure your team actually understands what's in it — before it merges. PR review, risk scoring, AI provenance, and AIBOM generation at $29/user/month."
+description: "Your AI wrote the code. SenseLab makes sure your team actually understands what's in it — before it merges through PR review, risk scoring, AI provenance, AIBOM generation, and more."
 ---
 
 ## What is Review?
 
-Review is SenseLab's plan for engineering teams that need to understand what AI is putting into their codebase before it ships. It adds AI-aware pull request analysis, risk scoring, and AIBOM generation on top of AI Lineage — giving engineering managers the full picture at every merge.
+Review is SenseLab AI Agent engine for engineering teams that need to understand what AI is putting into their codebase before it ships. It adds AI-aware pull request analysis, risk scoring, and AIBOM generation on top of [AI Lineage](/ai-lineage) — giving engineering managers the full picture at every merge.
 
-Where AI Lineage tells you *what happened*, Review tells you *what's about to happen* — and whether you should be worried.
+Where [AI Lineage](/ai-lineage) tells you _what happened_, Review tells you _what's about to happen_ — and whether you should be worried.
 
 <Info>
   Review builds on top of [AI Lineage](/ai-lineage). You get everything in the free plan, plus PR-level intelligence.
@@ -19,7 +19,7 @@ Where AI Lineage tells you *what happened*, Review tells you *what's about to ha
 
 Code review was designed for humans reviewing human-written code. When AI writes the code, the dynamics break down:
 
-- Developers are approving PRs they can't fully explain
+- Developers are approving PRs that they can't fully explain
 - Risk is invisible — there's no signal about which PRs carry the most exposure
 - Nobody knows which packages and dependencies the AI silently added
 - AIBOM generation happens after an incident, not before a merge
@@ -33,21 +33,50 @@ Review closes these gaps before the merge button is clicked.
 
 <CardGroup cols={2}>
   <Card title="AI-Aware PR Review" icon="code-pull-request">
-    Every pull request gets an automated review that surfaces what the model wrote, what the human wrote, what tests were added, and what risks the PR carries — so reviewers can actually make an informed decision.
+    <Frame>
+      ![Screenshot2026 03 30at12 22 13PM](/images/Screenshot2026-03-30at12.22.13PM.png)
+    </Frame>
+
+    Every pull request gets an automated review that surfaces what the model wrote, what the human wrote, which tests were added, and the risks the PR carries — so reviewers can make an informed decision.
   </Card>
+
   <Card title="Risk Scoring" icon="triangle-exclamation">
+    <Frame>
+      ![Screenshot2026 03 30at12 24 02PM](/images/Screenshot2026-03-30at12.24.02PM.png)
+    </Frame>
+
     Each PR receives a risk score based on three dimensions: **blast radius** (how much of the codebase it touches), **AI contribution rate** (how much was AI-generated), and **incident history** (whether similar code has caused problems before).
   </Card>
+
   <Card title="Dependency Surfacing" icon="box-open">
+    <Frame>
+      ![Screenshot2026 03 30at12 25 00PM](/images/Screenshot2026-03-30at12.25.00PM.png)
+    </Frame>
+
     Surfaces every package and dependency the AI silently added — including transitive dependencies that often go unnoticed in review. Nothing ships without your team knowing what's in it.
   </Card>
+
   <Card title="AIBOM at Review Time" icon="file-shield">
+    <Frame>
+      ![Screenshot2026 03 30at12 26 37PM](/images/Screenshot2026-03-30at12.26.37PM.png)
+    </Frame>
+
     AI Bills of Materials are generated at review time — before merge, not after the incident. When an auditor or enterprise customer asks what was in a release, the answer already exists.
   </Card>
+
   <Card title="AI Provenance" icon="fingerprint">
+    <Frame>
+      ![Screenshot2026 03 30at12 27 33PM](/images/Screenshot2026-03-30at12.27.33PM.png)
+    </Frame>
+
     Every line in the PR is attributed — which model wrote it, which developer was in the session, and when. Full traceability from prompt to production.
   </Card>
+
   <Card title="PR-to-Release Connection" icon="link">
+    <Frame>
+      ![Screenshot2026 03 30at12 28 33PM](/images/Screenshot2026-03-30at12.28.33PM.png)
+    </Frame>
+
     PRs don't live in isolation. Review connects each pull request to its downstream release, deployment, and runtime impact — so the context follows the code all the way to production.
   </Card>
 </CardGroup>
@@ -57,17 +86,17 @@ Review closes these gaps before the merge button is clicked.
 ## How it works
 
 <Steps>
-  <Step title="Developer opens a PR">
+  <Step title="A developer opens a PR">
     As soon as a pull request is opened, SenseLab begins analyzing it — attributing lines to models and developers, scanning dependencies, and computing the risk score.
   </Step>
   <Step title="Review surfaces the risk">
-    Reviewers see an AI-generated summary of what changed, who or what wrote it, what packages were added, and what the risk score is — directly in the PR context.
+    Reviewers see an AI-generated summary of what changed, who or what wrote it, which packages were added,  the risk score, and proposed changes, if any — directly in the PR context.
   </Step>
   <Step title="AIBOM is generated">
     At review time, SenseLab generates an AIBOM for the PR. This becomes part of the evidence pack that follows the code through to release.
   </Step>
-  <Step title="PR is linked to release">
-    Once merged, the PR is permanently connected to its release, deployment, and any production events that follow. If something breaks, the trace goes all the way back.
+  <Step title="PR is linked to the release">
+    Once merged, the PR is permanently linked to its release, deployment, approval, and comment history, as well as any subsequent production events. If something breaks, the trace goes all the way back.
   </Step>
 </Steps>
 
@@ -77,13 +106,20 @@ Review closes these gaps before the merge button is clicked.
 
 <CardGroup cols={3}>
   <Card title="For engineering managers" icon="chart-bar">
-    Stop rubber-stamping PRs. Get a risk signal on every merge. Know which PRs deserve deep review and which are low risk — without reading every line of AI-generated code yourself.
+    - Stop rubber-stamping PRs
+    - Get a risk signal on every merge
+    - Know which PRs deserve deep review and which are low risk — without reading every line of AI-generated code yourself.
   </Card>
+
   <Card title="For security teams" icon="shield-halved">
-    Catch risky dependencies before they merge. Get AIBOM coverage at review time, not after an incident. Build a continuous record of what AI introduced into your codebase.
+    - Catch risky dependencies before they merge.
+    - Get AIBOM coverage at review time, not after an incident.
+    - Build a continuous record of what AI introduced into your codebase.
   </Card>
+
   <Card title="For compliance" icon="scale-balanced">
-    When an auditor asks "what was in release 3.1.2 and who approved it?" — you have the answer. AIBOM, provenance, and approval records are generated automatically at every review.
+    - When an auditor asks, "What was in release 3.1.2 and who approved it?" — you have the answer.
+    - AIBOM, provenance, and approval records are generated automatically at every review.
   </Card>
 </CardGroup>
 
@@ -91,7 +127,7 @@ Review closes these gaps before the merge button is clicked.
 
 ## Pricing
 
-**$29 / user / month**
+**\$29 / user / month**
 
 Includes everything in [AI Lineage](/ai-lineage) (free), plus:
 
@@ -103,10 +139,10 @@ Includes everything in [AI Lineage](/ai-lineage) (free), plus:
 - Full PR-to-release connection
 - Team-level analytics
 
-<Card title="Get started with Review" icon="rocket" href="https://app.raia.live" horizontal>
+<Card title="Get started with Review" icon="rocket" horizontal href="https://app.raia.live">
   Start a free trial — no credit card required.
 </Card>
 
 <Note>
-  Need SBOM + AIBOM generation at release time, deployment correlation, and full audit trail export? Step up to the [Release plan](/release).
+  Need SBOM \+ AIBOM generation at release time, deployment correlation, and full audit trail export? Step up to the [Release plan](/release).
 </Note>

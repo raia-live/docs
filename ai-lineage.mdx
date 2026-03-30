@@ -36,18 +36,23 @@ Without answers, AI adoption is invisible — and invisible things don't get man
   <Card title="AI Attribution" icon="fingerprint">
     See exactly which lines and files were touched by AI, which model wrote them, and which developer was in the session. Full attribution — no guessing.
   </Card>
+
   <Card title="Team AI Score" icon="trophy">
     A composite score across adoption, coverage, activity volume, and session quality. Know at a glance how well your team is leveraging AI — and where the gaps are.
   </Card>
-  <Card title="Developer Session Tracking" icon="clock">
-    Track individual AI coding sessions from first edit to git push. See median session length, total events, AI commits, and estimated hours saved.
+
+  <Card title="Session Tracking" icon="clock">
+    Track  AI coding sessions from first edit to git push. See median session length, total events, AI commits, and estimated hours saved.
   </Card>
+
   <Card title="Team Coverage" icon="users">
     Know which team members are actively using AI tools and which aren't. Full coverage means complete insights. Partial coverage means blind spots.
   </Card>
+
   <Card title="AI Tool Breakdown" icon="wrench">
     See which IDEs and AI coding tools (Cursor, GitHub Copilot, Claude Code, Windsurf, etc.) your team is using and in what proportion.
   </Card>
+
   <Card title="Model Usage" icon="microchip">
     Track which LLMs your team is routing through — GPT-4o, Claude, Gemini, and more — and how heavily each is used across the org.
   </Card>
@@ -57,20 +62,28 @@ Without answers, AI adoption is invisible — and invisible things don't get man
 
 ## Your dashboard
 
-Once lineage is enabled, your [SenseLab Dashboard](https://app.raia.live) gives you a live view of all of this data.
+Once lineage is enabled, your [SenseLab Dashboard](https://app.raia.live) provides a live view of all this data.
 
 ### Team AI Score
+
+<Frame>
+  ![Screenshot2026 03 30at10 55 13AM](/images/Screenshot2026-03-30at10.55.13AM.png)
+</Frame>
 
 A composite metric built from four dimensions:
 
 | Dimension | What it measures |
-|---|---|
+| --- | --- |
 | **AI Adoption** | % of developers actively using AI tools |
 | **Team Coverage** | % of the team being tracked |
 | **Activity Volume** | Volume of AI-assisted commits and edits |
 | **Session Quality** | Depth and quality of AI coding sessions |
 
 ### 3D Activity View
+
+<Frame>
+  ![Screenshot2026 03 30at10 54 58AM](/images/Screenshot2026-03-30at10.54.58AM.png)
+</Frame>
 
 A visual breakdown of AI activity across the last 5 weeks. Click any block to drill into that day's events — who was active, which files were touched, which models were used, and how many AI lines were written.
 
@@ -87,13 +100,23 @@ A visual breakdown of AI activity across the last 5 weeks. Click any block to dr
 
 <CardGroup cols={3}>
   <Card title="For engineering managers" icon="chart-bar">
-    Get a clear picture of AI ROI. Know which tools your team uses, how much time is being saved, and where adoption is lagging — without asking anyone.
+    - Get a clear picture of AI ROI
+    - Know which tools your team uses
+    - How much time is being saved
+    - Where adoption is lagging 
+      Without asking anyone.
   </Card>
+
   <Card title="For security and compliance" icon="shield-halved">
-    Start building a record of AI activity now. Every sprint without lineage tracking is a sprint you'll never be able to audit. The foundation you build today is the evidence pack you'll need tomorrow.
+    - Start building a record of AI activity.
+    - Every sprint without lineage tracking is a sprint you'll never be able to audit.
+    - The foundation you build today is the evidence pack you'll need tomorrow.
   </Card>
+
   <Card title="For developers" icon="code">
-    Get credit for the AI-assisted work you're doing. Sessions are tracked, contributions are attributed, and your productivity is quantified.
+    - Get credit for the AI-assisted work you're doing. 
+    - Contributions are attributed
+    - Your productivity is quantified.
   </Card>
 </CardGroup>
 
@@ -111,14 +134,17 @@ A visual breakdown of AI activity across the last 5 weeks. Click any block to dr
     ```bash
     sense-cli signup
     ```
+
     Opens the SenseLab web UI. Sign up with GitHub or Google — takes under a minute.
   </Step>
   <Step title="Enable lineage in your repo">
     Navigate to your project directory and run:
+
     ```bash
     sense-cli lineage enable
     ```
-    SenseLab starts tracking immediately. Head to [app.raia.live](https://app.raia.live) to see your data.
+
+    SenseLab starts working immediately. Head to the [SenseLab Dashboard](https://app.raia.live) to see your data.
   </Step>
 </Steps>
 
