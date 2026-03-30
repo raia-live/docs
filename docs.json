@@ -90,7 +90,8 @@
   },
   "logo": {
     "light": "/logo/senselab-logo.png",
-    "dark": "/logo/senselab-logo.png"
+    "dark": "/logo/senselab-logo.png",
+    "href": "https://docs.sense-lab.ai"
   },
   "navbar": {
     "links": [
@@ -123,5 +124,6 @@
       "github": "https://github.com/senselab",
       "linkedin": "https://linkedin.com/company/sense-lab"
     }
-  }
+  },
+  "description": "AI Trust Layer for SLDC"
 }
