@@ -1,4 +1,127 @@
 ---
-title: 'AI Lineage'
+title: "AI Lineage"
+description: "Know exactly what AI wrote in your codebase, who wrote it, which models were used, and how much of your team has adopted AI — in real time. Free, forever."
 ---
 
+## What is AI Lineage?
+
+AI Lineage is SenseLab's free-forever tier. It gives you a live picture of how AI is being used across your engineering team — which files it touched, which models contributed, which tools your developers are using, and how many hours it saved.
+
+No repository connection required. Install the CLI and you're collecting data in minutes.
+
+---
+
+## The problem it solves
+
+Most teams have no idea what's actually happening with AI in their codebase.
+
+Developers are using Cursor, Copilot, Claude, and others — but there's no centralized view. Engineering managers can't answer basic questions like:
+
+- How much of our code is AI-generated?
+- Which developers have adopted AI tools, and which haven't?
+- Which models are being routed through our team?
+- How many hours is AI saving us per sprint?
+
+Without answers, AI adoption is invisible — and invisible things don't get managed, measured, or improved.
+
+<Info>
+  **AI Lineage makes the invisible visible.** It's the foundation every team needs before they can make intelligent decisions about AI tooling, risk, and compliance.
+</Info>
+
+---
+
+## What you get
+
+<CardGroup cols={2}>
+  <Card title="AI Attribution" icon="fingerprint">
+    See exactly which lines and files were touched by AI, which model wrote them, and which developer was in the session. Full attribution — no guessing.
+  </Card>
+  <Card title="Team AI Score" icon="trophy">
+    A composite score across adoption, coverage, activity volume, and session quality. Know at a glance how well your team is leveraging AI — and where the gaps are.
+  </Card>
+  <Card title="Developer Session Tracking" icon="clock">
+    Track individual AI coding sessions from first edit to git push. See median session length, total events, AI commits, and estimated hours saved.
+  </Card>
+  <Card title="Team Coverage" icon="users">
+    Know which team members are actively using AI tools and which aren't. Full coverage means complete insights. Partial coverage means blind spots.
+  </Card>
+  <Card title="AI Tool Breakdown" icon="wrench">
+    See which IDEs and AI coding tools (Cursor, GitHub Copilot, Claude Code, Windsurf, etc.) your team is using and in what proportion.
+  </Card>
+  <Card title="Model Usage" icon="microchip">
+    Track which LLMs your team is routing through — GPT-4o, Claude, Gemini, and more — and how heavily each is used across the org.
+  </Card>
+</CardGroup>
+
+---
+
+## Your dashboard
+
+Once lineage is enabled, your [SenseLab Dashboard](https://app.raia.live) gives you a live view of all of this data.
+
+### Team AI Score
+
+A composite metric built from four dimensions:
+
+| Dimension | What it measures |
+|---|---|
+| **AI Adoption** | % of developers actively using AI tools |
+| **Team Coverage** | % of the team being tracked |
+| **Activity Volume** | Volume of AI-assisted commits and edits |
+| **Session Quality** | Depth and quality of AI coding sessions |
+
+### 3D Activity View
+
+A visual breakdown of AI activity across the last 5 weeks. Click any block to drill into that day's events — who was active, which files were touched, which models were used, and how many AI lines were written.
+
+### Key metrics tracked
+
+- **Total Events** — commits, mid-edits, and agent runs across the team
+- **AI Commits** — percentage of commits that include AI-generated code
+- **Hours Saved** — estimated from AI-generated lines and session patterns
+- **Median Session** — average time from first AI edit to git push
+
+---
+
+## Why it matters
+
+<CardGroup cols={3}>
+  <Card title="For engineering managers" icon="chart-bar">
+    Get a clear picture of AI ROI. Know which tools your team uses, how much time is being saved, and where adoption is lagging — without asking anyone.
+  </Card>
+  <Card title="For security and compliance" icon="shield-halved">
+    Start building a record of AI activity now. Every sprint without lineage tracking is a sprint you'll never be able to audit. The foundation you build today is the evidence pack you'll need tomorrow.
+  </Card>
+  <Card title="For developers" icon="code">
+    Get credit for the AI-assisted work you're doing. Sessions are tracked, contributions are attributed, and your productivity is quantified.
+  </Card>
+</CardGroup>
+
+---
+
+## Get started
+
+<Steps>
+  <Step title="Install the CLI">
+    ```bash
+    curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+    ```
+  </Step>
+  <Step title="Sign up">
+    ```bash
+    sense-cli signup
+    ```
+    Opens the SenseLab web UI. Sign up with GitHub or Google — takes under a minute.
+  </Step>
+  <Step title="Enable lineage in your repo">
+    Navigate to your project directory and run:
+    ```bash
+    sense-cli lineage enable
+    ```
+    SenseLab starts tracking immediately. Head to [app.raia.live](https://app.raia.live) to see your data.
+  </Step>
+</Steps>
+
+<Note>
+  AI Lineage is **free forever**. No credit card required. When you're ready to add PR review, risk scoring, and AIBOM generation, upgrade to the [Review plan](/quickstart).
+</Note>
