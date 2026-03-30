@@ -1,4 +1,172 @@
 ---
 title: "Onboarding"
+description: "Get your team set up on SenseLab — from sign up to your first agent running in production."
 icon: "door-open"
 ---
+
+## Sign up
+
+You can create your SenseLab account in two ways — directly from the CLI or through the dashboard.
+
+<Tabs>
+  <Tab title="Via CLI (recommended)">
+    The CLI is the fastest path to getting lineage data flowing. Install it, sign up, and enable tracking in one flow.
+
+    **Step 1 — Install the CLI**
+
+    ```bash
+    curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+    ```
+
+    **Step 2 — Sign up**
+
+    ```bash
+    sense-cli signup
+    ```
+
+    This opens the SenseLab web UI in your browser. Sign up with GitHub or Google — takes under a minute. Once complete, your CLI is automatically authenticated.
+
+    **Step 3 — Enable AI Lineage**
+
+    Navigate to your project directory and run:
+
+    ```bash
+    sense-cli lineage enable
+    ```
+
+    SenseLab starts tracking immediately. Head to [app.raia.live](https://app.raia.live) to see your data.
+  </Tab>
+  <Tab title="Via Dashboard">
+    Prefer to sign up through the browser first? Go to [app.raia.live](https://app.raia.live) and choose your sign-in method.
+
+    <CardGroup cols={2}>
+      <Card title="GitHub" icon="github" href="https://app.raia.live">
+        Sign up with GitHub
+      </Card>
+      <Card title="Google" icon="google" href="https://app.raia.live">
+        Sign up with Google
+      </Card>
+    </CardGroup>
+
+    Once signed in, install the CLI to start sending lineage data:
+
+    ```bash
+    curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+    ```
+
+    Then authenticate with your new account:
+
+    ```bash
+    sense-cli login
+    ```
+
+    And enable lineage in your repo:
+
+    ```bash
+    sense-cli lineage enable
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Connect your systems
+
+Once you're signed in, head to **Settings → Connectors** in the dashboard. This is where you connect SenseLab's agents to your existing tools and infrastructure.
+
+Connectors give SenseLab the context it needs to track PRs, deployments, cloud environments, and more — across your entire SDLC.
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github">
+    Connect your GitHub organization to enable PR tracking, risk scoring, and AI provenance on every pull request.
+  </Card>
+  <Card title="AWS" icon="aws">
+    Connect your AWS environment to track deployments, correlate releases to infrastructure events, and monitor runtime impact.
+  </Card>
+  <Card title="Google Cloud" icon="google">
+    Connect Google Cloud to track deployments and surface production impact linked back to the AI-generated code that caused them.
+  </Card>
+  <Card title="More coming" icon="plug">
+    GitLab, Azure, Bitbucket, and more integrations are on the roadmap. [Join the Discord](https://discord.gg/KSGfQDryGg) to request yours.
+  </Card>
+</CardGroup>
+
+### How to add a connector
+
+<Steps>
+  <Step title="Go to Connectors">
+    In the dashboard, navigate to **Settings → Connectors**.
+  </Step>
+  <Step title="Choose your integration">
+    Select the system you want to connect — GitHub, AWS, Google Cloud, etc.
+  </Step>
+  <Step title="Authorize access">
+    Follow the OAuth or API key flow to grant SenseLab the required permissions. Access is scoped to only what's needed.
+  </Step>
+  <Step title="Verify the connection">
+    Once connected, SenseLab will confirm the integration is live and begin ingesting data from that system.
+  </Step>
+</Steps>
+
+---
+
+## Create your agents
+
+With your connectors set up, you're ready to create agents. Agents are the core of SenseLab — they run autonomously across your SDLC to review PRs, generate compliance artifacts, monitor deployments, and close the feedback loop.
+
+Navigate to **Agents** in the dashboard and click **New Agent**.
+
+<CardGroup cols={2}>
+  <Card title="Review Agent" icon="code-pull-request">
+    Attaches to your GitHub repositories and automatically analyzes every pull request — surfacing AI contribution, risk score, dependency changes, and AIBOM before merge.
+
+    **Requires:** GitHub connector, Review plan
+  </Card>
+  <Card title="Release Agent" icon="rocket">
+    Monitors your deployments end-to-end — from build artifact to runtime. Generates SBOM + AIBOM at every release, tracks deployment health, and traces production incidents back to their source.
+
+    **Requires:** GitHub + cloud connector (AWS or GCP), Release plan
+  </Card>
+</CardGroup>
+
+### How to create an agent
+
+<Steps>
+  <Step title="Go to Agents">
+    In the dashboard, navigate to **Agents** and click **New Agent**.
+  </Step>
+  <Step title="Select the agent type">
+    Choose **Review** or **Release** depending on what you want to track.
+  </Step>
+  <Step title="Configure the agent">
+    Select the repositories and connectors the agent should operate on. Set any policies (e.g. which branches trigger review, risk score thresholds).
+  </Step>
+  <Step title="Deploy the agent">
+    Click **Deploy**. The agent is now live and will run automatically on every PR or deployment event — no manual triggering required.
+  </Step>
+  <Step title="Check Agent History">
+    All agent runs are logged under **Agent History** and **Audit Trail**. You can see exactly what each agent did, when it ran, and what it found.
+  </Step>
+</Steps>
+
+---
+
+## You're set up
+
+Once your agents are running, SenseLab is tracking your entire AI-assisted SDLC — from the first keystroke in a coding session to the moment code hits production.
+
+<CardGroup cols={3}>
+  <Card title="AI Lineage" icon="diagram-project" href="/ai-lineage">
+    See live AI attribution, team adoption, and model usage across your org.
+  </Card>
+  <Card title="Review" icon="code-pull-request" href="/review">
+    Every PR gets risk-scored and AI-attributed before it merges.
+  </Card>
+  <Card title="Release" icon="rocket" href="/release">
+    Full deployment correlation, AIBOM generation, and runtime impact tracing.
+  </Card>
+</CardGroup>
+
+<Info>
+  Need help? [Join our Discord](https://discord.gg/KSGfQDryGg) — the team is active and happy to help you get set up.
+</Info>
