@@ -7,7 +7,7 @@
     "light": "#93c5fd",
     "dark": "#2563eb"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo/senselab-icon.png",
   "navigation": {
     "tabs": [
       {
