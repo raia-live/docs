@@ -1,97 +1,104 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "AI Trust Layer for the SDLC"
+description: "Somewhere in your codebase, an AI wrote something nobody reviewed. It's already in production. SenseLab gives you the complete trust record — from local dev to incident."
 ---
 
-## Setting up
+## The problem
 
-Get your documentation site up and running in minutes.
+AI coding changed everything. Your process hasn't caught up.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
+Developers are shipping code they didn't write and can't fully explain. Code review becomes a rubber stamp. Nobody sees what packages and dependencies the AI silently added. And when something breaks, there's no trail back to the source.
+
+**AI Code Review tools stop at merge. AIOps tools start at the incident. Nobody fills the gap in between.**
+
+SenseLab does.
+
+---
+
+## What SenseLab does
+
+SenseLab is the merge-to-incident lineage layer your SDLC is missing. It tracks every line of AI-generated code from the moment it's written to the moment it ships — and ties production incidents back to the exact PR, model, and developer that introduced them.
+
+<CardGroup cols={2}>
+  <Card title="AI Lineage" icon="diagram-project" href="/quickstart">
+    Know exactly which files AI touched, which models wrote what, and how much of your codebase is AI-generated — updated in real time.
+  </Card>
+  <Card title="Pull Request Review" icon="code-pull-request" href="/quickstart">
+    AI-aware PR reviews with risk scoring based on blast radius, AI contribution rate, and incident history. Your team understands what's in the code before it merges.
+  </Card>
+  <Card title="SBOM + AIBOM" icon="file-shield" href="/quickstart">
+    Automated generation of AI Bills of Materials at review time — before merge, not after the incident. Every package and dependency the AI silently added, surfaced.
+  </Card>
+  <Card title="Deployment & Evidence Pack" icon="rocket" href="/quickstart">
+    Link every artifact to its deployment. When your auditor or enterprise customer asks "what shipped in release 3.1.2?" — you have the answer.
+  </Card>
+  <Card title="Runtime Impact" icon="chart-line" href="/quickstart">
+    Deployment health tracked from the moment it ships. When something breaks, trace it back to the exact AI-generated line, the PR, and the approver.
+  </Card>
+  <Card title="Feedback Loop" icon="arrows-rotate" href="/quickstart">
+    Problems in production feed back into the next review. Every incident makes the next review smarter. Most tools are stateless. SenseLab remembers.
+  </Card>
+</CardGroup>
+
+---
+
+## Get started in minutes
+
+No repository connection required. Install the CLI, sign up, and start tracking AI lineage immediately.
+
+```bash
+# Install the SenseLab CLI
+curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+
+# Sign up and authenticate
+sense-cli signup
+
+# Enable AI lineage tracking in your repo
+sense-cli lineage enable
+```
+
+<Card title="Full quickstart guide" icon="rocket" href="/quickstart" horizontal>
+  Up and running in under 5 minutes. No configuration required.
 </Card>
 
-## Make it yours
+---
 
-Design a docs site that looks great and empowers your users.
+## Plans
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+<CardGroup cols={3}>
+  <Card title="AI Lineage" icon="chart-bar">
+    **Free**
 
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    AI attribution per line, developer session tracking, and team dashboard. Get your team on this today.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+  <Card title="Review" icon="code-pull-request">
+    **$29 / user / month**
 
-## Need inspiration?
+    PR review and risk scoring, AI provenance in every review, team-level analytics, full PR-to-release connection. Where engineering managers live.
+  </Card>
+  <Card title="Release" icon="file-shield">
+    **$149 / month**
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    SBOM + AIBOM generation, deployment correlation, full audit trail, compliance export. For when your auditor or enterprise customer comes knocking.
+  </Card>
+</CardGroup>
+
+---
+
+## Why now
+
+<CardGroup cols={3}>
+  <Card title="AI agents are accelerating" icon="bolt">
+    The volume of AI-generated code is about to increase by an order of magnitude. Teams without a trust layer will drown in it.
+  </Card>
+  <Card title="Your codebase is already full of it" icon="triangle-exclamation">
+    Every sprint without SenseLab is a sprint you'll never be able to audit. The code is already there.
+  </Card>
+  <Card title="Compliance is landing" icon="scale-balanced">
+    AIBOMs are coming. Unlike static SBOMs, AI creates dynamic dependency images — components change constantly. You need to track them automatically.
+  </Card>
+</CardGroup>
+
+<Info>
+  **One question:** What shipped in your last release that was AI-generated? If you can't answer that, [get started for free](https://app.raia.live) — no credit card required.
+</Info>
