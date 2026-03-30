@@ -71,14 +71,19 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Website",
-          "href": "https://www.sense-lab.ai",
-          "icon": "globe"
+          "anchor": "Quickstart",
+          "href": "/quickstart",
+          "icon": "rocket"
         },
         {
-          "anchor": "Support",
-          "href": "mailto:support@sense-lab.ai",
-          "icon": "envelope"
+          "anchor": "Changelog",
+          "href": "/changelog",
+          "icon": "list"
+        },
+        {
+          "anchor": "Discord",
+          "href": "https://discord.gg/KSGfQDryGg",
+          "icon": "discord"
         }
       ]
     }
