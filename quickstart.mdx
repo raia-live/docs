@@ -1,112 +1,101 @@
 ---
 title: "Quickstart"
-description: "Get your documentation site up and running in under 2 minutes"
+description: "Get SenseLab up and running in just a couple of minutes. Connect your repositories and start enabling AI-powered lineage tracking, AIBOM, deployment impact analysis, and more."
 icon: "rocket"
 ---
 
-## Get started
+## What you get for free
 
-Set up your docs site in two steps — no configuration required to get started.
-
-### Step 1: Create your account
-
-Sign up using your existing Git provider credentials. No new password needed.
+No repository connection required to get started. With a free account you immediately get access to:
 
 <CardGroup cols={2}>
-  <Card title="GitHub" icon="github" href="https://dashboard.mintlify.com">
-    Sign in with your GitHub account
+  <Card title="AI Lineage" icon="diagram-project">
+    See exactly which files AI has touched, which models are being used, and which dev tools your team relies on.
   </Card>
-  <Card title="GitLab" icon="gitlab" href="https://dashboard.mintlify.com">
-    Sign in with your GitLab account
+  <Card title="Commit Activity" icon="code-commit">
+    A full breakdown of AI adoption across your team — sessions, activity volume, and coding patterns.
   </Card>
-  <Card title="Bitbucket" icon="bitbucket" href="https://dashboard.mintlify.com">
-    Sign in with your Bitbucket account
+  <Card title="AI Tool Breakdown" icon="wrench">
+    Know which IDEs and AI coding tools (Cursor, Copilot, Claude, etc.) are driving your team's output.
   </Card>
-  <Card title="SSO / Email" icon="envelope" href="https://dashboard.mintlify.com">
-    Sign in with SSO or email
+  <Card title="Model Usage" icon="microchip">
+    Track which LLMs your team is routing through and how heavily each is used.
   </Card>
 </CardGroup>
 
-<Tip>
-  Your account is tied to your Git provider — use whichever you host your docs repository on.
-</Tip>
+---
 
-### Step 2: Connect your repository
-
-After signing in, link the repository that contains (or will contain) your documentation.
+## Get started in 3 steps
 
 <Steps>
-  <Step title="Open the dashboard">
-    Go to [dashboard.mintlify.com](https://dashboard.mintlify.com) and click **New project**.
+  <Step title="Install the SenseLab CLI">
+    Run the following command in your terminal to install the CLI:
+
+    ```bash
+    curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+    ```
   </Step>
-  <Step title="Select your repository">
-    Grant Mintlify access to your Git provider and choose the repository you want to use. You can scope access to just that repository.
+
+  <Step title="Sign up">
+    Create your account directly from the CLI. This will open the SenseLab web UI in your browser to complete sign up with GitHub or Google.
+
+    ```bash
+    sense-cli signup
+    ```
+
+    <CardGroup cols={2}>
+      <Card title="GitHub" icon="github" href="https://app.raia.live">
+        Sign up with GitHub
+      </Card>
+      <Card title="Google" icon="google" href="https://app.raia.live">
+        Sign up with Google
+      </Card>
+    </CardGroup>
+
+    Once sign up is complete, your CLI is automatically authenticated — no extra steps needed.
   </Step>
-  <Step title="Configure your project">
-    Set your project name and the directory where your docs live (defaults to the repo root).
-  </Step>
-  <Step title="Deploy">
-    Click **Deploy**. Your docs site will be live at `yourproject.mintlify.app` within moments.
+
+  <Step title="Enable AI Lineage">
+    Navigate to any local directory where your code lives (cloned from git) and run:
+
+    ```bash
+    sense-cli lineage enable
+    ```
+
+    That's it. SenseLab will start sending telemetry to your dashboard immediately.
   </Step>
 </Steps>
 
-<Info>
-  Every push to your default branch automatically redeploys your docs — no CI configuration needed.
-</Info>
-
 ---
 
-## Next steps
+## Your dashboard
 
-Now that your site is live, here are the three most common things to do next.
-
-<CardGroup cols={3}>
-  <Card title="Write your first page" icon="pen-to-square" href="/essentials/markdown">
-    Learn MDX syntax and start adding content to your docs.
-  </Card>
-  <Card title="Customize your brand" icon="palette" href="/essentials/settings">
-    Update your logo, colors, and navigation to match your brand.
-  </Card>
-  <Card title="Add an API reference" icon="code" href="/api-reference/introduction">
-    Auto-generate API docs from an OpenAPI spec in minutes.
-  </Card>
-</CardGroup>
-
----
-
-## Preview changes locally
-
-Before pushing, you can preview every change live on your machine.
-
-```bash
-# Install the CLI
-npm i -g mint
-
-# Start the local preview server
-mint dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) — the preview hot-reloads as you edit files.
-
----
-
-## Additional resources
+Once lineage is enabled, head to [app.raia.live](https://app.raia.live) to explore your data.
 
 <CardGroup cols={2}>
-  <Card title="Navigation" icon="bars" href="/essentials/navigation">
-    Configure tabs, groups, and sidebar ordering in `docs.json`.
+  <Card title="AI Score" icon="trophy">
+    A composite score across adoption, coverage, activity volume, and session quality — updated in real time.
   </Card>
-  <Card title="Reusable snippets" icon="puzzle-piece" href="/essentials/reusable-snippets">
-    Write content once and reuse it across multiple pages.
+  <Card title="3D Activity View" icon="cube">
+    A visual breakdown of AI activity across the last 5 weeks. Click any block to drill into that day's events.
   </Card>
-  <Card title="Images & media" icon="image" href="/essentials/images">
-    Add screenshots, diagrams, and videos to your docs.
+  <Card title="Agent History" icon="clock-rotate-left">
+    Full audit trail of every AI agent run — which files were touched, which model was used, and when.
   </Card>
-  <Card title="AI tools" icon="robot" href="/ai-tools/cursor">
-    Use Cursor, Claude Code, or Windsurf to author docs faster.
+  <Card title="Team Coverage" icon="users">
+    See how many team members are tracked and get notified when full coverage is reached.
   </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** Check the [full documentation](https://mintlify.com/docs) or reach out at [hi@mintlify.com](mailto:hi@mintlify.com).
-</Note>
+---
+
+## Need help?
+
+<CardGroup cols={2}>
+  <Card title="Join our Discord" icon="discord" href="https://discord.gg/KSGfQDryGg">
+    Get support, share feedback, and connect with the SenseLab community.
+  </Card>
+  <Card title="Visit our website" icon="globe" href="https://www.sense-lab.ai">
+    Learn more about SenseLab's full feature set.
+  </Card>
+</CardGroup>
