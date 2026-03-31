@@ -9,11 +9,6 @@ icon: "door-open"
 SenseLab is set up in stages. Each step unlocks more visibility — start with sign up and lineage, then layer in Review and Release as your team grows into them.
 
 <Steps>
-  <Step title="Sign up">Create your account via CLI or dashboard</Step>
-  <Step title="Enable AI Lineage">Start tracking AI activity in your codebase</Step>
-  <Step title="Connect your systems">Link SenseLab to GitHub, AWS, GCP, and more</Step>
-  <Step title="Create Review agents">AI-aware PR review and risk scoring</Step>
-  <Step title="Create Release agents">Full deployment tracking, AIBOM, and evidence packs</Step>
 </Steps>
 
 ---
@@ -24,7 +19,11 @@ Create your SenseLab account via the CLI or directly through the dashboard.
 
 <Tabs>
   <Tab title="Via CLI (recommended)">
-    **Install the CLI**
+    The CLI is the fastest path to sign up and get lineage data flowing as a first step. **Install the CLI**
+
+    Install it, sign up, and enable tracking in one flow.
+
+    **Step 1 — Install the CLI**
 
     ```bash
     curl -fsSL https://cli.sense-lab.ai/install.sh | sh
@@ -36,17 +35,22 @@ Create your SenseLab account via the CLI or directly through the dashboard.
     sense-cli signup
     ```
 
-    This opens the SenseLab web UI in your browser. Sign up with GitHub or Google. Once complete, your CLI is automatically authenticated — no extra steps needed.
+    This opens the SenseLab web UI in your browser. Sign up with GitHub or Google — takes under a minute. Once complete, your CLI is automatically authenticated — no extra steps needed.
   </Tab>
   <Tab title="Via Dashboard">
-    Go to [app.raia.live](https://app.raia.live) and sign up with GitHub or Google.
+    Prefer to sign up through the browser first? Go to [SenseLab's Dashboard](https://app.raia.live) and choose your sign-in method. Go to [app.raia.live](https://app.raia.live) and sign up with GitHub or Google.
 
     <CardGroup cols={2}>
-      <Card title="GitHub" icon="github" href="https://app.raia.live">Sign up with GitHub</Card>
-      <Card title="Google" icon="google" href="https://app.raia.live">Sign up with Google</Card>
+      <Card title="GitHub" icon="github" href="https://app.raia.live">
+        Sign up with GitHub
+      </Card>
+
+      <Card title="Google" icon="google" href="https://app.raia.live">
+        Sign up with Google
+      </Card>
     </CardGroup>
 
-    Then install the CLI and authenticate:
+    Once signed in, you can install the CLI to start sending lineage data: Then install the CLI and authenticate:
 
     ```bash
     curl -fsSL https://cli.sense-lab.ai/install.sh | sh
@@ -65,7 +69,7 @@ Navigate to the directory where your code lives (cloned from git) and run:
 sense-cli lineage enable
 ```
 
-That's it. SenseLab starts sending telemetry to your dashboard immediately. Head to [app.raia.live](https://app.raia.live) to see your first data — AI attribution, model usage, team coverage, and session activity.
+That's it. SenseLab starts sending telemetry to your dashboard immediately. Head to the [Dashboard](https://app.raia.live) to see your first data — AI attribution, model usage, team coverage, and session activity.
 
 <Note>
   AI Lineage is **free forever**. No connectors or agents required. See the [AI Lineage](/ai-lineage) page for a full breakdown of what's tracked.
@@ -75,57 +79,82 @@ That's it. SenseLab starts sending telemetry to your dashboard immediately. Head
 
 ## Step 3 — Connect your systems
 
-To unlock Review and Release agents, you need to connect SenseLab to your source systems. Go to **Settings to Connectors** in the dashboard.
+To unlock Review and Release agents, you need to connect SenseLab to your source systems. 
+
+Go to **Settings → Connectors** in the dashboard.
 
 <CardGroup cols={2}>
   <Card title="GitHub" icon="github">
     Required for Review agents. Connects SenseLab to your repositories so it can analyze pull requests, track AI contribution, and generate AIBOM at review time.
   </Card>
+
   <Card title="AWS" icon="aws">
     Required for Release agents. Connects SenseLab to your AWS environment to track deployments, correlate releases to infrastructure events, and monitor runtime impact.
   </Card>
+
   <Card title="Google Cloud" icon="google">
     Required for Release agents. Connects SenseLab to GCP to track deployments and trace production incidents back to the AI-generated code that caused them.
   </Card>
-  <Card title="More coming" icon="plug">
-    GitLab, Azure, Bitbucket, and more are on the roadmap. [Join the Discord](https://discord.gg/KSGfQDryGg) to request an integration.
+
+  <Card title="Additional Connectors" icon="plug">
+    GitLab, Jira, Slack, Kubernetes, Datadog, and more are on the connectors page. You can also [join the Discord](https://discord.gg/KSGfQDryGg) to request additional integrations.
   </Card>
 </CardGroup>
 
 **To add a connector:**
 
-1. Go to **Settings to Connectors** in the dashboard
+1. Go to **Settings → Connectors** in the dashboard
 2. Select the system you want to connect
 3. Follow the OAuth or API key flow to authorize access
-4. SenseLab confirms the connection and begins ingesting data
+4. SenseLab confirms the connection
 
 ---
 
 ## Step 4 — Create Review agents
 
 <Info>
-  Review agents require the **Review plan** ($29/user/month) and a **GitHub connector** configured in Step 3.
+  Review agents require the **Review plan** (\$29/user/month) and a **GitHub connector** configured in Step 3.
 </Info>
 
-Review agents attach to your repositories and automatically analyze every pull request — surfacing AI contribution, risk score, dependency changes, and AIBOM before anything merges.
+Review agents attach to your repositories and automatically analyze every pull request — surfacing code improvements and fixes required, AI contribution, risk score, dependency changes, and AIBOM before anything merges.
 
 **To create a Review agent:**
 
-1. Go to **Agents to New Agent** in the dashboard
+<CardGroup cols={2}>
+  <Card title="Review Agent" icon="code-pull-request">
+    **Requires:** GitHub connector, Review plan
+  </Card>
+</CardGroup>
+
+1. Go to **Agents → New Agent** in the dashboard
 2. Select **Review** as the agent type
-3. Choose the repositories and branches the agent should watch
-4. Set policies — risk score thresholds, required approvals, notification rules
-5. Click **Deploy** — the agent runs automatically on every new PR from this point on
+   <Frame>
+     ![Screenshot2026 03 31at9 25 27AM](/images/Screenshot2026-03-31at9.25.27AM.png)
+   </Frame>
+3. Choose the tool and repositories the agent should watch.
+   <Frame>
+     ![Screenshot2026 03 31at9 26 38AM](/images/Screenshot2026-03-31at9.26.38AM.png)
+   </Frame>
+4. Set policies — which type of reviews you want the agent to perform, notification rules, and more.
+   <Frame>
+     ![Screenshot2026 03 31at9 27 44AM](/images/Screenshot2026-03-31at9.27.44AM.png)
+   </Frame>
+   <Frame>
+     ![Screenshot2026 03 31at9 28 31AM](/images/Screenshot2026-03-31at9.28.31AM.png)
+   </Frame>
+5. Click **Create Agent** 
+6. Head to the [Github Marketplace](https://github.com/marketplace), install the SenseLab app, and connect it to the same repo you assigned to the Review agent you just created. The agent runs automatically on every new PR from this point on
 
 **What Review agents surface on every PR:**
 
+- Complete code review
 - Which lines were written by AI vs. the developer
-- Risk score: blast radius + AI contribution rate + incident history
+- Risk score: blast radius \+ AI contribution rate \+ incident history
 - Every package and dependency the AI silently added
 - AIBOM generated at review time — before merge, not after an incident
 - Full AI provenance: model, session, developer, timestamp
 
-<Card title="Learn more about Review" icon="code-pull-request" href="/review" horizontal>
+<Card title="Learn more about Review" icon="code-pull-request" horizontal href="/review">
   See the full breakdown of what's included in the Review plan.
 </Card>
 
@@ -133,15 +162,21 @@ Review agents attach to your repositories and automatically analyze every pull r
 
 ## Step 5 — Create Release agents
 
+<CardGroup cols={2}>
+  <Card title="Release Agent" icon="rocket">
+    Monitors your deployments end-to-end — from build artifact to runtime. Generates SBOM \+ AIBOM at every release, tracks deployment health, and traces production incidents back to their source.
+  </Card>
+</CardGroup>
+
 <Info>
-  Release agents require the **Release plan** ($149/month) and at least one **cloud connector** (AWS or GCP) configured in Step 3, plus a GitHub connector.
+  Release agents require the **Release plan** (\$149/month) and at least one **cloud connector** (AWS or GCP) configured in Step 3, plus a GitHub connector.
 </Info>
 
-Release agents monitor your deployments end-to-end — from build artifact to runtime. They generate SBOM + AIBOM at every release, track deployment health, and trace production incidents back to their source.
+Release agents monitor your deployments end-to-end — from build artifact to runtime. They generate SBOM \+ AIBOM at every release, track deployment health, and trace production incidents back to their source.
 
 **To create a Release agent:**
 
-1. Go to **Agents to New Agent** in the dashboard
+1. Go to **Agents → New Agent** in the dashboard
 2. Select **Release** as the agent type
 3. Choose the repositories and cloud environments to monitor
 4. Configure deployment triggers and health check policies
@@ -154,22 +189,23 @@ Once your Release agent is running, SenseLab assembles a complete evidence pack 
 The evidence pack spans the full SDLC:
 
 | Source | What's captured |
-|---|---|
+| --- | --- |
 | **Local Dev** | AI session, model used, files touched, lines written |
 | **PR Review** | Risk score, AI provenance, dependency scan, AIBOM at review time |
 | **Build & Artifact** | Evidence bound to the specific build artifact |
 | **Deployment** | Deployment record correlated to PRs, commits, and AI sessions |
 | **Runtime** | Health checks, anomalies, production impact events |
-| **Evidence Pack** | Full AIBOM + SBOM export, approval history, audit trail |
+| **Evidence Pack** | Full AIBOM \+ SBOM export, approval history, audit trail |
 
 When an auditor, enterprise customer, or legal team asks:
-- *"What shipped in release 3.1.2 and who approved it?"*
-- *"Can you provide an AIBOM for this release?"*
-- *"Which parts of our codebase were generated by AI?"*
+
+- _"What shipped in release 3.1.2 and who approved it?"_
+- _"Can you provide an AIBOM for this release?"_
+- _"Which parts of our codebase were generated by AI?"_
 
 The answer is already assembled. You're not scrambling — you're exporting.
 
-<Card title="Learn more about Release" icon="rocket" href="/release" horizontal>
+<Card title="Learn more about Release" icon="rocket" horizontal href="/release">
   See the full breakdown of what's included in the Release plan.
 </Card>
 
@@ -181,11 +217,13 @@ The answer is already assembled. You're not scrambling — you're exporting.
   <Card title="AI Lineage" icon="diagram-project" href="/ai-lineage">
     Free. Live AI attribution, team adoption, and model usage.
   </Card>
+
   <Card title="Review" icon="code-pull-request" href="/review">
-    $29/user/month. Risk-scored, AI-attributed PR review before merge.
+    \$29/user/month. Risk-scored, AI-attributed PR review before merge.
   </Card>
+
   <Card title="Release" icon="rocket" href="/release">
-    $149/month. Full deployment tracking, AIBOM, and evidence packs.
+    \$149/month. Full deployment tracking, AIBOM, and evidence packs.
   </Card>
 </CardGroup>
 
