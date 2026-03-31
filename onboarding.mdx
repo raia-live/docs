@@ -79,7 +79,7 @@ That's it. SenseLab starts sending telemetry to your dashboard immediately. Head
 
 ## Step 3 — Connect your systems
 
-To unlock Review and Release agents, you need to connect SenseLab to your source systems. 
+To unlock Review and Release agents, you need to connect SenseLab to your source systems.
 
 Go to **Settings → Connectors** in the dashboard.
 
@@ -142,7 +142,7 @@ Review agents attach to your repositories and automatically analyze every pull r
    <Frame>
      ![Screenshot2026 03 31at9 28 31AM](/images/Screenshot2026-03-31at9.28.31AM.png)
    </Frame>
-5. Click **Create Agent** 
+5. Click **Create Agent**
 6. Head to the [Github Marketplace](https://github.com/marketplace), install the SenseLab app, and connect it to the same repo you assigned to the Review agent you just created. The agent runs automatically on every new PR from this point on
 
 **What Review agents surface on every PR:**
@@ -164,23 +164,34 @@ Review agents attach to your repositories and automatically analyze every pull r
 
 <CardGroup cols={2}>
   <Card title="Release Agent" icon="rocket">
-    Monitors your deployments end-to-end — from build artifact to runtime. Generates SBOM \+ AIBOM at every release, tracks deployment health, and traces production incidents back to their source.
+    Monitors your deployments end-to-end — from build artifact to runtime. Generates SBOMs and AIBOMs at every release, tracks deployment health, and traces production incidents back to their source.
   </Card>
 </CardGroup>
 
 <Info>
-  Release agents require the **Release plan** (\$149/month) and at least one **cloud connector** (AWS or GCP) configured in Step 3, plus a GitHub connector.
+  Release agents require the **Release plan** (\$149/month), at least one **cloud connector** (AWS or GCP) configured in Step 3, and a GitHub connector.
 </Info>
-
-Release agents monitor your deployments end-to-end — from build artifact to runtime. They generate SBOM \+ AIBOM at every release, track deployment health, and trace production incidents back to their source.
 
 **To create a Release agent:**
 
 1. Go to **Agents → New Agent** in the dashboard
 2. Select **Release** as the agent type
 3. Choose the repositories and cloud environments to monitor
-4. Configure deployment triggers and health check policies
-5. Click **Deploy** — the agent begins tracking from your next deployment
+   <Frame>
+     ![Screenshot2026 03 31at9 49 19AM](/images/Screenshot2026-03-31at9.49.19AM.png)
+   </Frame>
+   <Frame>
+     ![Screenshot2026 03 31at9 51 02AM](/images/Screenshot2026-03-31at9.51.02AM.png)
+   </Frame>
+4. Select the functions you want your agent to perform
+   <Frame>
+     ![Screenshot2026 03 31at9 51 44AM](/images/Screenshot2026-03-31at9.51.44AM.png)
+   </Frame>
+5. Select a communication channel where you want your agent to interact with your team
+   <Frame>
+     ![Screenshot2026 03 31at9 28 31AM 1](/images/Screenshot2026-03-31at9.28.31AM-1.png)
+   </Frame>
+6. Click **Create Agent** — the agent begins executing the selected functions and tracking from your next deployments
 
 ### Step 5.1 — AIBOM and Evidence Pack
 
