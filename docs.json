@@ -50,7 +50,6 @@
           },
           {
             "group": "AI Lineage",
-            "icon": "street-view",
             "pages": [
               "essentials/settings",
               "essentials/navigation"
