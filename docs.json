@@ -61,8 +61,8 @@
             "icon": "shield-check",
             "pages": [
               "review/overview",
-              "essentials/code",
-              "essentials/images",
+              "review/connectors",
+              "review/create-agents",
               "essentials/reusable-snippets"
             ]
           },
