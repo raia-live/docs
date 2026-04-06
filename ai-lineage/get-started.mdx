@@ -70,6 +70,7 @@ There's nothing else to set up. SenseLab tracks AI activity in the background as
 </Info>
 
 The CLI captures:
+
 - Which AI tool was used (Cursor, Copilot, Claude Code, etc.)
 - Which model was active during the session
 - Which files were touched
@@ -87,7 +88,7 @@ sense-cli lineage --help
 ```
 
 | Command | Description |
-|---|---|
+| --- | --- |
 | `sense-cli lineage enable` | Enable lineage capture in the current git repository |
 | `sense-cli lineage disable` | Disable lineage capture in the current git repository |
 | `sense-cli lineage status` | Show lineage capture status for the current repository |
@@ -129,10 +130,10 @@ sense-cli lineage sync
 
 ## Verify it's working
 
-After your first commit and push, head to [app.raia.live](https://app.raia.live) and open the **AI Lineage dashboard**. You should see:
+After your first commit and push, head to the [dashboard](https://app.raia.live) and open the **AI Lineage dashboard**. You should see:
 
-- Your first event registered under **Commit Activity**
-- Your name appearing in the **Team Coverage** section
+- Your first event is registered under **Commit Activity**
+- Your name appears in the **Team Coverage** section
 - The "You're on the board!" notification confirming your first lineage event was received
 
 <Frame>
@@ -149,6 +150,6 @@ Lineage data is most valuable when it covers your whole team. Invite teammates f
 
 Track coverage under **Team** in the dashboard. Full team coverage means complete, unbiased lineage data.
 
-<Card title="View the full AI Lineage overview" icon="arrows-to-eye" href="/ai-lineave/overview" horizontal>
+<Card title="View the full AI Lineage overview" icon="arrows-to-eye" horizontal href="/ai-lineave/overview">
   See what's in your dashboard and what every metric means.
 </Card>
