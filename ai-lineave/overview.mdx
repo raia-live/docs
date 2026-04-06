@@ -1,344 +1,117 @@
 ---
 title: "Overview"
 icon: "arrows-to-eye"
-description: "SenseLab's AI Lineage Overview"
+description: "A live picture of how AI is being used across your engineering team — which models, which tools, which files, and how much time it's saving."
 ---
 
-Every Mintlify site needs a `docs.json` file with the core configuration settings. Learn more about the [properties](#properties) below.
-
-## Properties
-
-<ResponseField name="name" type="string" required>
-  Name of your project. Used for the global title.
-
-  Example: `mintlify`
-</ResponseField>
-
-<ResponseField name="navigation" type="Navigation[]" required>
-  An array of groups with all the pages within that group
+AI Lineage is SenseLab's free tier. It answers the questions every engineering team has once AI coding becomes the norm — but has no good way to answer today.
 
-  <Expandable title="Navigation">
-    <ResponseField name="group" type="string">
-      The name of the group.
+Install the CLI, run one command, and within minutes you have a live dashboard showing AI adoption, model usage, tool breakdown, session activity, and team coverage across your entire org. No repository connection required.
 
-      Example: `Settings`
-    </ResponseField>
-
-    <ResponseField name="pages" type="string[]">
-      The relative paths to the markdown files that will serve as pages.
-
-      Example: `["customization", "page"]`
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+---
 
-<ResponseField name="logo" type="string or object">
-  Path to logo image or object with path to "light" and "dark" mode logo images
+## What's in the dashboard
 
-  <Expandable title="Logo">
-    <ResponseField name="light" type="string">
-      Path to the logo in light mode
-    </ResponseField>
+### Overview — Team AI Score
 
-    <ResponseField name="dark" type="string">
-      Path to the logo in dark mode
-    </ResponseField>
+<Frame>
+  ![AI Lineage Overview](/images/Screenshot2026-03-30at10.55.13AM.png)
+</Frame>
 
-    <ResponseField name="href" type="string" default="/">
-      Where clicking on the logo links you to
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+The Overview tab shows your **Team AI Score** — a composite metric built from four dimensions:
 
-<ResponseField name="favicon" type="string">
-  Path to the favicon image
-</ResponseField>
+| Dimension | What it measures | Max points |
+|---|---|---|
+| **AI Adoption** | % of commits that are AI-assisted | 40 |
+| **Team Coverage** | % of the team being tracked | 30 |
+| **Activity Volume** | Volume of AI-assisted edits and commits | 20 |
+| **Session Quality** | Depth and consistency of AI coding sessions | 10 |
 
-<ResponseField name="colors" type="Colors">
-  Hex color codes for your global theme
+Below the score, you get real-time stats: **Total Events**, **AI Commits**, **Hours Saved**, and **Median Session** (time from first edit to git push). SenseLab also surfaces your biggest gain — the one metric most worth improving next.
 
-  <Expandable title="Colors">
-    <ResponseField name="primary" type="string" required>
-      The primary color. Used for most often for highlighted content, section headers, accents, in light mode
-    </ResponseField>
-
-    <ResponseField name="light" type="string">
-      The primary color for dark mode. Used for most often for highlighted content, section headers, accents, in dark mode
-    </ResponseField>
+---
 
-    <ResponseField name="dark" type="string">
-      The primary color for important buttons
-    </ResponseField>
-
-    <ResponseField name="background" type="object">
-      The color of the background in both light and dark mode
+### Commit Activity — 3D Activity View
 
-      <Expandable title="Object">
-        <ResponseField name="light" type="string" required>
-          The hex color code of the background in light mode
-        </ResponseField>
-
-        <ResponseField name="dark" type="string" required>
-          The hex color code of the background in dark mode
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topbarLinks" type="TopbarLink[]">
-  Array of `name`s and `url`s of links you want to include in the topbar
+<Frame>
+  ![3D Activity View](/images/Screenshot2026-03-30at10.54.58AM.png)
+</Frame>
 
-  <Expandable title="TopbarLink">
-    <ResponseField name="name" type="string">
-      The name of the button.
-
-      Example: `Contact us`
-    </ResponseField>
-
-    <ResponseField name="url" type="string">
-      The url once you click on the button. Example: `https://mintlify.com/docs`
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topbarCtaButton" type="Call to Action">
-  <Expandable title="Topbar Call to Action">
-    <ResponseField name="type" type='"link" or "github"' default="link">
-      Link shows a button. GitHub shows the repo information at the url provided including the number of GitHub stars.
-    </ResponseField>
-
-    <ResponseField name="url" type="string">
-      If `link`: What the button links to.
-
-      If `github`: Link to the repository to load GitHub information from.
-    </ResponseField>
-
-    <ResponseField name="name" type="string">
-      Text inside the button. Only required if `type` is a `link`.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="versions" type="string[]">
-  Array of version names. Only use this if you want to show different versions of docs with a dropdown in the navigation bar.
-</ResponseField>
-
-<ResponseField name="anchors" type="Anchor[]">
-  An array of the anchors, includes the `icon`, `color`, and `url`.
-
-  <Expandable title="Anchor">
-    <ResponseField name="icon" type="string">
-      The [Font Awesome](https://fontawesome.com/search?q=heart) icon used to feature the anchor.
-
-      Example: `comments`
-    </ResponseField>
-
-    <ResponseField name="name" type="string">
-      The name of the anchor label.
-
-      Example: `Community`
-    </ResponseField>
-
-    <ResponseField name="url" type="string">
-      The start of the URL that marks what pages go in the anchor. Generally, this is the name of the folder you put your pages in.
-    </ResponseField>
-
-    <ResponseField name="color" type="string">
-      The hex color of the anchor icon background. Can also be a gradient if you pass an object with the properties `from` and `to` that are each a hex color.
-    </ResponseField>
-
-    <ResponseField name="version" type="string">
-      Used if you want to hide an anchor until the correct docs version is selected.
-    </ResponseField>
+The Commit Activity tab shows a **3D view of AI activity across the last 5 weeks**. Each block represents a day — height indicates volume. Click any block to drill into that day's events: which developer was active, which files were touched, which model was used, how many prompts were sent, and how many agent runs occurred.
 
-    <ResponseField name="isDefaultHidden" type="boolean" default="false">
-      Pass `true` if you want to hide the anchor until you directly link someone to docs inside it.
-    </ResponseField>
+This is the view that answers: *"What was my team actually doing with AI last week?"*
 
-    <ResponseField name="iconType" type="string" default="duotone">
-      One of: "brands", "duotone", "light", "sharp-solid", "solid", or "thin"
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="topAnchor" type="Object">
-  Override the default configurations for the top-most anchor.
+---
 
-  <Expandable title="Object">
-    <ResponseField name="name" type="string" default="Documentation">
-      The name of the top-most anchor
-    </ResponseField>
+### AI Tool Breakdown and Model Usage
 
-    <ResponseField name="icon" type="string" default="book-open">
-      Font Awesome icon.
-    </ResponseField>
+<Frame>
+  ![AI Tool Breakdown and Model Usage](/images/Screenshot2026-03-30at10.59.30AM.png)
+</Frame>
 
-    <ResponseField name="iconType" type="string" default="duotone">
-      One of: "brands", "duotone", "light", "sharp-solid", "solid", or "thin"
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+Two side-by-side charts show you exactly what your team is using:
 
-<ResponseField name="tabs" type="Tabs[]">
-  An array of navigational tabs.
+- **AI Tool Breakdown** — which IDEs and AI coding tools (Cursor, Copilot, Claude Code, Windsurf, etc.) are driving output, and in what proportion
+- **AI Model Usage** — which LLMs your team is routing through (GPT-4o, Claude, Gemini, etc.) and how heavily each is used
 
-  <Expandable title="Tabs">
-    <ResponseField name="name" type="string">
-      The name of the tab label.
-    </ResponseField>
+This matters when you're making decisions about tooling spend, standardizing on a stack, or understanding model-level exposure.
 
-    <ResponseField name="url" type="string">
-      The start of the URL that marks what pages go in the tab. Generally, this is the name of the folder you put your pages in.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
+---
 
-<ResponseField name="api" type="API">
-  Configuration for API settings. Learn more about API pages at [API Components](/api-playground/demo).
+### Team Coverage and Leaderboard
 
-  <Expandable title="API">
-    <ResponseField name="baseUrl" type="string">
-      The base url for all API endpoints. If `baseUrl` is an array, it will enable for multiple base url options that the user can toggle.
-    </ResponseField>
+<Frame>
+  ![Team Coverage](/images/Screenshot2026-03-30at10.55.23AM.png)
+</Frame>
 
-    <ResponseField name="auth" type="Auth">
-      <Expandable title="Auth">
-        <ResponseField name="method" type='"bearer" | "basic" | "key"'>
-          The authentication strategy used for all API endpoints.
-        </ResponseField>
+The Team section shows **who is tracked and who isn't**. Full coverage means complete insights — partial coverage means blind spots in your lineage data.
 
-        <ResponseField name="name" type="string">
-          The name of the authentication parameter used in the API playground.
+Toggle between **Coverage view** (who's tracked, with live status) and **Leaderboard view** (ranked by AI coding events) to understand both adoption breadth and individual contribution.
 
-          If method is `basic`, the format should be `[usernameName]:[passwordName]`
-        </ResponseField>
-
-        <ResponseField name="inputPrefix" type="string">
-          The default value that's designed to be a prefix for the authentication input field.
+---
 
-          E.g. If an `inputPrefix` of `AuthKey` would inherit the default input result of the authentication field as `AuthKey`.
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
+### Shareable Adoption Dashboard
 
-    <ResponseField name="playground" type="Playground">
-      Configurations for the API playground
+SenseLab generates a shareable **AI Adoption Dashboard snapshot** — a clean, exportable summary showing Team AI Score, AI Commits, AI Lines Written, Hours Saved, Total Events, Tools Used, Models Used, and Coverage.
 
-      <Expandable title="Playground">
-        <ResponseField name="mode" type='"show" | "simple" | "hide"' default="show">
-          Whether the playground is showing, hidden, or only displaying the endpoint with no added user interactivity `simple`
+Use it to share progress with your manager, present AI ROI to leadership, or give a team member a view of where things stand — without giving them access to the full dashboard.
 
-          Learn more at the [playground guides](/api-playground/demo)
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
-
-    <ResponseField name="maintainOrder" type="boolean">
-      Enabling this flag ensures that key ordering in OpenAPI pages matches the key ordering defined in the OpenAPI file.
-
-      <Warning>
-        This behavior will soon be enabled by default, at which point this field will be deprecated.
-      </Warning>
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="openapi" type="string | string[]">
-  A string or an array of strings of URL(s) or relative path(s) pointing to your OpenAPI file.
-
-  Examples:
-
-  <CodeGroup>
-
-  ```json Absolute
-  "openapi": "https://example.com/openapi.json"
-  ```
-
-  ```json Relative
-  "openapi": "/openapi.json"
-  ```
-
-  ```json Multiple
-  "openapi": ["https://example.com/openapi1.json", "/openapi2.json", "/openapi3.json"]
-  ```
-
-  </CodeGroup>
-</ResponseField>
-
-<ResponseField name="footerSocials" type="FooterSocials">
-  An object of social media accounts where the key:property pair represents the social media platform and the account url.
-
-  Example:
-
-  ```json
-  {
-    "x": "https://x.com/mintlify",
-    "website": "https://mintlify.com"
-  }
-  ```
-
-  <Expandable title="FooterSocials">
-    <ResponseField name="[key]" type="string">
-      One of the following values `website`, `facebook`, `x`, `discord`, `slack`, `github`, `linkedin`, `instagram`, `hacker-news`
-
-      Example: `x`
-    </ResponseField>
-
-    <ResponseField name="property" type="string">
-      The URL to the social platform.
-
-      Example: `https://x.com/mintlify`
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="feedback" type="Feedback">
-  Configurations to enable feedback buttons
-
-  <Expandable title="Feedback">
-    <ResponseField name="suggestEdit" type="boolean" default="false">
-      Enables a button to allow users to suggest edits via pull requests
-    </ResponseField>
-
-    <ResponseField name="raiseIssue" type="boolean" default="false">
-      Enables a button to allow users to raise an issue about the documentation
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="modeToggle" type="ModeToggle">
-  Customize the dark mode toggle.
-
-  <Expandable title="ModeToggle">
-    <ResponseField name="default" type='"light" or "dark"'>
-      Set if you always want to show light or dark mode for new users. When not set, we default to the same mode as the user's operating system.
-    </ResponseField>
-
-    <ResponseField name="isHidden" type="boolean" default="false">
-      Set to true to hide the dark/light mode toggle. You can combine `isHidden` with `default` to force your docs to only use light or dark mode. For example:
-
-      <CodeGroup>
-
-      ```json Only Dark Mode
-      "modeToggle": {
-        "default": "dark",
-        "isHidden": true
-      }
-      ```
-
-      ```json Only Light Mode
-      "modeToggle": {
-        "default": "light",
-        "isHidden": true
-      }
-      ```
-
-      </CodeGroup>
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="backgroundImage" type="string">
-  A background image to be displayed behind every page. See example with [Infisical](https://infisical.com/docs) and [FRPC](https://frpc.io).
-</ResponseField>
+---
+
+## What problems it solves
+
+<CardGroup cols={2}>
+  <Card title="No visibility into AI adoption" icon="eye-slash">
+    Developers use Cursor, Copilot, Claude, and others — but there's no central view. AI Lineage aggregates everything into one dashboard without requiring any workflow changes.
+  </Card>
+  <Card title="Can't measure AI ROI" icon="chart-bar">
+    Hours saved, commits assisted, lines attributed — AI Lineage quantifies what AI is actually contributing so you can make the case (or course-correct) with data.
+  </Card>
+  <Card title="Unknown tool and model sprawl" icon="wrench">
+    Without lineage tracking, you don't know which AI tools or models your team is using. AI Lineage surfaces the full picture — including tools you didn't know were in use.
+  </Card>
+  <Card title="No audit foundation" icon="shield-halved">
+    Every sprint without lineage tracking is a sprint you'll never be able to audit. AI Lineage is the foundation — the record you'll need when compliance, legal, or an enterprise customer comes asking.
+  </Card>
+</CardGroup>
+
+---
+
+## Get started
+
+```bash
+# Install the CLI
+curl -fsSL https://cli.sense-lab.ai/install.sh | sh
+
+# Sign up
+sense-cli signup
+
+# Enable lineage in your repo
+sense-cli lineage enable
+```
+
+AI Lineage is **free forever**. Head to [app.raia.live](https://app.raia.live) to see your dashboard.
+
+<Card title="Full onboarding guide" icon="door-open" href="/onboarding" horizontal>
+  Step-by-step setup — from sign up to agents running in production.
+</Card>
