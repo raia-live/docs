@@ -1,47 +1,104 @@
 ---
 title: "Agent Connection"
-description: "Connecting SenseLab to your source systems"
+description: "Connect SenseLab to your source code systems before creating Review agents."
+icon: "plug"
 ---
 
-<img
-  style={{ borderRadius: '0.5rem' }}
-  src="https://mintlify-assets.b-cdn.net/bigbend.jpg"
-/>
+Before creating a Review agent, you need to connect SenseLab to your version control system. This gives the agent access to your repositories so it can perform local and PR reviews.
 
-## Image
+<Info>
+  Connectors are configured under **Settings → Connectors** in the [SenseLab dashboard](https://app.raia.live).
+</Info>
 
-### Using Markdown
+---
 
-The [markdown syntax](https://www.markdownguide.org/basic-syntax/#images) lets you add images using the following code
+## What you need
 
-```md
-![title](/path/image.jpg)
-```
+| Connector | Required for |
+|---|---|
+| GitHub or GitLab | Local reviews and PR reviews |
+| SenseLab GitHub App (GitHub Marketplace) | PR reviews only |
 
-Note that the image file size must be less than 5MB. Otherwise, we recommend hosting on a service like [Cloudinary](https://cloudinary.com/) or [S3](https://aws.amazon.com/s3/). You can then use that URL and embed.
+Local code reviews work with just the connector. PR reviews additionally require the SenseLab GitHub App installed on your repository.
 
-### Using embeds
+---
 
-To get more customizability with images, you can also use [embeds](/writing-content/embed) to add images
+## Step 1 — Add a VCS connector
 
-```html
-<img height="200" src="/path/image.jpg" />
-```
+Navigate to **Settings → Connectors** in the dashboard. Under the **VCS** section, select **GitHub** or **GitLab**.
 
-## Embeds and HTML elements
+<Frame>
+  ![Connectors page](/images/Screenshot-2026-04-06-at-10.01.37-AM.png)
+</Frame>
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/4KzFe50RQkQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', borderRadius: '0.5rem' }} />
+Click **Configure** on the connector you want to add, then click **+ Create** to set up a new connection.
 
-<br />
+<Frame>
+  ![GitHub connector](/images/Screenshot-2026-04-06-at-10.02.41-AM.png)
+</Frame>
 
-<Tip>
-  Mintlify supports [HTML tags in Markdown](https://www.markdownguide.org/basic-syntax/#html). This is helpful if you prefer HTML tags to Markdown syntax, and lets you create documentation with infinite flexibility.
-</Tip>
+You'll be asked to provide:
+- A **name** for this connection (e.g. `git-dev-myorg`)
+- A **personal access token** or OAuth credentials with repository access
 
-### iFrames
+Once saved, the connection will appear in the connector's connection list with a status indicator. You can create multiple connections — for example, one per GitHub organization or GitLab group — and set one as the default.
 
-Loads another HTML page within the document. Most commonly used for embedding videos.
+<Tabs>
+  <Tab title="GitHub">
+    **Minimum required token scopes:**
+    - `repo` — full repository access (read/write)
+    - `read:org` — read organization membership
+    - `read:user` — read user profile
 
-```html
-<iframe src="https://www.youtube.com/embed/4KzFe50RQkQ"> </iframe>
-```
+    Generate a token at **GitHub → Settings → Developer settings → Personal access tokens**.
+  </Tab>
+  <Tab title="GitLab">
+    **Minimum required token scopes:**
+    - `read_repository`
+    - `read_api`
+    - `read_user`
+
+    Generate a token at **GitLab → User Settings → Access Tokens**.
+  </Tab>
+</Tabs>
+
+---
+
+## Step 2 — Install the SenseLab GitHub App (PR reviews only)
+
+<Info>
+  This step is only required if you want your Review agent to perform **PR reviews**. If you only need **local code reviews**, skip this step and proceed to creating your agent.
+</Info>
+
+The SenseLab GitHub App allows the Review agent to post findings directly to pull requests and receive PR events from GitHub.
+
+1. Go to the [GitHub Marketplace](https://github.com/marketplace) and search for **SenseLab**
+2. Click **Install** and select the GitHub organization or account where your repositories live
+3. Choose which repositories to grant access to — you can scope it to specific repos or grant access to all repositories in the org
+4. Complete the installation — GitHub will redirect you back to SenseLab
+
+Once installed, the SenseLab app will receive PR open/update events from GitHub and trigger your Review agent automatically on every new pull request.
+
+<Warning>
+  The GitHub App must be installed on the same repositories that you assign to your Review agent. If a repository is not covered by the app installation, PR reviews will not trigger for that repo.
+</Warning>
+
+---
+
+## Verify your connection
+
+After adding a connector, confirm it's working:
+
+1. Go to **Settings → Connectors** and open the connector you just configured
+2. The connection should show a green checkmark indicating it's active
+3. You can also check **Agent History** after creating your first Review agent to confirm it successfully reached your repositories
+
+---
+
+## Next step
+
+With your connector set up and the GitHub App installed, you're ready to create your first Review agent.
+
+<Card title="Create a Review agent" icon="robot" href="/review/create-agents" horizontal>
+  Configure your agent, assign repositories, and set the types of reviews you want it to perform.
+</Card>
