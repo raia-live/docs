@@ -15,8 +15,8 @@ Before creating a Review agent, you need to connect SenseLab to your version con
 
 | Connector | Required for |
 | --- | --- |
-| GitHub or GitLab | Local reviews and PR reviews |
-| SenseLab GitHub App (GitHub Marketplace) | PR reviews only |
+| <Icon icon="code-pull-request" /> GitHub or GitLab | Local and PR reviews |
+| <Icon icon="display-code" /> SenseLab GitHub App (GitHub Marketplace) | PR reviews |
 
 Local code reviews work with just the connector. PR reviews additionally require the SenseLab GitHub App installed on your repository.
 
@@ -39,7 +39,7 @@ Click **Configure** on the connector you want to add, then click **\+ Create** t
 You'll be asked to provide:
 
 - A **name** for this connection (e.g. `git-dev-myorg`)
-- An** access token** or OAuth credentials with repository access
+- An\*\* access token\*\* or OAuth credentials with repository access
 
 Once saved, the connection will appear in the connector's connection list with a status indicator. You can create multiple connections — for example, one per GitHub organization or GitLab group — and set one as the default.
 
@@ -47,7 +47,7 @@ Once saved, the connection will appear in the connector's connection list with a
   <Tab title="GitHub">
     **Minimum required token scopes:**
 
-    - `repo` — read repository access 
+    - `repo` — read repository access
     - `read:org` — read organization membership
     - `read:user` — read user profile
 
