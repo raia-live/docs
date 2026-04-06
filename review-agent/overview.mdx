@@ -1,0 +1,158 @@
+---
+title: "Overview"
+description: "AI agents that review code before it ships — locally before a push, and on every PR. Built-in trust, provenance, and a full artifact trail from commit to deployment."
+icon: "arrows-to-eye"
+---
+
+Your AI wrote the code. SenseLab makes sure your team actually understands what's in it — before it merges.
+
+Review is an autonomous agent that sits in your development pipeline and performs code reviews at two critical moments: **before you push** (local review) and **after a PR is opened** (PR review). It surfaces findings, generates trust records, tracks artifact lineage, and creates the evidence bundle that feeds directly into your Release agent's SBOM and AIBOM.
+
+---
+
+## The problem it solves
+
+Code review was designed for humans reviewing human-written code. When AI writes the code, several things break at once:
+
+- Developers approve PRs they can't fully explain
+- Bugs and security issues slip through because nobody has time to read every AI-generated line
+- Nobody knows the blast radius — how much of the codebase this change touches, or what it breaks
+- There's no record of what was reviewed, what policies ran, or whether approval gates were respected
+- The gap between "merged" and "in production" is opaque — artifacts, deployments, and incidents aren't connected to the code that caused them
+
+Review closes these gaps — automatically, on every PR, without changing how your team works.
+
+---
+
+## What Review agents do
+
+### Local code review
+
+Before you push code changes to git, the Review agent analyzes your local changes and surfaces issues — security vulnerabilities, performance problems, maintainability concerns, and more — **before they ever enter the pipeline**.
+
+This means your commits arrive at PR with a higher baseline quality. Fewer rounds of review. Faster merge. Less risk reaching production.
+
+### PR review
+
+Once a PR is opened, the Review agent activates and performs a full analysis based on the review types you've configured. Findings are posted directly to the PR and appear in full detail on the SenseLab dashboard.
+
+You choose what your agent reviews:
+
+<CardGroup cols={2}>
+  <Card title="Code Security" icon="shield-halved">
+    Identifies vulnerabilities, insecure patterns, and risky dependencies introduced by AI-generated code — flagged before they merge.
+  </Card>
+  <Card title="Code Performance" icon="bolt">
+    Surfaces inefficiencies, unnecessary complexity, and patterns likely to cause latency or resource issues in production.
+  </Card>
+  <Card title="Code Maintainability" icon="wrench">
+    Flags code that will be hard to understand, test, or modify — helping teams keep AI-generated code as manageable as human-written code.
+  </Card>
+  <Card title="Custom review types" icon="sliders">
+    Configure your agent to focus on what matters most to your team — from naming conventions to architectural patterns to compliance-specific checks.
+  </Card>
+</CardGroup>
+
+---
+
+## Review visibility
+
+As the Review agent works, it builds a complete picture of every PR in your dashboard — not just findings, but the full timeline, lineage, and evidence record.
+
+### PR review findings
+
+Every finding is logged with full detail: the affected file and line, the type of issue, the severity, and the agent's reasoning. Findings are grouped by category and linked directly to the PR.
+
+### PR timeline
+
+The dashboard shows a complete timeline of each PR: when it was opened, when each review check ran, who approved it, when it was merged, and what happened to it after merge. Nothing is lost.
+
+### AI lineage
+
+For every PR, the agent estimates **how much of the code was written by AI vs. the developer**. This gives teams visibility into AI contribution rate — relevant for IP exposure, risk assessment, and understanding where AI is driving output.
+
+### Artifact lineage
+
+The Review agent tracks the full journey from code to running service:
+
+- PR opened and commits made
+- Build artifacts created (container images, binaries, packages) and where they were stored
+- Deployment correlated to the artifact
+- How the artifact reached the target service after deployment
+
+This creates a traceable chain from the developer's commit to what's running in production.
+
+### Trust, provenance, and evidence pack
+
+This is the foundation of SenseLab's compliance story.
+
+As the Review agent performs its analysis, it assembles a **trust and provenance bundle** for every PR — a structured evidence package that records:
+
+- Attestations for each review check performed
+- Which policies were executed and whether they passed or failed
+- Whether the PR was gated on approval before merging
+- The agent's identity and the timestamps of every action
+
+This evidence bundle is not just a log. It is machine-readable, cryptographically structured, and feeds directly into the Release agent — which uses it to generate **CycloneDX-compatible SBOMs and AIBOMs** at release time.
+
+<Info>
+  The trust and provenance bundle created at review time becomes the evidence foundation for your Release agent's compliance exports. Every sprint without a Review agent is a sprint with no evidence record.
+</Info>
+
+---
+
+## Multiple agents, multiple repos
+
+You can create as many Review agents as you need and assign them to different repositories with different configurations. Each agent is independent — one repo can have a security-focused agent while another runs a broader maintainability review.
+
+Managing all of them is straightforward: each agent gets its own management interface where you can see its full activity history, how long it has been running, and extend or modify its assigned review types at any time.
+
+---
+
+## Interact with your Review agents
+
+Review agents aren't just automated pipelines — they're agents you can talk to and connect to your existing tools.
+
+<CardGroup cols={2}>
+  <Card title="Slack" icon="slack">
+    Talk to your Review agent directly in Slack — ask about past findings, get its opinion on a PR, or query its activity history. It responds in context, scoped to its assigned repositories and review history.
+  </Card>
+  <Card title="Dashboard Chat" icon="message">
+    The same conversation interface is available on the SenseLab dashboard. Ask questions, dig into findings, and get answers without leaving your workflow.
+  </Card>
+  <Card title="MCP Server" icon="server">
+    Every Review agent gets its own MCP server that can be enabled or disabled. Connect it to Claude, Cursor, or any MCP-compatible tool to automate code development, testing, and shipping — with your Review agent as a live collaborator.
+  </Card>
+  <Card title="Agent Management" icon="sliders">
+    A dedicated interface for each agent showing every action it has taken, how long it has been active, and controls to extend or modify its assigned functions — add review types, change scope, update policies.
+  </Card>
+</CardGroup>
+
+---
+
+## Why it matters
+
+<CardGroup cols={3}>
+  <Card title="For engineering teams" icon="code">
+    Stop spending cycles on code review that could be automated. Let the agent catch the obvious issues so reviewers can focus on architecture, product logic, and the things that actually require human judgment.
+  </Card>
+  <Card title="For security teams" icon="shield-halved">
+    Every PR reviewed, every finding logged, every dependency surfaced — before it merges. No more discovering what the AI quietly added three sprints later.
+  </Card>
+  <Card title="For compliance and legal" icon="scale-balanced">
+    A machine-readable trust and provenance bundle exists for every PR that went through a Review agent. When an auditor asks what was reviewed, what policies ran, and who approved — you have a complete, structured answer.
+  </Card>
+</CardGroup>
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Onboarding" icon="door-open" href="/onboarding">
+    Set up connectors and create your first Review agent.
+  </Card>
+  <Card title="Release" icon="rocket" href="/release">
+    See how Review agent evidence feeds into Release SBOM and AIBOM generation.
+  </Card>
+</CardGroup>
