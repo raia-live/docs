@@ -1,34 +1,135 @@
 ---
-description: "Creating SenseLab Review Agents"
 title: "Creating Agents"
+description: "Create and configure a Review agent — assign repositories, select review functions, and set up communication channels."
+icon: "robot"
 ---
 
-## Inline code
+Review agents are created from the **Agents** section of the dashboard. You can create as many as you need, each assigned to different repositories with different review functions.
 
-To denote a `word` or `phrase` as code, enclose it in backticks (\`).
+<Info>
+  Before creating a Review agent, make sure you have a [GitHub or GitLab connector configured](/review/connectors) and — if you want PR reviews — the [SenseLab GitHub App installed](/review/connectors#step-2-install-the-senselab-github-app-pr-reviews-only).
+</Info>
 
-```text
-To denote a `word` or `phrase` as code, enclose it in backticks (`).
-```
+---
 
-## Code blocks
+## Step 1 — Name your agent and select its role
 
-Use [fenced code blocks](https://www.markdownguide.org/extended-syntax/#fenced-code-blocks) by enclosing code in three backticks and follow the leading ticks with the programming language of your snippet to get syntax highlighting. Optionally, you can also write the name of your code after the programming language.
+Go to **Agents** in the dashboard and click **+ New Agent**.
 
-```java HelloWorld.java
-class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
-}
-```
+<Frame>
+  ![Agents page](/images/Screenshot2026-03-31at9.25.27AM.png)
+</Frame>
 
-````md
-```java HelloWorld.java
-class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
-}
-```
-````
+A dialog will appear asking for:
+
+- **Agent Name** — give your agent a name (e.g. `review-agent1`, `security-reviewer`, `frontend-review`)
+- **Role** — select **Review**
+
+Click **Next** to continue.
+
+---
+
+## Step 2 — Select connected tools (Step 1 of 4: Connected Tools)
+
+The agent creation wizard has four steps. The first is selecting which VCS tool the agent will connect to.
+
+<Frame>
+  ![Connected Tools](/images/Screenshot2026-03-31at9.26.38AM.png)
+</Frame>
+
+Select **GitHub** or **GitLab** depending on where your repositories live. Only tools with an active connector will be available here. Click **Next**.
+
+---
+
+## Step 3 — Configure repositories (Step 2 of 4: Tool Configuration)
+
+In this step, you assign which repositories this agent will watch.
+
+<Frame>
+  ![Tool Configuration - Add Repository](/images/Screenshot2026-03-31at9.27.44AM.png)
+</Frame>
+
+Click **+ Add Repository**. A dialog will appear showing all repositories available from your connected GitHub or GitLab account.
+
+<Frame>
+  ![Add Repository dialog](/images/Screenshot2026-03-31at9.28.31AM.png)
+</Frame>
+
+- Select your **Connector** from the dropdown (e.g. `git-dev-myorg`)
+- Check the repositories you want this agent to monitor
+- Click **Next**
+
+The selected repositories will appear in the tool configuration table with their visibility and URL. You can add multiple repositories to a single agent.
+
+<Frame>
+  ![Repository added](/images/Screenshot2026-03-31at9.28.31AM-1.png)
+</Frame>
+
+Click **Next** to proceed to agent functions.
+
+---
+
+## Step 4 — Select review functions (Step 3 of 4: Agent Function)
+
+This is where you define what your agent will actually do. Choose from the available **Review Functions**:
+
+<Frame>
+  ![Review Functions](/images/Screenshot2026-03-31at9.49.19AM.png)
+</Frame>
+
+| Function | What it does |
+|---|---|
+| **PR Security Deep Dive** | Analyzes pull requests for security vulnerabilities, insecure patterns, and risky dependencies introduced by AI-generated code |
+| **PR Infra Changes Review** | Reviews infrastructure-as-code changes in PRs — Terraform, Kubernetes manifests, Docker files, and more |
+| **PR Perf and Cost Review** | Flags performance inefficiencies and cost-impact changes introduced in the PR |
+| **PR Maintainability Review** | Surfaces code that will be hard to understand, test, or modify over time |
+| **PR Test and Quality Gates** | Checks test coverage, quality gates, and whether the PR meets defined testing standards before merge |
+| **Master PR Review** | A comprehensive review that combines all of the above into a single pass — the full picture on every PR |
+
+Select one or more functions based on what you want this agent to do. You can always add or remove functions later from the agent's management interface. Click **Next**.
+
+---
+
+## Step 5 — Set communication channels (Step 4 of 4: Communication)
+
+In the final step, choose how the agent communicates findings to your team.
+
+<Frame>
+  ![Agent Team Interaction Channels](/images/Screenshot2026-03-31at9.51.02AM.png)
+</Frame>
+
+**Email** — add one or more recipient email addresses. The agent will send notifications when reviews are completed, findings are flagged, or policies fail.
+
+**Slack** — connect a Slack workspace and channel. The agent will post review summaries and findings directly into your channel, and team members can reply to interact with the agent in context.
+
+Configure one or both channels, then click **Create Agent**.
+
+---
+
+## Your agent is live
+
+Once created, the agent appears on the Agents page with an **Active** status and shows the connectors it's linked to, who created it, and when.
+
+<Frame>
+  ![Agents page with active agents](/images/Screenshot2026-03-31at9.51.44AM.png)
+</Frame>
+
+From the agent card you can:
+- **View analytics** — see the agent's activity and findings over time
+- **Edit settings** — modify repositories, functions, and communication channels
+- **Delete** — remove the agent
+
+The agent will now automatically trigger on every pull request opened in its assigned repositories. For local reviews, it runs before your code is pushed, with no additional configuration needed.
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Review Overview" icon="arrows-to-eye" href="/review/overview">
+    Understand what your Review agent tracks and surfaces on every PR.
+  </Card>
+  <Card title="Agent Connection" icon="plug" href="/review/connectors">
+    Add more connectors or install the GitHub App to enable PR reviews.
+  </Card>
+</CardGroup>
