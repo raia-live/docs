@@ -60,7 +60,10 @@
             "group": "Review",
             "icon": "shield-check",
             "pages": [
-              "review-agent/overview"
+              "review/overview",
+              "essentials/code",
+              "essentials/images",
+              "essentials/reusable-snippets"
             ]
           },
           {
