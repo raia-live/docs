@@ -6,8 +6,8 @@ icon: "map"
 
 ## Prerequisites
 
-- A SenseLab account — [sign up free](https://app.raia.live) with GitHub or Google
-- Git installed and a local repository you actively develop in
+- A SenseLab account — [sign up for free](https://app.raia.live) with GitHub or Google
+- Git is installed, and a local repository you actively develop in
 - macOS or Linux (Windows support coming soon)
 
 ---
@@ -30,7 +30,7 @@ sense-cli --version
 
 ## Step 2 — Sign up or log in
 
-If you don't have an account yet, sign up directly from the CLI. This opens the SenseLab web UI in your browser — sign up with GitHub or Google and your CLI is authenticated automatically.
+If you don't have an account yet, sign up directly from the CLI. This opens the SenseLab web UI in your browser — sign up with GitHub or Google, and your CLI is automatically authenticated.
 
 ```bash
 sense-cli signup
@@ -54,7 +54,7 @@ sense-cli lineage enable
 ```
 
 <Warning>
-  Run `sense-cli lineage enable` from inside your application code directory, not your home directory or any folder that isn't a git repository. Lineage tracking is scoped to the repository it's enabled in.
+  Run `sense-cli lineage enable` from inside your application code directory, not your home directory or any folder that isn't a git repository. Lineage tracking is scoped to the repository in which it's enabled.
 </Warning>
 
 You should see a confirmation that lineage capture is enabled for that repository. That's it — no other configuration needed.
@@ -71,7 +71,7 @@ There's nothing else to set up. SenseLab tracks AI activity in the background as
 
 The CLI captures:
 
-- Which AI tool was used (Cursor, Copilot, Claude Code, etc.)
+- Which AI tool was used (Cursor, Copilot, Claude Code, etc)
 - Which model was active during the session
 - Which files were touched
 - Session duration and event count
