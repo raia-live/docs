@@ -1,85 +1,154 @@
 ---
 title: "Get Started"
-description: "Getting started with SenseLab's AI Lineage"
+description: "Install the SenseLab CLI, enable lineage in your repo, and start seeing AI activity data on your dashboard within minutes."
 icon: "map"
 ---
 
-The navigation menu is the list of links on every website.
+## Prerequisites
 
-You will likely update `docs.json` every time you add a new page. Pages do not show up automatically.
+- A SenseLab account — [sign up free](https://app.raia.live) with GitHub or Google
+- Git installed and a local repository you actively develop in
+- macOS or Linux (Windows support coming soon)
 
-## Navigation syntax
+---
 
-Our navigation syntax is recursive which means you can make nested navigation groups. You don't need to include `.mdx` in page names.
+## Step 1 — Install the CLI
 
-<CodeGroup>
+Run the following command in your terminal:
 
-```json Regular Navigation
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Getting Started",
-          "pages": ["quickstart"]
-        }
-      ]
-    }
-  ]
-}
+```bash
+curl -fsSL https://cli.sense-lab.ai/install.sh | sh
 ```
 
-```json Nested Navigation
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Getting Started",
-          "pages": [
-            "quickstart",
-            {
-              "group": "Nested Reference Pages",
-              "pages": ["nested-reference-page"]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+Verify the installation:
+
+```bash
+sense-cli --version
 ```
 
-</CodeGroup>
+---
 
-## Folders
+## Step 2 — Sign up or log in
 
-Simply put your MDX files in folders and update the paths in `docs.json`.
+If you don't have an account yet, sign up directly from the CLI. This opens the SenseLab web UI in your browser — sign up with GitHub or Google and your CLI is authenticated automatically.
 
-For example, to have a page at `https://yoursite.com/your-folder/your-page` you would make a folder called `your-folder` containing an MDX file called `your-page.mdx`.
+```bash
+sense-cli signup
+```
+
+If you already have an account:
+
+```bash
+sense-cli login
+```
+
+---
+
+## Step 3 — Enable lineage in your repo
+
+Navigate to your **app code directory** — this should be the root of a git repository where you and your team are actively writing code.
+
+```bash
+cd /path/to/your/project
+sense-cli lineage enable
+```
 
 <Warning>
-  You cannot use `api` for the name of a folder unless you nest it inside another folder. Mintlify uses Next.js which reserves the top-level `api` folder for internal server calls. A folder name such as `api-reference` would be accepted.
+  Run `sense-cli lineage enable` from inside your application code directory, not your home directory or any folder that isn't a git repository. Lineage tracking is scoped to the repository it's enabled in.
 </Warning>
 
-```json Navigation With Folder
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Group Name",
-          "pages": ["your-folder/your-page"]
-        }
-      ]
-    }
-  ]
-}
+You should see a confirmation that lineage capture is enabled for that repository. That's it — no other configuration needed.
+
+---
+
+## Step 4 — Code as you normally would
+
+There's nothing else to set up. SenseLab tracks AI activity in the background as you work. **You'll start seeing data on your dashboard as soon as you commit and push code**, exactly as you normally would.
+
+<Info>
+  Data appears on your [dashboard](https://app.raia.live) after your first commit and push. The more your team codes, the richer your lineage data becomes.
+</Info>
+
+The CLI captures:
+- Which AI tool was used (Cursor, Copilot, Claude Code, etc.)
+- Which model was active during the session
+- Which files were touched
+- Session duration and event count
+- Whether a commit included AI-generated lines
+
+---
+
+## CLI reference
+
+All lineage commands are run from within a git repository directory.
+
+```bash
+sense-cli lineage --help
 ```
 
-## Hidden pages
+| Command | Description |
+|---|---|
+| `sense-cli lineage enable` | Enable lineage capture in the current git repository |
+| `sense-cli lineage disable` | Disable lineage capture in the current git repository |
+| `sense-cli lineage status` | Show lineage capture status for the current repository |
+| `sense-cli lineage sync` | Manually sync locally captured lineage events to the SenseLab backend |
 
-MDX files not included in `docs.json` will not show up in the sidebar but are accessible through the search bar and by linking directly to them.
+### `enable`
+
+Activates lineage tracking in the current directory's git repository. Run this once per repo. All team members who clone the repo and have the CLI installed will also be tracked.
+
+```bash
+sense-cli lineage enable
+```
+
+### `disable`
+
+Stops lineage capture for the current repository without deleting historical data.
+
+```bash
+sense-cli lineage disable
+```
+
+### `status`
+
+Shows whether lineage is enabled or disabled for the current repository, and when it was last synced.
+
+```bash
+sense-cli lineage status
+```
+
+### `sync`
+
+Lineage events are synced automatically on commit and push. If you're working offline or want to manually flush events to the backend, use:
+
+```bash
+sense-cli lineage sync
+```
+
+---
+
+## Verify it's working
+
+After your first commit and push, head to [app.raia.live](https://app.raia.live) and open the **AI Lineage dashboard**. You should see:
+
+- Your first event registered under **Commit Activity**
+- Your name appearing in the **Team Coverage** section
+- The "You're on the board!" notification confirming your first lineage event was received
+
+<Frame>
+  ![AI Lineage Dashboard](/images/Screenshot2026-03-30at10.55.13AM.png)
+</Frame>
+
+If you don't see data after your first push, run `sense-cli lineage status` to confirm capture is enabled, then `sense-cli lineage sync` to manually flush any queued events.
+
+---
+
+## Invite your team
+
+Lineage data is most valuable when it covers your whole team. Invite teammates from the dashboard — each person needs to install the CLI and run `sense-cli lineage enable` from within the same repository.
+
+Track coverage under **Team** in the dashboard. Full team coverage means complete, unbiased lineage data.
+
+<Card title="View the full AI Lineage overview" icon="arrows-to-eye" href="/ai-lineave/overview" horizontal>
+  See what's in your dashboard and what every metric means.
+</Card>
