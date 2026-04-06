@@ -1,7 +1,6 @@
 ---
 title: "Agent Connection"
 description: "Connect SenseLab to your source code systems before creating Review agents."
-icon: "plug"
 ---
 
 Before creating a Review agent, you need to connect SenseLab to your version control system. This gives the agent access to your repositories so it can perform local and PR reviews.
@@ -15,7 +14,7 @@ Before creating a Review agent, you need to connect SenseLab to your version con
 ## What you need
 
 | Connector | Required for |
-|---|---|
+| --- | --- |
 | GitHub or GitLab | Local reviews and PR reviews |
 | SenseLab GitHub App (GitHub Marketplace) | PR reviews only |
 
@@ -28,25 +27,27 @@ Local code reviews work with just the connector. PR reviews additionally require
 Navigate to **Settings → Connectors** in the dashboard. Under the **VCS** section, select **GitHub** or **GitLab**.
 
 <Frame>
-  ![Connectors page](/images/Screenshot-2026-04-06-at-10.01.37-AM.png)
+  ![Screenshot 2026 04 06 At 10 32 04 AM](/images/Screenshot-2026-04-06-at-10.32.04-AM.png)
 </Frame>
 
-Click **Configure** on the connector you want to add, then click **+ Create** to set up a new connection.
+Click **Configure** on the connector you want to add, then click **\+ Create** to set up a new connection.
 
 <Frame>
-  ![GitHub connector](/images/Screenshot-2026-04-06-at-10.02.41-AM.png)
+  ![Screenshot 2026 04 06 At 10 32 13 AM](/images/Screenshot-2026-04-06-at-10.32.13-AM.png)
 </Frame>
 
 You'll be asked to provide:
+
 - A **name** for this connection (e.g. `git-dev-myorg`)
-- A **personal access token** or OAuth credentials with repository access
+- An** access token** or OAuth credentials with repository access
 
 Once saved, the connection will appear in the connector's connection list with a status indicator. You can create multiple connections — for example, one per GitHub organization or GitLab group — and set one as the default.
 
 <Tabs>
   <Tab title="GitHub">
     **Minimum required token scopes:**
-    - `repo` — full repository access (read/write)
+
+    - `repo` — read repository access 
     - `read:org` — read organization membership
     - `read:user` — read user profile
 
@@ -54,6 +55,7 @@ Once saved, the connection will appear in the connector's connection list with a
   </Tab>
   <Tab title="GitLab">
     **Minimum required token scopes:**
+
     - `read_repository`
     - `read_api`
     - `read_user`
@@ -77,7 +79,7 @@ The SenseLab GitHub App allows the Review agent to post findings directly to pul
 3. Choose which repositories to grant access to — you can scope it to specific repos or grant access to all repositories in the org
 4. Complete the installation — GitHub will redirect you back to SenseLab
 
-Once installed, the SenseLab app will receive PR open/update events from GitHub and trigger your Review agent automatically on every new pull request.
+Once installed, the SenseLab app will receive PR open/update events from GitHub and automatically trigger the Review agent assigned for that repo for every new pull request.
 
 <Warning>
   The GitHub App must be installed on the same repositories that you assign to your Review agent. If a repository is not covered by the app installation, PR reviews will not trigger for that repo.
@@ -99,6 +101,6 @@ After adding a connector, confirm it's working:
 
 With your connector set up and the GitHub App installed, you're ready to create your first Review agent.
 
-<Card title="Create a Review agent" icon="robot" href="/review/create-agents" horizontal>
+<Card title="Create a Review agent" icon="robot" horizontal href="/review/create-agents">
   Configure your agent, assign repositories, and set the types of reviews you want it to perform.
 </Card>
