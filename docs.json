@@ -50,6 +50,7 @@
           },
           {
             "group": "AI Lineage",
+            "icon": "binoculars",
             "pages": [
               "ai-lineave/overview",
               "ai-lineage/get-started"
@@ -57,6 +58,7 @@
           },
           {
             "group": "Review",
+            "icon": "shield-check",
             "pages": [
               "essentials/markdown",
               "essentials/code",
