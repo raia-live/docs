@@ -30,7 +30,7 @@ Review closes these gaps — automatically, on every PR, without changing how yo
 
 Before you push code changes to git, the Review agent analyzes your local changes and surfaces issues — security vulnerabilities, performance problems, maintainability concerns, and more — **before they ever enter the pipeline**.
 
-This means your commits arrive at PR with a higher baseline quality. Fewer rounds of review. Faster merge. Less risk reaching production.
+This means your commits arrive at PR with a higher baseline quality. Fewer rounds of review. Faster merge. Less risk of reaching production.
 
 ### PR review
 
@@ -42,12 +42,15 @@ You choose what your agent reviews:
   <Card title="Code Security" icon="shield-halved">
     Identifies vulnerabilities, insecure patterns, and risky dependencies introduced by AI-generated code — flagged before they merge.
   </Card>
+
   <Card title="Code Performance" icon="bolt">
     Surfaces inefficiencies, unnecessary complexity, and patterns likely to cause latency or resource issues in production.
   </Card>
+
   <Card title="Code Maintainability" icon="wrench">
     Flags code that will be hard to understand, test, or modify — helping teams keep AI-generated code as manageable as human-written code.
   </Card>
+
   <Card title="Custom review types" icon="sliders">
     Configure your agent to focus on what matters most to your team — from naming conventions to architectural patterns to compliance-specific checks.
   </Card>
@@ -57,11 +60,15 @@ You choose what your agent reviews:
 
 ## Review visibility
 
+<Frame>
+  ![Screenshot 2026 04 06 At 10 02 41 AM](/images/Screenshot-2026-04-06-at-10.02.41-AM.png)
+</Frame>
+
 As the Review agent works, it builds a complete picture of every PR in your dashboard — not just findings, but the full timeline, lineage, and evidence record.
 
 ### PR review findings
 
-Every finding is logged with full detail: the affected file and line, the type of issue, the severity, and the agent's reasoning. Findings are grouped by category and linked directly to the PR.
+Every finding is logged in full detail: the affected file and line, the issue type, the severity, and the agent's reasoning. Findings are grouped by category and linked directly to the PR.
 
 ### PR timeline
 
@@ -89,11 +96,11 @@ This is the foundation of SenseLab's compliance story.
 As the Review agent performs its analysis, it assembles a **trust and provenance bundle** for every PR — a structured evidence package that records:
 
 - Attestations for each review check performed
-- Which policies were executed and whether they passed or failed
+- Which policies were executed, and whether they passed or failed
 - Whether the PR was gated on approval before merging
 - The agent's identity and the timestamps of every action
 
-This evidence bundle is not just a log. It is machine-readable, cryptographically structured, and feeds directly into the Release agent — which uses it to generate **CycloneDX-compatible SBOMs and AIBOMs** at release time.
+This evidence bundle is not just a log. It is machine-readable, cryptographically structured, and feeds directly into the Release agent, which uses it to generate **CycloneDX-compatible SBOMs and AIBOMs** at release time.
 
 <Info>
   The trust and provenance bundle created at review time becomes the evidence foundation for your Release agent's compliance exports. Every sprint without a Review agent is a sprint with no evidence record.
@@ -102,6 +109,10 @@ This evidence bundle is not just a log. It is machine-readable, cryptographicall
 ---
 
 ## Multiple agents, multiple repos
+
+<Frame>
+  ![Screenshot 2026 04 06 At 10 01 37 AM](/images/Screenshot-2026-04-06-at-10.01.37-AM.png)
+</Frame>
 
 You can create as many Review agents as you need and assign them to different repositories with different configurations. Each agent is independent — one repo can have a security-focused agent while another runs a broader maintainability review.
 
@@ -117,12 +128,15 @@ Review agents aren't just automated pipelines — they're agents you can talk to
   <Card title="Slack" icon="slack">
     Talk to your Review agent directly in Slack — ask about past findings, get its opinion on a PR, or query its activity history. It responds in context, scoped to its assigned repositories and review history.
   </Card>
+
   <Card title="Dashboard Chat" icon="message">
     The same conversation interface is available on the SenseLab dashboard. Ask questions, dig into findings, and get answers without leaving your workflow.
   </Card>
+
   <Card title="MCP Server" icon="server">
     Every Review agent gets its own MCP server that can be enabled or disabled. Connect it to Claude, Cursor, or any MCP-compatible tool to automate code development, testing, and shipping — with your Review agent as a live collaborator.
   </Card>
+
   <Card title="Agent Management" icon="sliders">
     A dedicated interface for each agent showing every action it has taken, how long it has been active, and controls to extend or modify its assigned functions — add review types, change scope, update policies.
   </Card>
@@ -136,9 +150,11 @@ Review agents aren't just automated pipelines — they're agents you can talk to
   <Card title="For engineering teams" icon="code">
     Stop spending cycles on code review that could be automated. Let the agent catch the obvious issues so reviewers can focus on architecture, product logic, and the things that actually require human judgment.
   </Card>
+
   <Card title="For security teams" icon="shield-halved">
     Every PR reviewed, every finding logged, every dependency surfaced — before it merges. No more discovering what the AI quietly added three sprints later.
   </Card>
+
   <Card title="For compliance and legal" icon="scale-balanced">
     A machine-readable trust and provenance bundle exists for every PR that went through a Review agent. When an auditor asks what was reviewed, what policies ran, and who approved — you have a complete, structured answer.
   </Card>
@@ -152,6 +168,7 @@ Review agents aren't just automated pipelines — they're agents you can talk to
   <Card title="Onboarding" icon="door-open" href="/onboarding">
     Set up connectors and create your first Review agent.
   </Card>
+
   <Card title="Release" icon="rocket" href="/release">
     See how Review agent evidence feeds into Release SBOM and AIBOM generation.
   </Card>
