@@ -8,6 +8,26 @@ AI Lineage is SenseLab's free tier. It answers the questions every engineering t
 
 Install the CLI, run one command, and within minutes you have a live dashboard showing AI adoption, model usage, tool breakdown, session activity, and team coverage across your entire org. No repository connection required.
 
+## What problems it solves
+
+<CardGroup cols={2}>
+  <Card title="No visibility into AI adoption" icon="eye-slash">
+    Developers use Cursor, Copilot, Claude, and others — but there's no central view. AI Lineage aggregates everything into one dashboard without requiring any workflow changes.
+  </Card>
+
+  <Card title="Can't measure AI ROI" icon="chart-bar">
+    Hours saved, commits assisted, lines attributed — AI Lineage quantifies what AI is actually contributing so you can make the case (or course-correct) with data.
+  </Card>
+
+  <Card title="Unknown tool and model sprawl" icon="wrench">
+    Without lineage tracking, you don't know which AI tools or models your team is using. AI Lineage surfaces the full picture — including tools you didn't know were in use.
+  </Card>
+
+  <Card title="No audit foundation" icon="shield-halved">
+    Every sprint without lineage tracking is a sprint you'll never be able to audit. AI Lineage is the foundation — the record you'll need when compliance, legal, or an enterprise customer comes asking.
+  </Card>
+</CardGroup>
+
 ---
 
 ## What's in the dashboard
@@ -21,7 +41,7 @@ Install the CLI, run one command, and within minutes you have a live dashboard s
 The Overview tab shows your **Team AI Score** — a composite metric built from four dimensions:
 
 | Dimension | What it measures | Max points |
-|---|---|---|
+| --- | --- | --- |
 | **AI Adoption** | % of commits that are AI-assisted | 40 |
 | **Team Coverage** | % of the team being tracked | 30 |
 | **Activity Volume** | Volume of AI-assisted edits and commits | 20 |
@@ -39,7 +59,7 @@ Below the score, you get real-time stats: **Total Events**, **AI Commits**, **Ho
 
 The Commit Activity tab shows a **3D view of AI activity across the last 5 weeks**. Each block represents a day — height indicates volume. Click any block to drill into that day's events: which developer was active, which files were touched, which model was used, how many prompts were sent, and how many agent runs occurred.
 
-This is the view that answers: *"What was my team actually doing with AI last week?"*
+This is the view that answers: _"What was my team actually doing with AI last week?"_
 
 ---
 
@@ -61,7 +81,7 @@ This matters when you're making decisions about tooling spend, standardizing on 
 ### Team Coverage and Leaderboard
 
 <Frame>
-  ![Team Coverage](/images/Screenshot2026-03-30at10.55.23AM.png)
+  ![Screenshot2026 04 06at9 00 27AM](/images/Screenshot2026-04-06at9.00.27AM.png)
 </Frame>
 
 The Team section shows **who is tracked and who isn't**. Full coverage means complete insights — partial coverage means blind spots in your lineage data.
@@ -72,46 +92,12 @@ Toggle between **Coverage view** (who's tracked, with live status) and **Leaderb
 
 ### Shareable Adoption Dashboard
 
+<Frame>
+  ![Team Coverage](/images/Screenshot2026-03-30at10.55.23AM.png)
+</Frame>
+
 SenseLab generates a shareable **AI Adoption Dashboard snapshot** — a clean, exportable summary showing Team AI Score, AI Commits, AI Lines Written, Hours Saved, Total Events, Tools Used, Models Used, and Coverage.
 
 Use it to share progress with your manager, present AI ROI to leadership, or give a team member a view of where things stand — without giving them access to the full dashboard.
 
 ---
-
-## What problems it solves
-
-<CardGroup cols={2}>
-  <Card title="No visibility into AI adoption" icon="eye-slash">
-    Developers use Cursor, Copilot, Claude, and others — but there's no central view. AI Lineage aggregates everything into one dashboard without requiring any workflow changes.
-  </Card>
-  <Card title="Can't measure AI ROI" icon="chart-bar">
-    Hours saved, commits assisted, lines attributed — AI Lineage quantifies what AI is actually contributing so you can make the case (or course-correct) with data.
-  </Card>
-  <Card title="Unknown tool and model sprawl" icon="wrench">
-    Without lineage tracking, you don't know which AI tools or models your team is using. AI Lineage surfaces the full picture — including tools you didn't know were in use.
-  </Card>
-  <Card title="No audit foundation" icon="shield-halved">
-    Every sprint without lineage tracking is a sprint you'll never be able to audit. AI Lineage is the foundation — the record you'll need when compliance, legal, or an enterprise customer comes asking.
-  </Card>
-</CardGroup>
-
----
-
-## Get started
-
-```bash
-# Install the CLI
-curl -fsSL https://cli.sense-lab.ai/install.sh | sh
-
-# Sign up
-sense-cli signup
-
-# Enable lineage in your repo
-sense-cli lineage enable
-```
-
-AI Lineage is **free forever**. Head to [app.raia.live](https://app.raia.live) to see your dashboard.
-
-<Card title="Full onboarding guide" icon="door-open" href="/onboarding" horizontal>
-  Step-by-step setup — from sign up to agents running in production.
-</Card>
