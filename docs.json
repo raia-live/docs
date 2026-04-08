@@ -28,70 +28,75 @@
         }
       ]
     },
-    "tabs": [
+    "products": [
       {
-        "tab": "Guides",
-        "groups": [
+        "product": "SenseLab",
+        "tabs": [
           {
-            "group": "Platform",
-            "pages": [
-              "index",
-              "ai-lineage",
-              "review",
-              "release"
+            "tab": "Guides",
+            "groups": [
+              {
+                "group": "Platform",
+                "pages": [
+                  "index",
+                  "ai-lineage",
+                  "review",
+                  "release"
+                ]
+              },
+              {
+                "group": "Getting started",
+                "pages": [
+                  "quickstart",
+                  "onboarding"
+                ]
+              },
+              {
+                "group": "AI Lineage",
+                "icon": "binoculars",
+                "pages": [
+                  "ai-lineave/overview",
+                  "ai-lineage/get-started"
+                ]
+              },
+              {
+                "group": "Review",
+                "icon": "shield-check",
+                "pages": [
+                  "review/overview",
+                  "review/connectors",
+                  "review/create-agents",
+                  "review/agent-management"
+                ]
+              },
+              {
+                "group": "AI tools",
+                "pages": [
+                  "ai-tools/cursor",
+                  "ai-tools/claude-code",
+                  "ai-tools/windsurf"
+                ]
+              }
             ]
           },
           {
-            "group": "Getting started",
-            "pages": [
-              "quickstart",
-              "onboarding"
-            ]
-          },
-          {
-            "group": "AI Lineage",
-            "icon": "binoculars",
-            "pages": [
-              "ai-lineave/overview",
-              "ai-lineage/get-started"
-            ]
-          },
-          {
-            "group": "Review",
-            "icon": "shield-check",
-            "pages": [
-              "review/overview",
-              "review/connectors",
-              "review/create-agents",
-              "review/agent-management"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+            "tab": "API reference",
+            "groups": [
+              {
+                "group": "API documentation",
+                "pages": [
+                  "api-reference/introduction"
+                ]
+              },
+              {
+                "group": "Endpoint examples",
+                "pages": [
+                  "api-reference/endpoint/get",
+                  "api-reference/endpoint/create",
+                  "api-reference/endpoint/delete",
+                  "api-reference/endpoint/webhook"
+                ]
+              }
             ]
           }
         ]
