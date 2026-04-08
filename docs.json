@@ -70,7 +70,8 @@
                 ]
               },
               {
-                "group": "AI tools",
+                "group": "Release",
+                "icon": "conveyor-belt-boxes",
                 "pages": [
                   "ai-tools/cursor",
                   "ai-tools/claude-code",
