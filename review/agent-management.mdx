@@ -1,7 +1,6 @@
 ---
 title: "Agent Management"
 description: "Monitor your Review agent's activity, track ROI metrics, manage token usage, configure MCP access, and update review functions."
-icon: "sliders"
 ---
 
 Each Review agent has a dedicated management interface where you can monitor everything it has done, understand the value it's generating, and control how it behaves going forward.
@@ -9,6 +8,10 @@ Each Review agent has a dedicated management interface where you can monitor eve
 ---
 
 ## Agent Activity
+
+<Frame>
+  ![Screenshot 2026 04 06 At 10 01 37 AM](/images/Screenshot-2026-04-06-at-10.01.37-AM.png)
+</Frame>
 
 The **Activity** section shows a real-time feed of every action your Review agent has performed — PR reviews triggered, findings posted, policies evaluated, and communications sent.
 
@@ -30,6 +33,7 @@ The **Work** section surfaces two key metrics that help you quantify the value y
   <Card title="Actions Executed" icon="list-check">
     The total number of discrete actions the agent has taken — PR reviews run, findings generated, policy checks completed. A direct measure of agent output.
   </Card>
+
   <Card title="Estimated Time Worked" icon="clock">
     An estimate of the cumulative time the agent has spent working, based on the complexity and volume of actions executed. Use this to calculate ROI against your team's review time.
   </Card>
@@ -87,7 +91,7 @@ Once enabled, copy the MCP endpoint from the agent management interface and add 
 The **Functions** tab shows the review functions currently assigned to the agent and lets you add or remove them at any time.
 
 | Function | What it does |
-|---|---|
+| --- | --- |
 | **PR Security Deep Dive** | Analyzes pull requests for security vulnerabilities, insecure patterns, and risky dependencies introduced by AI-generated code |
 | **PR Infra Changes Review** | Reviews infrastructure-as-code changes in PRs — Terraform, Kubernetes manifests, Docker files, and more |
 | **PR Perf and Cost Review** | Flags performance inefficiencies and cost-impact changes introduced in the PR |
@@ -109,6 +113,7 @@ Click **Edit Functions** to modify the assigned review types. Check or uncheck f
   <Card title="Review Overview" icon="arrows-to-eye" href="/review/overview">
     Understand what your Review agent tracks and surfaces on every PR.
   </Card>
+
   <Card title="Creating Agents" icon="robot" href="/review/create-agents">
     Create a new Review agent or review the setup steps.
   </Card>
