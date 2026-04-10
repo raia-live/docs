@@ -12,7 +12,7 @@ The Python SDK provides the `AgentMemory` class — the primary interface for re
 pip install amfs
 ```
 
-On AMFS SaaS, set the connection env vars and the SDK auto-detects the HTTP adapter:
+Set the connection env vars and the SDK auto-detects the HTTP adapter:
 
 ```bash
 export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
@@ -502,7 +502,7 @@ with AgentMemory(agent_id="my-agent") as mem:
 
 ---
 
-## SaaS Connection
+## Connecting to AMFS
 
 Set two env vars and the SDK connects automatically — no adapter setup needed:
 

@@ -5,7 +5,7 @@ icon: "terminal"
 ---
 
 <Note>
-The CLI is for self-hosted AMFS. On SaaS, use the [Dashboard](https://amfs-login.sense-lab.ai) or [REST API](/amfs/guides/http-server) instead.
+The CLI is for self-hosted AMFS. On the managed platform, use the [Dashboard](https://amfs-login.sense-lab.ai) or [REST API](/amfs/guides/http-server) instead.
 </Note>
 
 The AMFS CLI provides commands for inspecting, diffing, and snapshotting local memory from the terminal.
@@ -107,9 +107,9 @@ amfs inspect list -c /path/to/amfs.yaml
 
 ---
 
-## Connecting to AMFS SaaS
+## Connecting to AMFS
 
-When using AMFS as a hosted service (SaaS), CLI commands work against local storage by default. To interact with the SaaS instance, use the HTTP API directly or configure the MCP server with `AMFS_HTTP_URL`.
+CLI commands work against local storage by default. To interact with the managed platform, use the HTTP API directly or configure the MCP server with `AMFS_HTTP_URL`.
 
 ### Environment Variables
 
@@ -124,7 +124,7 @@ With these set, the MCP server and HTTP server automatically route through the a
 Never use `AMFS_POSTGRES_DSN` for external agents in multi-tenant mode. Always use `AMFS_HTTP_URL` + `AMFS_API_KEY`.
 </Warning>
 
-See the [SaaS Connection Guide](/amfs/getting-started/saas-connection) and [Environment Variables](/amfs/reference/environment-variables) for details.
+See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide and [Environment Variables](/amfs/reference/environment-variables) for details.
 
 ---
 

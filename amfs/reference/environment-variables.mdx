@@ -6,7 +6,7 @@ icon: "gear"
 
 ## Connection
 
-These are the only variables most SaaS users need:
+These are the only variables most users need:
 
 | Variable | Description |
 |:---------|:------------|
@@ -69,7 +69,7 @@ These are set by IDEs and read by AMFS for agent identity detection. You don't s
 
 ## Self-Hosted Only
 
-These variables are for self-hosted AMFS deployments. SaaS users don't need them.
+These variables are for self-hosted AMFS deployments. You don't need them on the managed platform.
 
 | Variable | Description | Default |
 |:---------|:------------|:--------|
@@ -83,12 +83,12 @@ These variables are for self-hosted AMFS deployments. SaaS users don't need them
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key | — |
 | `AMFS_HTTP_HOST` | HTTP server bind host | `0.0.0.0` |
 | `AMFS_HTTP_PORT` | HTTP server bind port | `8080` |
-| `AMFS_API_KEYS` | Comma-separated API keys for self-hosted auth | — |
+| `AMFS_API_KEYS` | Comma-separated API keys (self-hosted auth) | — |
 | `AMFS_CORS_ORIGINS` | CORS allowed origins | `*` |
 | `AMFS_CONNECTOR_{NAME}_SECRET` | HMAC secret for webhook connector verification | — |
 | `AMFS_CORTEX_DEBOUNCE_MS` | Digest recompilation debounce (ms) | `3000` |
-| `AMFS_PRO_URL` | Pro SaaS API URL for hybrid deployments | — |
-| `AMFS_PRO_API_KEY` | API key for Pro SaaS API | — |
+| `AMFS_PRO_URL` | Pro API URL for hybrid deployments | — |
+| `AMFS_PRO_API_KEY` | API key for the Pro API | — |
 | `AMFS_API_URL` | Dashboard: AMFS server URL (server-side) | `http://localhost:8080` |
 | `NEXT_PUBLIC_AMFS_API_URL` | Dashboard: AMFS server URL (client-side) | — |
 | `AMFS_ROOT` | Dashboard: path to `.amfs` directory | — |
