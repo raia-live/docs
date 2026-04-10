@@ -120,10 +120,20 @@
               {
                 "group": "Getting Started",
                 "pages": [
-                  "amfs/getting-started/installation",
+                  "amfs/getting-started/saas-connection",
                   "amfs/getting-started/quickstart",
-                  "amfs/getting-started/configuration",
-                  "amfs/getting-started/saas-connection"
+                  "amfs/getting-started/configuration"
+                ]
+              },
+              {
+                "group": "Guides",
+                "icon": "book",
+                "pages": [
+                  "amfs/guides/mcp",
+                  "amfs/guides/python",
+                  "amfs/guides/typescript",
+                  "amfs/guides/connectors",
+                  "amfs/guides/integrations"
                 ]
               },
               {
@@ -137,20 +147,6 @@
                   "amfs/concepts/provenance",
                   "amfs/concepts/context-graphs",
                   "amfs/concepts/git-timeline"
-                ]
-              },
-              {
-                "group": "Guides",
-                "icon": "book",
-                "pages": [
-                  "amfs/guides/mcp",
-                  "amfs/guides/python",
-                  "amfs/guides/typescript",
-                  "amfs/guides/cli",
-                  "amfs/guides/http-server",
-                  "amfs/guides/docker",
-                  "amfs/guides/connectors",
-                  "amfs/guides/integrations"
                 ]
               },
               {
@@ -168,9 +164,13 @@
                 ]
               },
               {
-                "group": "Storage Adapters",
-                "icon": "database",
+                "group": "Self-Hosted",
+                "icon": "server",
                 "pages": [
+                  "amfs/getting-started/installation",
+                  "amfs/guides/cli",
+                  "amfs/guides/docker",
+                  "amfs/guides/http-server",
                   "amfs/adapters/overview",
                   "amfs/adapters/filesystem",
                   "amfs/adapters/postgres",

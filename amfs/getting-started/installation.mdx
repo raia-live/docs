@@ -1,37 +1,16 @@
 ---
-title: "Installation"
-description: "Get AMFS running — SaaS, pip, npm, or Docker."
+title: "Self-Hosted Installation"
+description: "Install AMFS locally with pip, npm, or Docker."
 icon: "download"
 ---
 
-## Using AMFS SaaS (Recommended)
+<Note>
+Using AMFS SaaS? You don't need to install anything — see [Connect to AMFS](/amfs/getting-started/saas-connection).
+</Note>
 
-No installation required. Add the MCP config to your IDE and you're done:
+This guide is for running AMFS on your own infrastructure.
 
-```json
-{
-  "mcpServers": {
-    "amfs": {
-      "command": "uvx",
-      "args": ["amfs-mcp-server"],
-      "env": {
-        "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
-        "AMFS_API_KEY": "<your-api-key>"
-      }
-    }
-  }
-}
-```
-
-Get your API key from the [AMFS Dashboard](https://amfs-login.sense-lab.ai). See [Connect to AMFS](/amfs/getting-started/saas-connection) for details.
-
----
-
-## Self-Hosted
-
-If you want to run AMFS locally or on your own infrastructure:
-
-### Python SDK
+## Python SDK
 
 ```bash
 pip install amfs

@@ -1,150 +1,99 @@
 ---
-title: Configuration
-description: "Configure AMFS with YAML files, environment variables, and programmatic options."
+title: "Configuration"
+description: "Configure AMFS — environment variables, SDK options, and agent identity."
 icon: "gear"
 ---
 
-AMFS can be configured through YAML files, environment variables, or programmatically.
-
-## YAML Configuration
-
-Create an `amfs.yaml` file in your project root:
-
-```yaml
-namespace: production
-layers:
-  primary:
-    adapter: filesystem
-    options:
-      root: .amfs
-```
-
-### Config File Discovery
-
-The SDK searches for configuration files by walking up from the current directory. It looks for these filenames in order:
-
-1. `amfs.yaml`
-2. `amfs.yml`
-3. `.amfs.yaml`
-4. `.amfs.yml`
-
-If no config file is found, the SDK uses sensible defaults (filesystem adapter at `.amfs/`, namespace `default`).
-
-### Filesystem Adapter Config
-
-```yaml
-namespace: default
-layers:
-  primary:
-    adapter: filesystem
-    options:
-      root: .amfs           # path to data directory (relative to config file)
-```
-
-### Postgres Adapter Config
-
-```yaml
-namespace: production
-layers:
-  primary:
-    adapter: postgres
-    options:
-      dsn: postgresql://user:pass@localhost:5432/amfs_db
-```
-
-### S3 Adapter Config
-
-```yaml
-namespace: production
-layers:
-  primary:
-    adapter: s3
-    options:
-      bucket: my-amfs-bucket
-      prefix: amfs/
-      endpoint_url: https://s3.acceleratedcloudstorage.com  # optional, for non-AWS
-```
-
----
+On AMFS SaaS, configuration is minimal. Two environment variables connect you; everything else has sensible defaults.
 
 ## Environment Variables
 
-Environment variables override config file values:
+| Variable | Description | Required |
+|:---------|:------------|:---------|
+| `AMFS_HTTP_URL` | Your AMFS API URL (e.g. `https://amfs-login.sense-lab.ai`) | Yes |
+| `AMFS_API_KEY` | Your API key (from Dashboard → Settings → API Keys) | Yes |
+| `AMFS_AGENT_ID` | Override auto-detected agent identity (for CI, scripts, servers) | No |
 
-| Variable | Description | Default |
-|:---------|:------------|:--------|
-| `AMFS_POSTGRES_DSN` | Postgres connection string; overrides adapter to Postgres | — |
-| `AMFS_S3_BUCKET` | S3 bucket name; overrides adapter to S3 | — |
-| `AMFS_S3_ENDPOINT` | Custom S3 endpoint URL (for ACS, MinIO, R2) | — |
-| `AMFS_DATA_DIR` | Custom filesystem data directory | `.amfs` |
-| `AMFS_AGENT_ID` | Override auto-detected agent identity | Auto-detected |
-| `AMFS_API_KEYS` | HTTP API authentication keys (comma-separated) | — |
-| `AMFS_TRANSPORT` | MCP transport: `stdio` or `http` | `stdio` |
-| `AMFS_HOST` | HTTP server bind host | `0.0.0.0` |
-| `AMFS_PORT` | HTTP server bind port | `8000` |
-| `AMFS_PATH` | HTTP server URL path | `/mcp` |
+When `AMFS_HTTP_URL` is set, the SDK and MCP server route all operations through the authenticated HTTP API. No config files, no adapter setup, no database connection strings.
+
+```bash
+export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
+export AMFS_API_KEY="<your-api-key>"
+```
 
 ---
 
-## Programmatic Configuration
+## SDK Options
 
-You can bypass config files entirely and configure `AgentMemory` in code:
+When using the Python SDK directly, pass options to the constructor:
 
 ```python
 from amfs import AgentMemory
-from amfs_filesystem import FilesystemAdapter
-from pathlib import Path
-
-adapter = FilesystemAdapter(
-    root=Path("/data/shared-memory"),
-    namespace="production",
-)
 
 mem = AgentMemory(
-    agent_id="my-agent",
-    adapter=adapter,
-    ttl_sweep_interval=60.0,    # sweep expired entries every 60s
-    decay_half_life_days=30.0,  # confidence half-life for decay
+    agent_id="checkout-agent",
+    decay_half_life_days=30.0,
 )
 ```
 
-### Constructor Options
-
 | Parameter | Type | Description |
 |:----------|:-----|:------------|
-| `agent_id` | `str` | Unique identifier for this agent (required) |
+| `agent_id` | `str` | Identity for this agent (required) |
 | `session_id` | `str` | Session identifier; auto-generated if omitted |
-| `config_path` | `Path` | Explicit path to config file |
-| `adapter` | `AdapterABC` | Pre-configured adapter instance |
 | `ttl_sweep_interval` | `float` | Seconds between TTL sweep runs |
 | `decay_half_life_days` | `float` | Confidence decay half-life in days |
-| `embedder` | `EmbedderABC` | Embedder for semantic search |
 | `conflict_policy` | `ConflictPolicy` | How to handle concurrent write conflicts |
-| `on_conflict` | `Callable` | Custom conflict resolution function |
+
+The SDK auto-detects the HTTP adapter when `AMFS_HTTP_URL` is set — no adapter configuration needed.
+
+---
+
+## Agent Identity
+
+Agents are identified by their `agent_id`. This determines:
+- Who gets credit for writes (provenance)
+- What shows up in the Dashboard
+- How `recall()` and `my_entries()` scope results
+
+**MCP agents** should call `amfs_set_identity` at the start of each session. Without it, identity is auto-detected from the IDE environment:
+
+| Environment | Detected ID |
+|:------------|:------------|
+| Cursor | `cursor/<username>` |
+| Claude Code | `claude-code/<username>` |
+| `AMFS_AGENT_ID` set | value of `AMFS_AGENT_ID` |
+| Fallback | `agent/<username>` |
+
+**SDK and REST clients** pass `agent_id` in the constructor or header.
+
+---
+
+## Scoped API Keys
+
+API keys can be restricted to specific entity paths and permissions:
+
+```
+amfs_sk_live_abc123  →  checkout-service/**  [READ_WRITE]
+                        shared/patterns/*     [READ]
+```
+
+Create and manage scoped keys in **Dashboard → Settings → API Keys**. Use the narrowest scope that works — one key per agent or service.
 
 ---
 
 ## Namespaces
 
-Namespaces isolate memory between environments. Entries in different namespaces don't see each other:
+Namespaces isolate memory between environments. Entries in different namespaces don't see each other.
 
-```yaml
-# Development
-namespace: dev
-
-# Production
-namespace: production
-```
-
-The default namespace is `default`.
+On AMFS SaaS, namespaces are managed through the Dashboard. The default namespace is `default`.
 
 ---
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">Understand how AMFS works.</Card>
-  <Card title="Adapters" icon="plug" href="/amfs/adapters">Filesystem, Postgres, S3, and custom adapters.</Card>
-  <Card title="HTTP API Server" icon="server" href="/amfs/guides/http-server">Access AMFS over REST from any language.</Card>
-  <Card title="Docker & Kubernetes" icon="docker" href="/amfs/guides/docker">Deploy AMFS in containers.</Card>
+  <Card title="Quick Start" icon="rocket" href="/amfs/getting-started/quickstart">Write, read, and search memory.</Card>
+  <Card title="MCP Setup" icon="plug" href="/amfs/guides/mcp">Connect your IDE to AMFS.</Card>
+  <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">How AMFS works under the hood.</Card>
+  <Card title="Environment Variables" icon="list" href="/amfs/reference/environment-variables">Full reference with all options.</Card>
 </CardGroup>

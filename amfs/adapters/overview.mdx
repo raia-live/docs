@@ -4,7 +4,9 @@ description: "Storage backends for AMFS: filesystem, Postgres, S3-compatible, an
 icon: "database"
 ---
 
-# Adapters
+<Note>
+Storage adapters are for self-hosted AMFS. On SaaS, storage is fully managed — see [Connect to AMFS](/amfs/getting-started/saas-connection).
+</Note>
 
 AMFS uses a pluggable adapter system for storage. All adapters implement the same contract, so your code works identically regardless of the backend.
 

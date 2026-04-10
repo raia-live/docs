@@ -4,33 +4,19 @@ description: "Give your agent a persistent brain in 5 minutes."
 icon: "rocket"
 ---
 
-AMFS gives each agent a **persistent brain** that works like a Git repository. When an agent writes, it's forming a memory — logged as an event on the agent's timeline. When it recalls, it's accessing its own experience. When it reads shared knowledge, it benefits from what other agents have learned. Every interaction is tracked so you can always answer: *what did I know, when did I know it, and who told me?*
+AMFS gives each agent a **persistent brain**. When an agent writes, it's forming a memory — logged on the agent's timeline. When it recalls, it's accessing its own experience. When it reads shared knowledge, it benefits from what other agents have learned.
+
+<Note>
+This guide assumes you've [connected to AMFS](/amfs/getting-started/saas-connection). If you haven't, do that first — it takes 30 seconds.
+</Note>
 
 ---
 
 ## How Memory Sharing Works
 
-All agents write to the **same storage backend**. The `agent_id` acts as a provenance tag — it marks *who* wrote each entry, not *where* the entry lives.
+All agents share the same memory pool. The `agent_id` marks *who* wrote each entry.
 
-By default, every memory is **shared**: any agent can read it. This enables collective learning — Agent B can read what Agent A learned. But agents can also write **private** memories that only they can access. This gives each agent control over what it shares.
-
-```
-┌──────────────────────────────────────────┐
-│           Shared Memory Pool             │
-│                                          │
-│  ┌──────────┐  ┌──────────┐              │
-│  │ Agent A's │  │ Agent B's │             │
-│  │  shared   │  │  shared   │  ← visible │
-│  │ memories  │  │ memories  │    to all   │
-│  └──────────┘  └──────────┘              │
-│                                          │
-│  ┌──────────┐  ┌──────────┐              │
-│  │ Agent A's │  │ Agent B's │             │
-│  │  private  │  │  private  │  ← visible │
-│  │ memories  │  │ memories  │    to owner │
-│  └──────────┘  └──────────┘    only      │
-└──────────────────────────────────────────┘
-```
+By default, every memory is **shared** — any agent can read it. Agents can also write **private** memories that only they can access.
 
 ---
 

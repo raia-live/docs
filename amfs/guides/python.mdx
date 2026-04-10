@@ -4,16 +4,19 @@ description: "Complete guide to the AMFS Python SDK."
 icon: "python"
 ---
 
-# Python SDK
-
 The Python SDK provides the `AgentMemory` class — the primary interface for reading, writing, and managing agent memory.
-
----
 
 ## Installation
 
 ```bash
 pip install amfs
+```
+
+On AMFS SaaS, set the connection env vars and the SDK auto-detects the HTTP adapter:
+
+```bash
+export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
+export AMFS_API_KEY="<your-api-key>"
 ```
 
 ---
