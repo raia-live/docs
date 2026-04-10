@@ -1,0 +1,44 @@
+---
+title: "Pattern Detection"
+description: "Automatically detect recurring failures, hot entities, stale clusters, and confidence drift."
+icon: "magnifying-glass-chart"
+---
+
+# Automated Pattern Detection
+
+Continuously analyze your memory store to surface recurring patterns, anomalies, and risks — before they become incidents.
+
+## Pattern Types
+
+The Pattern Detector scans memory entries and decision trace data for four pattern types:
+
+| Pattern | What it finds | Severity |
+|:--------|:-------------|:---------|
+| **Recurring failures** | Entries that repeatedly appear in incident causal chains | Warning / Critical |
+| **Hot entities** | Entities with disproportionate write/outcome activity vs. average | Info |
+| **Stale clusters** | Groups of old entries with no outcome links that may need pruning | Warning |
+| **Confidence drift** | Entries whose confidence diverges significantly from their entity average | Info |
+
+## Alert Manager
+
+Configurable rules that fire when matching patterns are detected:
+
+```python
+from amfs_patterns import PatternDetector, AlertManager, AlertRule
+
+detector = PatternDetector(incident_threshold=2, stale_days=30)
+report = detector.analyze(entries, outcome_data=outcomes)
+
+manager = AlertManager()
+manager.add_rule(AlertRule(
+    name="Critical recurring failures",
+    pattern_type="recurring_failure",
+    min_severity="critical",
+    cooldown_minutes=60,
+))
+manager.on_alert(lambda eval: send_slack_notification(eval))
+
+evaluations = manager.evaluate(report)
+```
+
+Features: severity filtering, entity-path scoping, cooldown-based suppression (prevent alert fatigue), and callback registration for routing to Slack, PagerDuty, email, or custom systems.

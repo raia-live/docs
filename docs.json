@@ -103,7 +103,96 @@
         ]
       },
       {
-        "product": "AMFS"
+        "product": "AMFS",
+        "tabs": [
+          {
+            "tab": "Guides",
+            "groups": [
+              {
+                "group": "Product",
+                "pages": [
+                  "amfs/introduction",
+                  "amfs/editions",
+                  "amfs/vs-competitors",
+                  "amfs/vs-vector-databases"
+                ]
+              },
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "amfs/getting-started/installation",
+                  "amfs/getting-started/quickstart",
+                  "amfs/getting-started/configuration",
+                  "amfs/getting-started/saas-connection"
+                ]
+              },
+              {
+                "group": "Core Concepts",
+                "icon": "brain",
+                "pages": [
+                  "amfs/concepts/overview",
+                  "amfs/concepts/memory-entries",
+                  "amfs/concepts/copy-on-write",
+                  "amfs/concepts/confidence",
+                  "amfs/concepts/provenance",
+                  "amfs/concepts/context-graphs",
+                  "amfs/concepts/git-timeline"
+                ]
+              },
+              {
+                "group": "Guides",
+                "icon": "book",
+                "pages": [
+                  "amfs/guides/mcp",
+                  "amfs/guides/python",
+                  "amfs/guides/typescript",
+                  "amfs/guides/cli",
+                  "amfs/guides/http-server",
+                  "amfs/guides/docker",
+                  "amfs/guides/connectors",
+                  "amfs/guides/integrations"
+                ]
+              },
+              {
+                "group": "Pro Features",
+                "icon": "gem",
+                "pages": [
+                  "amfs/pro/branching",
+                  "amfs/pro/multi-tenant",
+                  "amfs/pro/immutable-traces",
+                  "amfs/pro/pattern-detection",
+                  "amfs/pro/intelligence",
+                  "amfs/pro/ml-layer",
+                  "amfs/pro/dashboard",
+                  "amfs/pro/billing"
+                ]
+              },
+              {
+                "group": "Storage Adapters",
+                "icon": "database",
+                "pages": [
+                  "amfs/adapters/overview",
+                  "amfs/adapters/filesystem",
+                  "amfs/adapters/postgres",
+                  "amfs/adapters/s3",
+                  "amfs/adapters/custom"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Reference",
+                "pages": [
+                  "amfs/reference/api",
+                  "amfs/reference/environment-variables"
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   },

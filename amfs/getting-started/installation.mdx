@@ -1,0 +1,94 @@
+---
+title: Installation
+description: "Install the AMFS SDK, CLI, and adapters."
+icon: "download"
+---
+
+AMFS is distributed as several packages so you can install only what you need. The fastest way to get started is with Docker — no Python required.
+
+## Docker (Recommended)
+
+Get a running AMFS server in one command:
+
+```bash
+docker run -p 8080:8080 -v amfs-data:/data ghcr.io/raia-live/amfs
+```
+
+Or with Postgres (full-text + vector search):
+
+```bash
+docker compose up
+```
+
+See the [Docker & Kubernetes guide](/amfs/guides/docker) for the full setup.
+
+## Python SDK
+
+The core SDK includes the `AgentMemory` class and the filesystem adapter:
+
+```bash
+pip install amfs
+```
+
+<Note>Requires Python 3.11 or later.</Note>
+
+### Optional packages
+
+```bash
+pip install amfs-adapter-postgres   # Postgres adapter
+pip install amfs-adapter-s3         # S3-compatible adapter
+pip install amfs-http-server        # HTTP/REST API server
+pip install amfs-cli                # CLI tools
+pip install amfs-mcp-server         # MCP server for AI coding agents
+```
+
+## TypeScript SDK
+
+```bash
+npm install @amfs/sdk
+```
+
+## Framework Integrations
+
+```bash
+pip install amfs-crewai       # CrewAI
+pip install amfs-langgraph    # LangGraph
+pip install amfs-langchain    # LangChain
+pip install amfs-autogen      # AutoGen
+```
+
+## Initialize a Project
+
+```bash
+amfs init
+```
+
+This creates:
+
+| Path | Purpose |
+|:-----|:--------|
+| `amfs.yaml` | Configuration file |
+| `.amfs/` | Local data directory (filesystem adapter storage) |
+| `.gitignore` | Updated to exclude `.amfs/` |
+
+<Tip>You can skip `amfs init` if you're using the Postgres adapter or passing configuration programmatically — the SDK works without a config file using sensible defaults.</Tip>
+
+## Verify Installation
+
+```python
+from amfs import AgentMemory
+
+mem = AgentMemory(agent_id="test")
+entry = mem.write("test", "hello", "world")
+print(entry.value)  # "world"
+print("AMFS is working!")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/amfs/getting-started/quickstart">Write, read, and search memory.</Card>
+  <Card title="Configuration" icon="gear" href="/amfs/getting-started/configuration">YAML config, adapters, and options.</Card>
+  <Card title="Docker & Kubernetes" icon="docker" href="/amfs/guides/docker">Run AMFS in containers.</Card>
+  <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">Understand how AMFS works under the hood.</Card>
+</CardGroup>

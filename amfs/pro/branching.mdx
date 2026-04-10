@@ -1,0 +1,74 @@
+---
+title: "Memory Branching"
+description: "Git-like branching for agent memory — branches, merge, PRs, tags, rollback, and fork."
+icon: "code-branch"
+---
+
+# Memory Branching — Git for Agent Memory
+
+The defining Pro feature. While OSS provides the git-like timeline engine (event logging on `main`), Pro adds the full branching model — branches, merge, pull requests, access control, tags, rollback, cherry-pick, and fork. Install with `pip install amfs-branching`.
+
+## Branches
+
+Create branches from an agent's main memory. Write to a branch without affecting main. Diff changes, then merge or discard.
+
+```python
+from amfs import AgentMemory
+from amfs_branching.sdk import extend_with_branching
+
+mem = AgentMemory(agent_id="deploy-agent")
+extend_with_branching(mem)
+
+mem.create_branch("experiment/retry-v3")
+mem.switch_branch("experiment/retry-v3")
+mem.write("checkout-service", "retry-pattern", {"max_retries": 5})
+
+diffs = mem.diff_branch("experiment/retry-v3")
+result = mem.merge_branch("experiment/retry-v3")
+```
+
+## Access Control
+
+Grant read or read/write access to specific users, teams, or API keys per branch. Access is enforced at the HTTP layer — requests targeting a non-main branch are automatically checked against the branch's access grants.
+
+```python
+mem.grant_branch_access("experiment/retry-v3", "api_key", "amfs_sk_bob", "read")
+```
+
+## Pull Requests
+
+Create PRs for team review before merging branch changes into main. Includes a review workflow with approve/reject/comment.
+
+## Tags & Rollback
+
+Create named snapshots and roll back memory to any point in time or tagged state.
+
+## Cherry-pick & Fork
+
+Selectively move entries between branches, or clone an entire agent's memory to a new agent.
+
+## Sacred Timeline
+
+Interactive 3D visualization (React Three Fiber) showing how an agent's memory evolved over time, with branch forks, event nodes, and contextual detail panels.
+
+## Full Example
+
+```python
+from amfs import AgentMemory
+from amfs_branching.sdk import extend_with_branching
+
+mem = AgentMemory(agent_id="deploy-agent")
+extend_with_branching(mem)
+
+# Create and switch to a branch
+mem.create_branch("experiment/retry-v3")
+mem.switch_branch("experiment/retry-v3")
+mem.write("checkout-service", "retry-pattern", {"max_retries": 5})
+
+# Grant access to a specific API key
+mem.grant_branch_access("experiment/retry-v3", "api_key", "amfs_sk_bob", "read")
+
+# Diff and merge
+diffs = mem.diff_branch("experiment/retry-v3")
+result = mem.merge_branch("experiment/retry-v3")
+```

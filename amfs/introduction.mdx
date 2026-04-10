@@ -1,0 +1,135 @@
+---
+title: "Introduction"
+description: "AMFS — Agent Memory File System. GitHub for agent memory."
+icon: "brain"
+---
+
+## The Problem
+
+When agents share memory today, it's chaos — last write wins, no branching, no review, no rollback. It's like coding without Git. Every team that tried that eventually hit a wall. Agent teams are hitting that wall right now.
+
+The problem isn't "agents need permissions." The problem is agents have no way to collaborate on knowledge the way developers collaborate on code.
+
+## What is AMFS?
+
+AMFS applies the Git model to agent memory. The mental model is already in every developer's head — you're not learning something new, you're getting the tool you've been waiting for.
+
+```
+Every developer knows this:          AMFS does the same for agent memory:
+
+  repo                                 agent brain
+  ├── main branch                      ├── main (what the agent knows)
+  ├── feature branch                   ├── experiment branch (isolated changes)
+  ├── pull request                     ├── pull request (review before merge)
+  ├── code review                      ├── diff (what changed in the branch)
+  ├── merge                            ├── merge (accept changes into main)
+  ├── git log                          ├── timeline (every operation logged)
+  └── git revert                       └── rollback (restore to any point)
+```
+
+Other agents can be granted read or write access to branches of that brain. Changes stay isolated until the owner reviews the diff and merges. Every change is logged. You can roll back to any point.
+
+### Quick Example
+
+```python
+from amfs import AgentMemory
+
+mem = AgentMemory(agent_id="review-agent")
+
+mem.write(
+    "checkout-service",
+    "risk-race-condition",
+    "Race condition in order processing under concurrent load",
+    confidence=0.85,
+)
+
+entry = mem.read("checkout-service", "risk-race-condition")
+# → confidence: 0.85, written_by: review-agent
+```
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Git-like Collaboration" icon="code-branch">
+    Timeline, branching, PRs, tags, rollback, access control, and fork. Collaborate on memory the way you collaborate on code.
+  </Card>
+  <Card title="Memory Intelligence" icon="lightbulb">
+    Copy-on-Write versioning, confidence scoring, outcome feedback, knowledge graph, hybrid search, and tiered memory.
+  </Card>
+  <Card title="Decision Traces" icon="route">
+    Full causal chain capture — what the agent read, what tools it consulted, and what happened when it acted.
+  </Card>
+  <Card title="Platform" icon="server">
+    MCP server, HTTP/REST API, Python and TypeScript SDKs, CLI, Docker, Kubernetes, and framework integrations.
+  </Card>
+</CardGroup>
+
+---
+
+## Get Started
+
+The fastest way to start using AMFS is through the hosted SaaS — no infrastructure required.
+
+<CardGroup cols={2}>
+  <Card title="SaaS Connection" icon="cloud" href="/amfs/getting-started/saas-connection">
+    Connect your agents to AMFS SaaS with two environment variables. Up and running in minutes.
+  </Card>
+  <Card title="Self-Hosted Installation" icon="download" href="/amfs/getting-started/installation">
+    Install AMFS locally with pip, npm, or Docker for development or self-hosted production.
+  </Card>
+</CardGroup>
+
+---
+
+## How Agents Use AMFS
+
+```
+1. Identify yourself         →  amfs_set_identity("checkout-agent", "Fixing retry logic")
+2. Get a briefing            →  amfs_briefing(entity_path="checkout-service")
+3. Search for specifics      →  amfs_search("checkout-service")
+4. Read relevant entries     →  amfs_read("checkout-service", "retry-pattern")
+5. Do the work               →  (agent performs its task)
+6. Write findings            →  amfs_write("checkout-service", "new-pattern", ...)
+7. Record outcomes           →  amfs_commit_outcome("DEP-287", "success")
+8. Next agent starts at #2   →  Knowledge compounds across agents and sessions
+```
+
+The Memory Cortex compiles raw entries into ranked digests, so the next agent — on any machine — starts with a pre-compiled briefing of what matters, instead of searching from scratch.
+
+---
+
+## Packages
+
+| Package | Language | Install |
+|:--------|:---------|:--------|
+| `amfs` | Python | `pip install amfs` |
+| `amfs-adapter-postgres` | Python | `pip install amfs-adapter-postgres` |
+| `amfs-adapter-s3` | Python | `pip install amfs-adapter-s3` |
+| `amfs-http-server` | Python | `pip install amfs-http-server` |
+| `amfs-cli` | Python | `pip install amfs-cli` |
+| `amfs-mcp-server` | Python | `pip install amfs-mcp-server` |
+| `@amfs/sdk` | TypeScript | `npm install @amfs/sdk` |
+
+---
+
+## OSS vs Pro
+
+AMFS is open source under [Apache 2.0](https://github.com/raia-live/amfs/blob/main/LICENSE). The OSS edition gives you the full memory engine with a single-branch repo model — versioned writes, confidence scoring, outcome feedback, causal traces, knowledge graph, hybrid search, tiered memory, git-like timeline on `main`, SDKs, adapters, HTTP API, MCP server, and CLI.
+
+**AMFS Pro** unlocks the full Git model: branching, merge, pull requests, access control, tags, rollback, cherry-pick, and fork. Plus multi-tenant SaaS isolation, immutable decision traces, automated pattern detection, an intelligence layer, and a web dashboard.
+
+OSS gives you a repo with full history. Pro gives you GitHub.
+
+<CardGroup cols={3}>
+  <Card title="Compare Editions" icon="scale-balanced" href="/amfs/editions">
+    Full feature comparison between OSS and Pro.
+  </Card>
+  <Card title="vs Vector DBs" icon="database" href="/amfs/vs-vector-databases">
+    When to use AMFS, when to use a vector database.
+  </Card>
+  <Card title="vs Competitors" icon="chart-bar" href="/amfs/vs-competitors">
+    How AMFS compares to Mem0, Zep, Letta, and more.
+  </Card>
+</CardGroup>

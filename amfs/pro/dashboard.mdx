@@ -1,0 +1,39 @@
+---
+title: "Dashboard"
+description: "Web dashboard for exploring memory, visualizing decisions, and managing your AMFS deployment."
+icon: "gauge"
+---
+
+# Dashboard
+
+A web dashboard (Next.js 15 + React 19) for exploring memory, visualizing decisions, and managing your AMFS deployment.
+
+## Pages
+
+| Page | Description |
+|:-----|:------------|
+| **Overview** | Account-wide stats, recent activity, health indicators, live SSE status |
+| **Entities** | Browse entities, view entries with confidence badges, version history, provenance details |
+| **Traces** | Enriched trace cards with causal entries (full values), external contexts, query/error events, session timing, outcome badges, and search/filter |
+| **Trace Detail** | Full trace view with interactive causal graph (D3), timeline, entry snapshots, and state diff |
+| **Agents** | Per-agent overview with memory graph, activity, and **Git Repository** section (see below) |
+| **Incidents** | Incident timeline with causal chain drill-down |
+| **Patterns** | Detected pattern dashboard (recurring failures, hot entities, stale clusters, confidence drift) with severity indicators and resolution tracking |
+| **Teams** | Team CRUD with member management (admin, developer, viewer roles) |
+| **Snapshots** | Memory snapshot capture, comparison, and JSON export |
+| **API Keys** | Key management console with scopes, rate limits, expiry, and usage |
+| **Audit Log** | Searchable, filterable log of all state-changing operations |
+| **Usage & Quotas** | Quota progress bars, request metrics, top agents/entities breakdown |
+| **Pro Tools** | Retrieval playground, critic panel, distiller view, calibration dashboard, training data export |
+
+## Agent Git Repository
+
+Each agent's detail page includes a "Git Repository" section with:
+
+| Tab | Description |
+|:----|:------------|
+| **Sacred Timeline** | Interactive 3D visualization of the agent's memory history (React Three Fiber). Shows event nodes, branch forks, date markers, and contextual detail panels when clicking events. |
+| **Event Log** | Chronological 2D list of all events (writes, outcomes, reads, briefs, webhooks) with icons, details, and date grouping. |
+| **Branches** | Branch management — create, close, merge, view diffs, and manage access grants per branch. |
+| **Pull Requests** | PR workflow — create, review, merge, and close pull requests for branch changes. |
+| **Tags & Rollback** | Create named snapshots, roll back to tags or specific timestamps. |

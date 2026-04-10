@@ -1,0 +1,53 @@
+---
+title: "Intelligence Layer"
+description: "LLM-driven extraction, memory critic, distiller, safety validation, and multi-strategy retrieval."
+icon: "brain"
+---
+
+# Intelligence Layer
+
+The Intelligence Layer uses LLMs and advanced algorithms to keep your memory store healthy, your retrieval sharp, and your agents onboarded faster.
+
+## Extraction
+
+Turns raw text (conversations, logs, documents) into structured memory operations using LLMs. The extractor classifies each piece of information as an **ADD**, **UPDATE**, **DELETE**, or **NOOP** operation.
+
+## Auto Entity & Relationship Extraction
+
+Automatically extracts entities (services, people, tools, infrastructure) and relationships (depends_on, uses, manages, monitors) from decision traces and memory entries using LLMs. Extracted data is stored in dedicated tables with confidence scores, temporal validity, and trace provenance. Enable with `AMFS_AUTO_EXTRACT=true`.
+
+## Memory Critic
+
+Automated quality analyzer that scans the memory store and detects five issue classes:
+
+- **Toxic** — repeated negative correlations
+- **Stale** — entries not referenced in a long time
+- **Contradictory** — conflicting entries for the same key
+- **Uncalibrated** — confidence scores misaligned with outcome history
+- **Orphaned** — entries with no links to any outcome or other entries
+
+## Memory Distiller
+
+Compacts large stores into smaller, higher-quality sets via pruning, consolidation, and bootstrap set generation for agent onboarding.
+
+## Memory Safety Validator
+
+Pre-write guardrails: contradiction detection, temporal consistency, confidence thresholds, and causal chain integrity.
+
+## Multi-Strategy Retrieval
+
+Combines semantic, BM25, temporal, and confidence signals via Reciprocal Rank Fusion (RRF). When a learned ranking model is trained, it automatically receives 30% weight in the fusion pipeline.
+
+## Pro MCP Tools
+
+| Tool | Description |
+|:-----|:------------|
+| `amfs_critique` | Run the Memory Critic and get a quality report |
+| `amfs_distill` | Trigger distillation (prune, consolidate, or generate bootstrap set) |
+| `amfs_validate` | Validate a candidate memory before writing |
+| `amfs_retrain` | Train the learned ranking model from outcome data |
+| `amfs_calibrate` | Learn optimal confidence multipliers from outcome history |
+| `amfs_export_training_data` | Export decision traces as SFT/DPO/reward model datasets |
+| `amfs_record_llm_call` | Record an LLM call with model, tokens, cost, and latency |
+| `amfs_graph_path` | Find shortest trust-weighted path between two entities in the knowledge graph |
+| `amfs_graph_query` | Flexible graph edge search by relation, entity type, or confidence range |

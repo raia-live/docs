@@ -1,0 +1,66 @@
+---
+title: "Immutable Decision Traces"
+description: "Persistent, cryptographically signed decision traces with LLM call tracking and OpenTelemetry export."
+icon: "shield-check"
+---
+
+# Immutable Decision Trace Store
+
+The OSS `explain()` only works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). Pro builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever.
+
+## OSS Trace Enrichment
+
+Every `commit_outcome` automatically captures:
+
+- **Session timing** — `session_started_at`, `session_ended_at`, `session_duration_ms`
+- **Query events** — every `search()` and `list()` call with parameters, result counts, and per-operation latency
+- **Error events** — any errors during reads, writes, or tool calls
+- **State diff** — entries created, updated, and confidence changes during the session
+- **Full entry snapshots** — `value`, `memory_type`, and `written_by` captured at read time
+
+## Pro Immutable Traces
+
+Pro adds:
+
+- **Cryptographic integrity** — HMAC-SHA256 content hashing with Merkle chain linking across sessions
+- **LLM call spans** — model, provider, prompt/completion token counts, cost, latency, temperature, finish reason
+- **Write events, tool calls, agent interactions** — full record of every action
+- **Token and cost aggregates** — `total_llm_calls`, `total_tokens`, `total_cost_usd` per trace
+
+```python
+from amfs_traces import TraceRecorder, InMemoryTraceStore
+
+recorder = TraceRecorder(memory, store, account_id=acct.id)
+
+# Reads and external contexts are tracked automatically
+recorder.memory.read("svc", "retry-pattern")
+recorder.memory.record_context("pagerduty", "3 SEV-1", source="PagerDuty API")
+
+# Record LLM calls for token/cost tracking
+recorder.record_llm_call(
+    model="gpt-4o", provider="openai",
+    prompt_tokens=1200, completion_tokens=450,
+    latency_ms=2340, cost_usd=0.0285,
+)
+
+# Outcome commits automatically persist the trace
+updated, trace = recorder.commit_outcome("DEP-500", OutcomeType.SUCCESS)
+
+# Months later, explain still works
+result = recorder.explain("DEP-500")
+
+# Search across all decisions
+traces = recorder.search_traces(entity_path="checkout-service", outcome_type="critical_failure")
+```
+
+## OpenTelemetry Export
+
+Export AMFS decision traces as OpenTelemetry spans for integration with existing observability stacks (Jaeger, Grafana Tempo, Datadog, Honeycomb). Traces are mapped to hierarchical spans following GenAI semantic conventions — each LLM call becomes a `gen_ai` span, and memory operations become `amfs` spans.
+
+```python
+from amfs_otel import TraceExporter, configure_otel
+
+configure_otel(endpoint="http://localhost:4317", service_name="my-agent")
+exporter = TraceExporter()
+exporter.export_trace(trace)  # sends spans to your OTel collector
+```
