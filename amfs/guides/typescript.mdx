@@ -250,5 +250,5 @@ import {
 ## Notes
 
 <Note>
-The TypeScript SDK uses an in-memory adapter by default. For persistent storage, use the Python SDK, HTTP API, or MCP server with a Postgres or S3 backend.
+The TypeScript SDK uses an in-memory adapter locally. When connected to AMFS (via `AMFS_HTTP_URL`), all operations are persisted through the HTTP API automatically.
 </Note>
