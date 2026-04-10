@@ -66,11 +66,19 @@ To avoid committing keys to git, use Cursor's env interpolation: `"AMFS_API_KEY"
 
 ---
 
-## Connect via Python SDK
+## Connect via SDK
+
+Set the env vars once — both SDKs pick them up automatically:
 
 ```bash
 export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
 export AMFS_API_KEY="<your-api-key>"
+```
+
+### Python
+
+```bash
+pip install amfs
 ```
 
 ```python
@@ -80,7 +88,18 @@ mem = AgentMemory(agent_id="my-agent")
 mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
 ```
 
-When `AMFS_HTTP_URL` is set, the SDK auto-detects the HTTP adapter. No config files needed.
+### TypeScript
+
+```bash
+npm install @amfs/sdk
+```
+
+```typescript
+import { AgentMemory } from "@amfs/sdk";
+
+const mem = new AgentMemory({ agentId: "my-agent" });
+await mem.write("checkout-service", "retry-pattern", { maxRetries: 3 });
+```
 
 ---
 
