@@ -162,21 +162,6 @@
                   "amfs/pro/dashboard",
                   "amfs/pro/billing"
                 ]
-              },
-              {
-                "group": "Self-Hosted",
-                "icon": "server",
-                "pages": [
-                  "amfs/getting-started/installation",
-                  "amfs/guides/cli",
-                  "amfs/guides/docker",
-                  "amfs/guides/http-server",
-                  "amfs/adapters/overview",
-                  "amfs/adapters/filesystem",
-                  "amfs/adapters/postgres",
-                  "amfs/adapters/s3",
-                  "amfs/adapters/custom"
-                ]
               }
             ]
           },
@@ -186,6 +171,7 @@
               {
                 "group": "Reference",
                 "pages": [
+                  "amfs/guides/http-server",
                   "amfs/reference/api",
                   "amfs/reference/environment-variables"
                 ]
