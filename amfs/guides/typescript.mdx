@@ -129,17 +129,17 @@ The TypeScript SDK currently uses an in-memory adapter by default. For SaaS, age
 
 ### Via MCP Server
 
-Configure the MCP server with HTTP adapter environment variables:
+Add the MCP server to your IDE config:
 
 ```json
 {
   "mcpServers": {
     "amfs": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/amfs", "amfs-mcp-server"],
+      "command": "uvx",
+      "args": ["amfs-mcp-server"],
       "env": {
         "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
-        "AMFS_API_KEY": "amfs_sk_your_key_here"
+        "AMFS_API_KEY": "<your-api-key>"
       }
     }
   }

@@ -267,27 +267,35 @@ When scaling to multiple replicas with the filesystem backend, each replica has 
 
 ---
 
-## Connecting MCP Through Docker
+## Connecting MCP to Docker
 
-You can point your MCP config at the Dockerized HTTP server instead of running a local process:
+Point your MCP config at the Dockerized HTTP server using the Streamable HTTP URL:
 
 ```json
 {
   "mcpServers": {
     "amfs": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/amfs", "amfs-mcp-server"],
-      "env": {
-        "AMFS_TRANSPORT": "http",
-        "AMFS_HOST": "localhost",
-        "AMFS_PORT": "8080"
-      }
+      "url": "http://localhost:8080/mcp"
     }
   }
 }
 ```
 
-Or configure the MCP server to connect to the remote AMFS HTTP API, so all your agents share the same centralized memory.
+Or use the standard `uvx` approach with the Docker server's HTTP URL:
+
+```json
+{
+  "mcpServers": {
+    "amfs": {
+      "command": "uvx",
+      "args": ["amfs-mcp-server"],
+      "env": {
+        "AMFS_HTTP_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
 
 ---
 
