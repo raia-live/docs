@@ -502,18 +502,14 @@ with AgentMemory(agent_id="my-agent") as mem:
 
 ---
 
-## Connecting to AMFS SaaS
+## SaaS Connection
 
-When using AMFS as a hosted service (SaaS), connect through the HTTP API with your API key instead of a direct database connection.
-
-### Environment Variables
+Set two env vars and the SDK connects automatically — no adapter setup needed:
 
 ```bash
 export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
-export AMFS_API_KEY="amfs_sk_your_key_here"
+export AMFS_API_KEY="<your-api-key>"
 ```
-
-With these set, the SDK auto-detects the HTTP adapter — no code changes needed:
 
 ```python
 from amfs import AgentMemory
@@ -522,30 +518,7 @@ mem = AgentMemory(agent_id="my-agent")
 mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
 ```
 
-### Explicit HttpAdapter
-
-You can also configure the adapter directly:
-
-```python
-from amfs import AgentMemory
-from amfs_adapter_http import HttpAdapter
-
-adapter = HttpAdapter(
-    base_url="https://amfs-login.sense-lab.ai",
-    api_key="amfs_sk_your_key_here",
-)
-mem = AgentMemory(agent_id="my-agent", adapter=adapter)
-```
-
-<Note>
-Install the HTTP adapter with `pip install amfs-adapter-http`.
-</Note>
-
-<Warning>
-Never use `AMFS_POSTGRES_DSN` for external agents in multi-tenant mode. Always use `AMFS_HTTP_URL` + `AMFS_API_KEY` to ensure tenant isolation, scope enforcement, and audit logging.
-</Warning>
-
-See the [SaaS Connection Guide](/amfs/getting-started/saas-connection) and [Environment Variables](/amfs/reference/environment-variables) for details.
+See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide for details.
 
 ---
 

@@ -10,22 +10,14 @@ AMFS integrates with popular multi-agent frameworks so you can add persistent me
 
 ---
 
-## Using with AMFS SaaS
+## Setup
 
-When using AMFS as a hosted service (SaaS), all integrations should connect via the HTTP API with an API key. Set these two environment variables before running your agents:
+Set your connection env vars — all framework integrations pick them up automatically:
 
 ```bash
 export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
-export AMFS_API_KEY="amfs_sk_your_key_here"
+export AMFS_API_KEY="<your-api-key>"
 ```
-
-With these set, `AgentMemory` auto-detects the HTTP adapter and routes all operations through the authenticated API. This applies to CrewAI, LangGraph, LangChain, AutoGen, and any custom integration.
-
-<Warning>
-Never use `AMFS_POSTGRES_DSN` for external agents in multi-tenant mode. Always use `AMFS_HTTP_URL` + `AMFS_API_KEY` to ensure tenant isolation.
-</Warning>
-
-See the [SaaS Connection Guide](/amfs/getting-started/saas-connection) for detailed setup instructions.
 
 ---
 
