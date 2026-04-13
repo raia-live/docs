@@ -133,7 +133,8 @@
                   "amfs/guides/python",
                   "amfs/guides/typescript",
                   "amfs/guides/connectors",
-                  "amfs/guides/integrations"
+                  "amfs/guides/integrations",
+                  "amfs/guides/strands"
                 ]
               },
               {

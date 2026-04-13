@@ -1,0 +1,144 @@
+---
+title: "Strands Agents"
+description: "Add persistent, versioned memory with automatic causal tracing to your Strands Agents."
+icon: "link"
+---
+
+AMFS integrates with [Strands Agents](https://github.com/strands-agents/strands) as a plugin, giving your agents persistent, versioned memory with automatic causal tracing — deeper than tool-only integrations.
+
+---
+
+## Installation
+
+```bash
+pip install amfs-strands strands-agents
+```
+
+---
+
+## Plugin Setup (Recommended)
+
+The `AMFSPlugin` registers memory tools on your agent and automatically tracks every tool call into causal chains:
+
+```python
+from strands import Agent
+from amfs import AgentMemory
+from amfs_strands import AMFSPlugin
+
+mem = AgentMemory(agent_id="research-agent")
+agent = Agent(
+    system_prompt="You are a research assistant with persistent memory.",
+    plugins=[AMFSPlugin(mem)],
+)
+
+agent("Research the latest AI papers and remember key findings")
+```
+
+### Tools registered by the plugin
+
+| Tool | What it does |
+|---|---|
+| `amfs_read` | Retrieve memory entries by path and key |
+| `amfs_write` | Store values with confidence levels |
+| `amfs_search` | Query entries with text and filters |
+| `amfs_recall` | Agent-scoped reads of the agent's own entries |
+| `amfs_list` | Display all entries under a path |
+| `amfs_record_context` | Track external context in causal chains |
+
+---
+
+## Tools-Only Setup
+
+If you prefer a single-tool approach without the full plugin:
+
+```python
+from strands import Agent
+from amfs_strands import amfs_memory
+
+agent = Agent(tools=[amfs_memory])
+```
+
+Supports `store`, `retrieve`, `search`, and `list` actions. Set the `AMFS_AGENT_ID` environment variable to identify the agent:
+
+```bash
+export AMFS_AGENT_ID="my-agent"
+```
+
+---
+
+## Key Features
+
+**Versioning** — AMFS tracks how agent knowledge evolves through copy-on-write versions. Every write creates a new version; older versions remain queryable.
+
+**Provenance** — AMFS records which agent wrote each entry, in which session, and when. Entries from different agents in a shared memory space are always attributable.
+
+**Automatic Causal Tracing** — The plugin automatically records non-AMFS tool calls into causal chains. No extra instrumentation needed.
+
+**Outcome Tracking** — Record success or failure after an action to adjust the confidence score on related memory entries:
+
+```python
+mem.record_outcome(success=True, entry_path="research/papers")
+```
+
+**Decision Traces** — Use `explain()` to view the complete causal chain behind any memory entry:
+
+```python
+mem.explain("research/papers/attention-is-all-you-need")
+```
+
+---
+
+## SaaS Connection
+
+Set your connection environment variables — the plugin picks them up automatically:
+
+```bash
+export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
+export AMFS_API_KEY="amfs_sk_your_key_here"
+```
+
+Or configure explicitly in code:
+
+```python
+from amfs_adapter_http import HttpAdapter
+
+adapter = HttpAdapter(
+    base_url="https://amfs-login.sense-lab.ai",
+    api_key="amfs_sk_your_key_here",
+)
+mem = AgentMemory(agent_id="my-agent", adapter=adapter)
+```
+
+---
+
+## Multi-Agent Setup
+
+Use separate `agent_id` values for each agent. AMFS handles provenance automatically — all agents can share the same memory space while keeping their writes attributable:
+
+```python
+researcher = AgentMemory(agent_id="researcher")
+writer = AgentMemory(agent_id="writer")
+```
+
+---
+
+## Disable Auto-Tracing
+
+If you want the plugin's memory tools without automatic causal tracing of other tool calls:
+
+```python
+plugin = AMFSPlugin(mem, auto_trace=False)
+```
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Framework Integrations" icon="puzzle-piece" href="/amfs/guides/integrations">
+    Use AMFS with CrewAI, LangGraph, LangChain, and AutoGen.
+  </Card>
+  <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">
+    Understand versioning, provenance, and causal graphs in AMFS.
+  </Card>
+</CardGroup>
