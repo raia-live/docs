@@ -31,6 +31,7 @@
     "products": [
       {
         "product": "SenseLab",
+        "hidden": true,
         "tabs": [
           {
             "tab": "Guides",
