@@ -26,7 +26,7 @@ Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 ```
 
 <Tip>
-Copy the ready-made snippet from your [AMFS Dashboard → Agents page](https://amfs-login.sense-lab.ai). The **MCP Connection Card** has your URL and key pre-filled.
+  Copy the ready-made snippet from your [AMFS Dashboard → Agents page](https://amfs-login.sense-lab.ai). The **MCP Connection Card** has your URL and key pre-filled.
 </Tip>
 
 ## Claude Code
@@ -48,10 +48,6 @@ Add to `~/.claude/claude_desktop_config.json`:
 }
 ```
 
-## Any MCP Client
-
-Same pattern — set `AMFS_HTTP_URL` and `AMFS_API_KEY` as env vars on the `uvx amfs-mcp-server` process. No local code, no cloning, no Docker.
-
 ## Verify
 
 Restart your IDE after saving the config. Ask the agent to run `amfs_stats()` — if it returns a response, you're connected.
@@ -60,22 +56,22 @@ Restart your IDE after saving the config. Ask the agent to run `amfs_stats()` �
 
 ## What Your Agents Get
 
-Once connected, agents have 20+ tools across five categories:
+Once connected, agents have 20\+ tools across five categories:
 
 **Identity & Context**
 
 | Tool | What it does |
-|:-----|:------------|
+| :-- | :-- |
 | `amfs_set_identity` | Name this agent session (e.g. `"checkout-fixer"`) |
 | `amfs_briefing` | Get a compiled knowledge digest — what matters right now |
 
 **Read & Write**
 
 | Tool | What it does |
-|:-----|:------------|
+| :-- | :-- |
 | `amfs_read` / `amfs_write` | Read and write versioned memory entries |
 | `amfs_search` | Filter by entity, confidence, agent, time range |
-| `amfs_retrieve` | Natural language search with semantic + recency + confidence ranking |
+| `amfs_retrieve` | Natural language search with semantic \+ recency \+ confidence ranking |
 | `amfs_list` / `amfs_stats` | Browse entries and get an overview |
 | `amfs_history` | Version history of any entry |
 | `amfs_graph_neighbors` | Explore the knowledge graph |
@@ -83,7 +79,7 @@ Once connected, agents have 20+ tools across five categories:
 **Agent Brain**
 
 | Tool | What it does |
-|:-----|:------------|
+| :-- | :-- |
 | `amfs_recall` | Recall your own memories |
 | `amfs_my_entries` | List everything you've written |
 | `amfs_read_from` | Read from another agent's memory (tracked) |
@@ -91,28 +87,16 @@ Once connected, agents have 20+ tools across five categories:
 **Decision Traces**
 
 | Tool | What it does |
-|:-----|:------------|
-| `amfs_record_context` | Capture tool results, user choices, external data |
+| :-- | :-- |
+| `amfs_record_context` | Capture tool results, user choices, and external data |
 | `amfs_commit_outcome` | Snapshot the full decision trace |
 | `amfs_explain` | Inspect the causal chain |
 
 **Timeline**
 
 | Tool | What it does |
-|:-----|:------------|
+| :-- | :-- |
 | `amfs_timeline` | Browse the git-style event log |
-
----
-
-## Agent Rules
-
-To get the most out of AMFS, add the agent rules file to your project. This teaches agents *when* and *how* to use memory tools automatically:
-
-**Cursor** — copy [amfs-memory.mdc](https://github.com/raia-live/amfs/blob/main/.cursor/rules/amfs-memory.mdc) to `.cursor/rules/amfs-memory.mdc` in your project.
-
-**Claude Code** — copy [CLAUDE.md](https://github.com/raia-live/amfs/blob/main/CLAUDE.md) to your project root.
-
-Without rules, agents still have access to the tools — they just won't use them proactively.
 
 ---
 
@@ -120,14 +104,14 @@ Without rules, agents still have access to the tools — they just won't use the
 
 Agents should call `amfs_set_identity` at the start of every session:
 
-```
+```text
 amfs_set_identity("checkout-agent", "Fixing retry logic")
 ```
 
 Use **kebab-case role names** that persist across conversations:
 
 | Good | Bad |
-|:-----|:----|
+| :-- | :-- |
 | `dashboard-agent` | `fix-button-color` (too specific) |
 | `api-agent` | `agent-1` (meaningless) |
 
@@ -137,7 +121,7 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 
 ## How Knowledge Compounds
 
-```
+```text
 Machine A (Cursor / Bruno):
   → Reviews checkout-service PR
   → amfs_write("myapp/checkout", "risk-race-condition", "...")
@@ -165,8 +149,8 @@ To pin to a specific MCP server version:
 ## Troubleshooting
 
 | Problem | Fix |
-|:--------|:----|
-| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| :-- | :-- |
+| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh` |
 | Agent doesn't use memory tools | Add the [agent rules file](#agent-rules) to your project |
 | `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |
 | `403 Scope Denied` | Your key doesn't have permission for that entity path |
