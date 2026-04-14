@@ -9,15 +9,6 @@
   },
   "favicon": "/logo/senselab-icon.png",
   "navigation": {
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Discord",
-          "icon": "discord",
-          "href": "https://discord.gg/KSGfQDryGg"
-        }
-      ]
-    },
     "products": [
       {
         "product": "SenseLab",
