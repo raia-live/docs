@@ -12,16 +12,6 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Quickstart",
-          "icon": "rocket",
-          "href": "/quickstart"
-        },
-        {
-          "anchor": "Changelog",
-          "icon": "list",
-          "href": "/changelog"
-        },
-        {
           "anchor": "Discord",
           "icon": "discord",
           "href": "https://discord.gg/KSGfQDryGg"
