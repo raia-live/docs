@@ -8,9 +8,10 @@ AMFS is fully managed — no infrastructure to deploy. Your agents connect throu
 
 ## Get Your Credentials
 
-1. Go to the [AMFS Dashboard → Agents](https://amfs-login.sense-lab.ai) page
-2. The **MCP Connection Card** shows your **Server URL** and **API Key**
-3. Copy the ready-made JSON snippet — paste it into your IDE config
+1. Go to **Settings → API Keys** to create a scoped key
+2. Go to the [AMFS Dashboard → Agents](https://amfs-login.sense-lab.ai) page
+3. The **MCP Connection Card** shows your **Server URL**
+4. Copy the ready-made JSON snippet — paste it into your IDE config
 
 Need more keys? Go to **Settings → API Keys** to create scoped keys per agent or service.
 
@@ -55,14 +56,6 @@ Add to `~/.claude/claude_desktop_config.json`:
   }
 }
 ```
-
-### Any MCP Client
-
-Set `AMFS_HTTP_URL` and `AMFS_API_KEY` as environment variables on the `uvx amfs-mcp-server` process. That's it.
-
-<Tip>
-To avoid committing keys to git, use Cursor's env interpolation: `"AMFS_API_KEY": "${env:AMFS_API_KEY}"` and set the variable in your shell profile.
-</Tip>
 
 ---
 
@@ -122,7 +115,7 @@ See the [API Reference](/amfs/reference/api) for the full endpoint list.
 
 **Scoped keys** — Restrict keys to specific entity paths and permissions:
 
-```
+```text
 amfs_sk_live_abc123  →  checkout-service/**  [READ_WRITE]
                         shared/patterns/*     [READ]
 ```
@@ -130,7 +123,7 @@ amfs_sk_live_abc123  →  checkout-service/**  [READ_WRITE]
 **Audit logging** — Every state-changing operation is recorded. View in Dashboard → Audit Log.
 
 <Warning>
-Never hardcode API keys in files committed to git. Use environment variables or a secrets manager.
+  Never hardcode API keys in files committed to git. Use environment variables or a secrets manager.
 </Warning>
 
 ---
@@ -138,7 +131,7 @@ Never hardcode API keys in files committed to git. Use environment variables or 
 ## Troubleshooting
 
 | Problem | Fix |
-|:--------|:----|
+| :-- | :-- |
 | `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |
 | `403 Scope Denied` | Key doesn't have permission for that entity path — check scopes |
-| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh` |
