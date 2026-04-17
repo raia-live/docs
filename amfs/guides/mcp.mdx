@@ -119,6 +119,97 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 
 ---
 
+## AMFS Skill
+
+Use this skill at the start of any session where AMFS MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or when mentioning AMFS, agent memory, or persistent memory across sessions.
+
+```markdown
+---
+name: amfs
+description: "Use this skill at the start of any session where AMFS MCP tools are connected. Covers the full session lifecycle: set identity, briefing, read/write, commit outcome. Also use when storing decisions, retrieving past context, or any mention of AMFS, agent memory, or persistent memory across sessions."
+compatibility: "claude.ai, Claude Desktop — any surface with AMFS MCP connected"
+---
+
+# AMFS Skill
+
+Use this skill whenever AMFS MCP tools are available — reading context, storing decisions, or committing outcomes across sessions.
+
+## Trigger conditions
+- Starting any session where AMFS MCP is connected
+- User asks to remember, store, or retrieve something
+- After making a significant decision or completing meaningful work
+- When context from a previous session may be relevant
+
+## Session workflow (always follow this order)
+
+1. **Set identity** — always first, every session. Use a stable kebab-case name that persists across conversations about the same domain.
+   `amfs_set_identity("your-agent-name", "what you're doing this session")`
+   Good names: `api-agent`, `infra-agent`, `dashboard-agent`
+   Bad names: `fix-button` (too specific), `agent-1` (meaningless)
+
+2. **Get briefing** — one call replaces many reads
+   `amfs_briefing(entity_path="repo/module")`
+   If briefing is empty, use `amfs_list` or `amfs_read` to pull specific keys.
+
+3. **Work** — read before decisions, write after meaningful ones
+
+4. **Commit** — always at session end, it's free
+   `amfs_commit_outcome("task-ref", "success|minor_failure|failure")`
+
+## Entity path conventions
+Use hierarchical `{project}/{module}` paths to scope knowledge. Avoid generic paths like `project` or `app` — they become unsearchable.
+
+Examples:
+- `myapp/auth` — authentication module
+- `myapp/api` — API layer
+- `myapp/checkout` — checkout service
+- `user/context` — personal or cross-project context
+- `user/preferences` — working style, communication preferences
+
+## Key naming conventions
+- `pattern-` reusable patterns
+- `risk-` known bugs or blockers
+- `decision-` architectural or strategic choices
+- `task-summary-` what was done and why
+- `action-` log of actions taken
+
+## Cost model
+- Read = 1 op (`amfs_read`, `amfs_search`, `amfs_list`, `amfs_briefing`)
+- Write = 2 ops (`amfs_write`, `amfs_record_context`)
+- Commit = free (never skip)
+
+Prefer `amfs_briefing` over multiple individual reads — one briefing returns compiled, ranked knowledge for an entity.
+
+## What to write
+- Decisions with rationale (why, not just what)
+- Risks or blockers discovered
+- Patterns worth reusing
+- Task summaries after meaningful work
+- User decisions that affect direction
+
+## What to skip
+- Trivial changes (typos, renames, comments)
+- Anything recomputable from the codebase in seconds
+- One-sentence observations — batch related ones into a single richer entry
+
+## Memory types
+- `fact` — stable, verified knowledge (default)
+- `belief` — hypothesis or unverified observation, use confidence < 0.9
+- `experience` — action log, decays slower, good for what was done and why
+
+## Confidence guidelines
+- `1.0` — verified, tested in production
+- `0.7–0.9` — high confidence, not yet verified
+- `0.4–0.6` — hypothesis, needs validation
+- `< 0.4` — speculative, early signal
+
+## Known issues
+- `amfs_commit_batch` may throw a CausalTagger session_id error — use individual `amfs_write` calls instead
+- `amfs_briefing` returns empty on new stores until the Memory Cortex compiles digests (async)
+```
+
+---
+
 ## How Knowledge Compounds
 
 ```text
@@ -148,9 +239,9 @@ To pin to a specific MCP server version:
 
 ## Troubleshooting
 
-| Problem | Fix |
-| :-- | :-- |
-| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh` |
-| Agent doesn't use memory tools | Add the [agent rules file](#agent-rules) to your project |
-| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |
-| `403 Scope Denied` | Your key doesn't have permission for that entity path |
+| Problem | Fix |  |
+| :-- | :-- | --- |
+| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): \`curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh\` |
+| Agent doesn't use memory tools | Add the [agent rules file](#agent-rules) to your project |  |
+| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |  |
+| `403 Scope Denied` | Your key doesn't have permission for that entity path |  |

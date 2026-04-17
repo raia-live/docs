@@ -10,16 +10,16 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 
 ## At a Glance
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    AMFS Pro (Proprietary)                  │
-│                                                          │
-│  ┌─ Memory Branching (Git for Agent Memory) ───────────┐ │
-│  │  Branches · Merge · PRs · Diff · Access Control      │ │
-│  │  Tags/Snapshots · Rollback · Cherry-pick · Fork      │ │
-│  │  Branch-Level Permissions (user/team/API key)        │ │
-│  │  Sacred Timeline (3D visualization)                   │ │
-│  └──────────────────────────────────────────────────────┘ │
+```text
+┌──────────────────────────────────────────┐
+│                    AMFS Pro (Proprietary)                         │
+│                                                                   │
+│  ┌─ Memory Branching (Git for Agent Memory) ────────────┐│
+│  │  Branches · Merge · PRs · Diff · Access Control              ││
+│  │  Tags/Snapshots · Rollback · Cherry-pick · Fork              ││
+│  │  Branch-Level Permissions (user/team/API key)                ││
+│  │  Sacred Timeline (3D visualization)                          ││
+│  └──────────────────────────────────────┘ │
 │                                                          │
 │  ┌─ Multi-Tenant SaaS ─────────────────────────────────┐ │
 │  │  Accounts · RBAC · Scoped API Keys · Audit · Quotas │ │
@@ -87,8 +87,8 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 ## Feature Comparison
 
 | Capability | OSS | Pro |
-|:-----------|:---:|:---:|
-| **Core Memory Primitives** | | |
+| :-- | :-: | :-: |
+| **Core Memory Primitives** |  |  |
 | Copy-on-Write versioning | Yes | Yes |
 | Confidence scoring with outcome back-propagation | Yes | Yes |
 | Memory types (fact, belief, experience) | Yes | Yes |
@@ -102,7 +102,7 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 | Composite recall scoring | Yes | Yes |
 | Multi-scope search | Yes | Yes |
 | Knowledge graph (auto-materialized from writes/outcomes) | Yes | Yes |
-| Hybrid search (full-text + semantic + composite scoring) | Yes | Yes |
+| Hybrid search (full-text \+ semantic \+ composite scoring) | Yes | Yes |
 | Frequency-modulated decay (4-signal model) | Yes | Yes |
 | Tiered memory (Hot / Warm / Archive) | Yes | Yes |
 | Progressive retrieval (`depth`) | Yes | Yes |
@@ -110,12 +110,12 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 | Cortex drift gate (skip-redundant recompilations) | Yes | Yes |
 | LLM importance scoring (3-dimension) | — | Yes |
 | Background tier recomputation (`TierWorker`) | — | Yes |
-| **Git-like Timeline** | | |
+| **Git-like Timeline** |  |  |
 | Event logging (writes, outcomes, reads, briefs) on main | Yes | Yes |
 | Branch-aware read/write/list/search (`branch` parameter) | Yes | Yes |
 | Timeline API endpoint per agent | Yes | Yes |
 | MCP `amfs_timeline` tool | Yes | Yes |
-| **Memory Branching (Pro)** | | |
+| **Memory Branching (Pro)** |  |  |
 | Create / close / list branches | — | Yes |
 | Diff branch vs. main | — | Yes |
 | Merge branches (fast-forward, ours, theirs) | — | Yes |
@@ -127,33 +127,33 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 | Cherry-pick entries across branches | — | Yes |
 | Fork agent memory to a new agent | — | Yes |
 | Sacred Timeline (3D interactive visualization) | — | Yes |
-| **Connectors** | | |
+| **Connectors** |  |  |
 | Connector framework (`ConnectorABC`) | Yes | Yes |
 | Connector CLI (`amfs connector install/list/remove`) | Yes | Yes |
 | Built-in connectors (PagerDuty, GitHub, Slack, Jira) | Yes | Yes |
 | Webhook receiver (`/api/v1/webhooks/{name}`) | Yes | Yes |
-| **Adapters & Infrastructure** | | |
+| **Adapters & Infrastructure** |  |  |
 | Filesystem adapter | Yes | Yes |
 | Postgres adapter (triggers, LISTEN/NOTIFY) | Yes | Yes |
 | S3 adapter | Yes | Yes |
 | HTTP/REST API server | Yes | Yes |
-| Docker + Docker Compose + Helm charts | Yes | Yes |
+| Docker \+ Docker Compose \+ Helm charts | Yes | Yes |
 | MCP server (12 tools) | Yes | Yes |
-| **SDKs & Clients** | | |
+| **SDKs & Clients** |  |  |
 | Python SDK (full parity) | Yes | Yes |
 | TypeScript SDK (full parity) | Yes | Yes |
 | CLI tools | Yes | Yes |
 | Framework integrations (CrewAI, LangGraph, etc.) | Yes | Yes |
 | Bundled lightweight embedder | Yes | Yes |
-| **Multi-Tenant SaaS (Pro)** | | |
+| **Multi-Tenant SaaS (Pro)** |  |  |
 | Account-level tenant isolation (RLS) | — | Yes |
 | RBAC (Admin, Developer, User) | — | Yes |
 | Scoped API keys with entity-path permissions | — | Yes |
 | Permissioned inference (scope-filtered search/explain) | — | Yes |
 | OAuth 2.0 / OIDC for dashboard users | — | Yes |
 | Append-only audit logging | — | Yes |
-| Usage quotas + sliding-window rate limiting | — | Yes |
-| **Immutable Decision Trace Store (Pro)** | | |
+| Usage quotas \+ sliding-window rate limiting | — | Yes |
+| **Immutable Decision Trace Store (Pro)** |  |  |
 | Durable causal chains across sessions | — | Yes |
 | Cryptographic signing (HMAC-SHA256) and Merkle chain linking | — | Yes |
 | LLM call span tracking (model, tokens, cost, latency) | — | Yes |
@@ -162,30 +162,30 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 | Historical `explain(outcome_ref)` | — | Yes |
 | `search_traces` / precedent search API | — | Yes |
 | Cross-agent, cross-session trace queries | — | Yes |
-| **Cross-System Ingestion** | | |
+| **Cross-System Ingestion** |  |  |
 | Generic webhook endpoint with HMAC verification | Yes | Yes |
 | Payload deduplication (idempotency) | Yes | Yes |
 | Pluggable transform pipeline with pattern matching | Yes | Yes |
 | PagerDuty incident connector | Yes | Yes |
 | Extensible connector framework (`ConnectorABC`) | Yes | Yes |
-| **Automated Pattern Detection (Pro)** | | |
+| **Automated Pattern Detection (Pro)** |  |  |
 | Recurring failure detection across causal chains | — | Yes |
 | Hot entity detection (disproportionate activity) | — | Yes |
 | Stale cluster detection (unvalidated entries) | — | Yes |
 | Confidence drift detection (outlier entries) | — | Yes |
 | Configurable alert rules with cooldown suppression | — | Yes |
 | Alert callbacks (Slack, PagerDuty, email routing) | — | Yes |
-| **Intelligence Layer (Pro)** | | |
+| **Intelligence Layer (Pro)** |  |  |
 | LLM-driven memory extraction | — | Yes |
 | Auto entity/relationship extraction from traces | — | Yes |
 | Automated memory critic | — | Yes |
 | Memory distillation & bootstrap sets | — | Yes |
 | Memory safety validation | — | Yes |
-| Multi-strategy retrieval with learned ranking (RRF + ML) | — | Yes |
+| Multi-strategy retrieval with learned ranking (RRF \+ ML) | — | Yes |
 | Learned retrieval ranking from outcome data | — | Yes |
 | Adaptive confidence calibration | — | Yes |
 | Training data export (SFT, DPO, reward model) | — | Yes |
-| **Dashboard (Pro)** | | |
+| **Dashboard (Pro)** |  |  |
 | Memory explorer with interactive causal graph | — | Yes |
 | Decision trace explorer with enriched context and causal graph | — | Yes |
 | Per-agent memory graph and activity timeline | — | Yes |
@@ -205,14 +205,14 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 Stripe, subscriptions, and the tenant control plane are implemented in the private SenseLab `amfs-internal` repository (not in the open-source tree). Self-serve tiers are summarized below; see also [Hosted billing & metering](/amfs/pro/billing).
 
 | Tier | Indicative price | Included ops / month | Notes |
-|:-----|:-----------------|:----------------------|:------|
-| **Free** | $0 | 1K | Solo; no team invites; hard cap |
-| **Starter** | $29 | 25K | Entry tier; auto top-up near limit (paid) |
-| **Pro** | $149 | 50K | Production agent teams |
-| **Teams** | $449 | 300K | Org scale; lower overage unit / 10K ops |
+| :-- | :-- | :-- | :-- |
+| **Free** | \$0 | 1K | Solo; no team invites; hard cap |
+| **Starter** | \$29 | 25K | Entry tier; auto top-up near limit (paid) |
+| **Pro** | \$149 | 50K | Production agent teams |
+| **Teams** | \$449 | 300K | Org scale; lower overage unit / 10K ops |
 | **Enterprise** | Custom | Custom | SSO, committed volume, SLA |
 
-**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. The HTTP + MCP mapping lives in the metering guide linked above.
+**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. The HTTP \+ MCP mapping lives in the metering guide linked above.
 
 **Onboarding:** Users must **choose a plan** (including Free) before the dashboard unlocks; paid plans complete **Stripe Checkout** and activation via **webhooks** (not browser success URL alone).
 
@@ -220,12 +220,12 @@ Stripe, subscriptions, and the tenant control plane are implemented in the priva
 
 ## OSS Layer — What's Included
 
-The open-source layer ([github.com/raia-live/amfs](https://github.com/raia-live/amfs)) provides the full memory primitive: read, write, version, search, and learn from outcomes. It includes a git-like timeline engine, branch-aware operations, a connector framework, composite recall scoring, multi-scope search, a knowledge graph auto-materialized from writes and outcomes, hybrid search (full-text + semantic + composite scoring), tiered memory (Hot/Warm/Archive with progressive retrieval), frequency-modulated decay (4-signal model), and a Cortex drift gate that avoids redundant digest recompilations.
+The open-source layer ([github.com/raia-live/amfs](https://github.com/raia-live/amfs)) provides the full memory primitive: read, write, version, search, and learn from outcomes. It includes a git-like timeline engine, branch-aware operations, a connector framework, composite recall scoring, multi-scope search, a knowledge graph auto-materialized from writes and outcomes, hybrid search (full-text \+ semantic \+ composite scoring), tiered memory (Hot/Warm/Archive with progressive retrieval), frequency-modulated decay (4-signal model), and a Cortex drift gate that avoids redundant digest recompilations.
 
 ### Packages
 
 | Package | Description |
-|:--------|:------------|
+| :-- | :-- |
 | `amfs-core` | CoW engine, models, read tracking, causal tagging, default embedder, `tiering` (PriorityScorer, TierAssigner), `importance` (ImportanceEvaluator ABC) |
 | `amfs` (SDK) | `AgentMemory` class — `read`, `write`, `list`, `search`, `history`, `timeline`, `explain`, `commit_outcome`, `record_context` |
 | `amfs-adapter-filesystem` | JSON-file-based adapter for local development |
@@ -328,10 +328,10 @@ LLM-powered tools for memory quality and retrieval: extraction (raw text → str
 
 ### Dashboard
 
-A web dashboard (Next.js 15 + React 19) for exploring memory, visualizing decisions, and managing your AMFS deployment.
+A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decisions, and managing your AMFS deployment.
 
 | Page | Description |
-|:-----|:------------|
+| :-- | :-- |
 | **Overview** | Account-wide stats, recent activity, health indicators, live SSE status |
 | **Entities** | Browse entities, view entries with confidence badges, version history, provenance details |
 | **Traces** | Enriched trace cards with causal entries, external contexts, query/error events, session timing, outcome badges, and search/filter |
@@ -354,7 +354,7 @@ A web dashboard (Next.js 15 + React 19) for exploring memory, visualizing decisi
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                        Agent / IDE                          │
 └────────────────────────────┬────────────────────────────────┘
@@ -415,7 +415,7 @@ The Pro API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenan
 ## When to Use Which
 
 | Scenario | Recommendation |
-|:---------|:---------------|
+| :-- | :-- |
 | Single developer, local memory | OSS |
 | Small team sharing via Postgres | OSS |
 | CI/CD outcome tracking | OSS |
@@ -447,7 +447,7 @@ The Pro API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenan
 | Want LLM-driven extraction from conversations/logs | **Pro** |
 | Onboarding new agents with curated knowledge | **Pro** (bootstrap sets) |
 | Compliance or safety requirements for memory writes | **Pro** (safety validator) |
-| Advanced retrieval across large stores | **Pro** (multi-strategy + learned ranking) |
+| Advanced retrieval across large stores | **Pro** (multi-strategy \+ learned ranking) |
 | Retrieval that improves as outcomes accumulate | **Pro** (ML layer) |
 | Need optimized confidence multipliers per entity | **Pro** (adaptive calibration) |
 | Want to fine-tune agents on your decision history | **Pro** (training data export) |
@@ -461,6 +461,7 @@ The Pro API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenan
   <Card title="OSS Quick Start" icon="rocket" href="/amfs/getting-started/quickstart">
     Install with `pip install amfs` and start writing memory in minutes.
   </Card>
+
   <Card title="Pro Access" icon="key" href="https://raia.live">
     Contact us at raia.live for Pro access and setup instructions.
   </Card>
