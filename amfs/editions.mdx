@@ -132,7 +132,7 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 
 ---
 
-## Hosted SaaS Tiers 
+## Hosted SaaS Tiers
 
 Self-serve tiers for the SaaS version are summarized below:
 
@@ -144,7 +144,7 @@ Self-serve tiers for the SaaS version are summarized below:
 | **Teams** | \$449 | 300K | Org scale; lower overage unit / 10K ops |
 | **Enterprise** | Custom | Custom | SSO, committed volume, SLA |
 
-**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. 
+**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**.
 
 ---
 
@@ -204,13 +204,13 @@ chain = mem.explain()
 
 ---
 
-## Pro Layer — What's Added
+## SaaS Layer — What's Added
 
-The Pro layer wraps the OSS layer — it never replaces it. All Pro features read from and write to the same memory store using the same adapters and SDK.
+The SaaS offering wraps the OSS layer — it never replaces it. All Pro features read from and write to the same memory store using the same adapters and SDK.
 
 ### Memory Branching — Git for Agent Memory
 
-The defining Pro feature. While OSS provides the git-like timeline engine (event logging on `main`), Pro adds the full branching model — branches, merge, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
+While OSS provides the git-like timeline engine (event logging on `main`), SenseLab AMFS SaaS adds the full branching model — branches, merges, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
 
 <Card title="Memory Branching Deep Dive" icon="code-branch" href="/amfs/pro/branching">
   Full documentation on branches, merge strategies, pull requests, access control, tags, rollback, cherry-pick, fork, and the Sacred Timeline visualization.
@@ -218,7 +218,7 @@ The defining Pro feature. While OSS provides the git-like timeline engine (event
 
 ### Multi-Tenant SaaS Foundation
 
-The foundation for running AMFS as a hosted service. Every API request is authenticated, authorized, scoped, and audited. Includes account-level Postgres RLS isolation, three-role RBAC (Admin/Developer/User), scoped API keys with entity-path permissions, and sliding-window rate limiting.
+Every API request is authenticated, authorized, scoped, and audited. Includes account-level Postgres RLS isolation, three-role RBAC (Admin/Developer/User), scoped API keys with entity-path permissions, and sliding-window rate limiting.
 
 <Card title="Multi-Tenant SaaS" icon="building" href="/amfs/pro/multi-tenant">
   Account isolation, RBAC, scoped API keys, OAuth/OIDC, audit logging, rate limiting, and usage quotas.
@@ -226,7 +226,7 @@ The foundation for running AMFS as a hosted service. Every API request is authen
 
 ### Immutable Decision Trace Store
 
-The OSS `explain()` works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). Pro builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever. Includes LLM call span tracking with token/cost analytics and OpenTelemetry export.
+The OSS `explain()` works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). SaaS builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever. Includes LLM call span tracking with token/cost analytics and OpenTelemetry export.
 
 <Card title="Decision Trace Store" icon="fingerprint" href="/amfs/pro/traces">
   Durable causal chains, cryptographic integrity, LLM call spans, precedent search, and OpenTelemetry export.
@@ -338,7 +338,7 @@ A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decis
        Adapter    Adapter   Adapter
 ```
 
-The Pro API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenant isolation, scope enforcement, rate limiting, and audit logging — all backed by Postgres RLS for defense-in-depth.
+The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenant isolation, scope enforcement, rate limiting, and audit logging — all backed by Postgres RLS for defense-in-depth.
 
 ---
 
@@ -353,35 +353,35 @@ The Pro API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenan
 | S3-based cloud storage | OSS |
 | Git-like timeline (event logging on main branch) | OSS |
 | Branch-aware read/write (main branch only) | OSS |
-| Create branches and share memory selectively | **Pro** (branching) |
-| Branch access control per user/team/API key | **Pro** (branching) |
-| Merge branches, resolve conflicts | **Pro** (branching) |
-| Pull request workflow for memory changes | **Pro** (branching) |
-| Rollback memory to a point in time or tag | **Pro** (branching) |
-| Fork agent memory to new agents | **Pro** (branching) |
-| Sacred Timeline 3D visualization | **Pro** (dashboard) |
-| Multi-tenant SaaS with account isolation | **Pro** |
-| Scoped API keys per agent/tool | **Pro** |
-| Compliance audit logging | **Pro** |
+| Create branches and share memory selectively | **SaaS** (branching) |
+| Branch access control per user/team/API key | **SaaS** (branching) |
+| Merge branches, resolve conflicts | **SaaS** (branching) |
+| Pull request workflow for memory changes | **SaaS** (branching) |
+| Rollback memory to a point in time or tag | **SaaS** (branching) |
+| Fork agent memory to new agents | **SaaS** (branching) |
+| Sacred Timeline 3D visualization | **SaaS** (dashboard) |
+| Multi-tenant SaaS with account isolation | **SaaS** |
+| Scoped API keys per agent/tool | **SaaS** |
+| Compliance audit logging | **SaaS** |
 | Enriched decision traces with error/query events and session timing | OSS |
 | Per-agent memory graph and activity timeline | OSS |
-| Immutable, cryptographically signed traces | **Pro** |
-| LLM call span tracking with token/cost analytics | **Pro** |
-| OpenTelemetry export for existing observability stacks | **Pro** |
-| Auto entity/relationship extraction from traces | **Pro** |
-| Precedent search ("how did we handle similar situations?") | **Pro** |
-| Auto-ingest PagerDuty/Slack/GitHub events | **Pro** (connectors) |
-| Detect recurring failure patterns automatically | **Pro** (pattern detection) |
-| Alert on stale memory or confidence drift | **Pro** (alert manager) |
-| Need memory quality auditing at scale | **Pro** |
-| Want LLM-driven extraction from conversations/logs | **Pro** |
-| Onboarding new agents with curated knowledge | **Pro** (bootstrap sets) |
-| Compliance or safety requirements for memory writes | **Pro** (safety validator) |
-| Advanced retrieval across large stores | **Pro** (multi-strategy \+ learned ranking) |
-| Retrieval that improves as outcomes accumulate | **Pro** (ML layer) |
-| Need optimized confidence multipliers per entity | **Pro** (adaptive calibration) |
-| Want to fine-tune agents on your decision history | **Pro** (training data export) |
-| Team dashboard for non-technical users | **Pro** (dashboard) |
+| Immutable, cryptographically signed traces | **SaaS** |
+| LLM call span tracking with token/cost analytics | **SaaS** |
+| OpenTelemetry export for existing observability stacks | **SaaS** |
+| Auto entity/relationship extraction from traces | **SaaS** |
+| Precedent search ("how did we handle similar situations?") | **SaaS** |
+| Auto-ingest PagerDuty/Slack/GitHub events | **SaaS** (connectors) |
+| Detect recurring failure patterns automatically | **SaaS** (pattern detection) |
+| Alert on stale memory or confidence drift | **SaaS** (alert manager) |
+| Need memory quality auditing at scale | **SaaS** |
+| Want LLM-driven extraction from conversations/logs | **SaaS** |
+| Onboarding new agents with curated knowledge | **SaaS** (bootstrap sets) |
+| Compliance or safety requirements for memory writes | **SaaS** (safety validator) |
+| Advanced retrieval across large stores | **SaaS** (multi-strategy \+ learned ranking) |
+| Retrieval that improves as outcomes accumulate | **SaaS** (ML layer) |
+| Need optimized confidence multipliers per entity | **SaaS** (adaptive calibration) |
+| Want to fine-tune agents on your decision history | **SaaS** (training data export) |
+| Team dashboard for non-technical users | **SaaS** (dashboard) |
 
 ---
 
