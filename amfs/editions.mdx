@@ -18,7 +18,7 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 
 ## Feature Comparison
 
-| Capability | OSS | Pro |
+| Capability | OSS | SaaS |
 | :-- | :-: | :-: |
 | **Core Memory Primitives** |  |  |
 | Copy-on-Write versioning | Yes | Yes |
@@ -132,11 +132,11 @@ AMFS is GitHub for agent memory, split into two layers. The open-source core giv
 
 ---
 
-## Hosted SaaS Tiers (SenseLab Cloud)
+## Hosted SaaS Tiers 
 
-Stripe, subscriptions, and the tenant control plane are implemented in the private SenseLab `amfs-internal` repository (not in the open-source tree). Self-serve tiers are summarized below; see also [Hosted billing & metering](/amfs/pro/billing).
+Self-serve tiers for the SaaS version are summarized below:
 
-| Tier | Indicative price | Included ops / month | Notes |
+| Tier | Indicative price | Included ops/month | Notes |
 | :-- | :-- | :-- | :-- |
 | **Free** | \$0 | 1K | Solo; no team invites; hard cap |
 | **Starter** | \$29 | 25K | Entry tier; auto top-up near limit (paid) |
@@ -144,9 +144,7 @@ Stripe, subscriptions, and the tenant control plane are implemented in the priva
 | **Teams** | \$449 | 300K | Org scale; lower overage unit / 10K ops |
 | **Enterprise** | Custom | Custom | SSO, committed volume, SLA |
 
-**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. The HTTP \+ MCP mapping lives in the metering guide linked above.
-
-**Onboarding:** Users must **choose a plan** (including Free) before the dashboard unlocks; paid plans complete **Stripe Checkout** and activation via **webhooks** (not browser success URL alone).
+**Ops (hosted):** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. 
 
 ---
 
