@@ -15,7 +15,7 @@ pip install amfs
 Set the connection env vars and the SDK auto-detects the HTTP adapter:
 
 ```bash
-export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
+export AMFS_HTTP_URL="https://amfs.sense-lab.ai"
 export AMFS_API_KEY="<your-api-key>"
 ```
 
@@ -51,6 +51,21 @@ adapter = FilesystemAdapter(root=Path(".amfs"), namespace="staging")
 mem = AgentMemory(agent_id="my-agent", adapter=adapter)
 ```
 
+### With an Embedder
+
+```python
+from amfs_core.embedder import EmbedderABC
+
+class MyEmbedder(EmbedderABC):
+    def embed(self, text: str) -> list[float]:
+        # Return embedding vector
+        ...
+    def embed_value(self, value) -> list[float]:
+        return self.embed(str(value))
+
+mem = AgentMemory(agent_id="my-agent", embedder=MyEmbedder())
+```
+
 ### With an Importance Evaluator
 
 ```python
@@ -66,6 +81,24 @@ mem = AgentMemory(agent_id="my-agent", importance_evaluator=MyEvaluator())
 
 Every `write()` call will automatically score the entry and set `importance_score` and `importance_dimensions`. If the evaluator raises, the write proceeds without scoring.
 
+### Full Constructor Signature
+
+```python
+AgentMemory(
+    agent_id: str,
+    *,
+    session_id: str | None = None,
+    config_path: Path | None = None,
+    adapter: AdapterABC | None = None,
+    ttl_sweep_interval: float | None = None,
+    decay_half_life_days: float | None = None,
+    embedder: EmbedderABC | None = None,
+    conflict_policy: ConflictPolicy = ConflictPolicy.LAST_WRITE_WINS,
+    on_conflict: Callable | None = None,
+    importance_evaluator: Any | None = None,
+)
+```
+
 ---
 
 ## Core Operations
@@ -74,12 +107,15 @@ Every `write()` call will automatically score the entry and set `importance_scor
 
 ```python
 entry = mem.write(
-    "checkout-service",          # entity_path
-    "retry-pattern",             # key
-    {"max_retries": 3},          # value (any JSON-serializable data)
-    confidence=0.85,             # optional, default 1.0
-    pattern_refs=["retry"],      # optional cross-references
-    memory_type=MemoryType.FACT, # optional: fact (default), belief, or experience
+    "checkout-service",              # entity_path
+    "retry-pattern",                 # key
+    {"max_retries": 3},              # value (any JSON-serializable data)
+    confidence=0.85,                 # optional, default 1.0
+    pattern_refs=["retry"],          # optional cross-references
+    memory_type=MemoryType.FACT,     # optional: fact (default), belief, or experience
+    shared=True,                     # optional, default True — visible to other agents
+    artifact_refs=None,              # optional list of ArtifactRef
+    branch=None,                     # optional, defaults to "main"
 )
 ```
 
@@ -111,6 +147,12 @@ With minimum confidence filter:
 entry = mem.read("svc", "pattern", min_confidence=0.5)
 ```
 
+Read from a specific branch:
+
+```python
+entry = mem.read("svc", "pattern", branch="experiment-1")
+```
+
 ### List
 
 ```python
@@ -122,12 +164,33 @@ entries = mem.list("checkout-service")
 
 # Include superseded versions
 entries = mem.list("checkout-service", include_superseded=True)
+
+# From a specific branch
+entries = mem.list("checkout-service", branch="experiment-1")
 ```
 
 ### Search
 
 ```python
 results = mem.search(entity_path="checkout-service", min_confidence=0.5)
+```
+
+Full search options:
+
+```python
+results = mem.search(
+    query="retry strategy",              # text query (full-text via adapter)
+    entity_path="checkout-service",      # filter by entity
+    entity_paths=["svc-a", "svc-b"],    # multi-scope search
+    min_confidence=0.5,                  # minimum confidence
+    max_confidence=1.0,                  # maximum confidence
+    agent_id="review-agent",             # filter by author
+    since=datetime(2026, 3, 1),          # filter by time
+    pattern_ref="retry-pattern",         # filter by pattern reference
+    sort_by="confidence",                # "confidence" | "recency" | "version"
+    limit=100,                           # max results
+    depth=3,                             # tier depth (1=HOT, 2=HOT+WARM, 3=all)
+)
 ```
 
 Progressive retrieval with `depth` — search only high-priority tiers for fast, high-signal results:
@@ -141,7 +204,7 @@ all_tiers = mem.search(query="retry strategy")            # All (default)
 Composite recall scoring (blends semantic similarity, recency, and confidence):
 
 ```python
-from amfs_core.models import RecallConfig
+from amfs import RecallConfig
 
 scored = mem.search(
     query="how do we handle retries?",
@@ -160,7 +223,10 @@ Semantic scoring requires an `embedder`. Without one, the semantic component is 
 ```python
 stats = mem.stats()
 print(f"Total entries: {stats.total_entries}")
-print(f"Total outcomes: {stats.total_outcomes}")
+print(f"Total entities: {stats.total_entities}")
+print(f"Total agents: {stats.total_agents}")
+print(f"Confidence avg: {stats.confidence_avg}")
+print(f"Outcome-linked: {stats.outcome_linked_count}")
 ```
 
 ---
@@ -183,6 +249,14 @@ updated = mem.commit_outcome(
 updated = mem.commit_outcome(
     outcome_ref="DEP-300",
     outcome_type=OutcomeType.SUCCESS,
+)
+
+# With additional options
+updated = mem.commit_outcome(
+    outcome_ref="DEP-500",
+    outcome_type=OutcomeType.SUCCESS,
+    causal_confidence=0.9,
+    decision_summary="Deployed after CI passed and PagerDuty clear",
 )
 ```
 
@@ -216,6 +290,93 @@ mem.write("svc", "action-log", "Added index on user_id", memory_type=MemoryType.
 
 ---
 
+## Agent-Scoped Memory
+
+The SDK distinguishes between shared memory and agent-scoped memory. Use `recall`, `my_entries`, and `read_from` for explicit agent-level operations.
+
+### Recall
+
+Read only entries written by this agent — what this brain knows from direct experience:
+
+```python
+mine = mem.recall("checkout-service", "retry-pattern")
+```
+
+Unlike `read()`, which returns the latest version by any agent, `recall()` falls back through history to find the most recent version authored by this agent.
+
+### My Entries
+
+List everything this agent has written:
+
+```python
+all_mine = mem.my_entries("checkout-service")
+```
+
+### Read From Another Agent
+
+Explicitly read from another agent's memory with tracked knowledge transfer:
+
+```python
+theirs = mem.read_from("deploy-agent", "checkout-service", "deploy-config")
+```
+
+This creates a graph edge (`learned_from`) and logs cross-agent read events on both sides for full traceability.
+
+### Cross-Agent Reads
+
+See which other agents' memory this agent has consumed:
+
+```python
+reads = mem.cross_agent_reads()
+# {'deploy-agent': [{'entity_path': 'checkout-service', 'key': 'retry-pattern', 'read_count': 3}]}
+
+# Convenience: just the agent IDs
+agents = mem.agents_i_read_from()
+# ['deploy-agent', 'review-agent']
+```
+
+---
+
+## Scopes
+
+A `MemoryScope` provides a focused view bound to a single entity path, reducing boilerplate:
+
+```python
+from amfs import MemoryScope
+
+checkout = mem.scope("checkout-service")
+
+# All operations are scoped
+checkout.write("retry-pattern", {"max_retries": 5}, confidence=0.9)
+entry = checkout.read("retry-pattern")
+all_entries = checkout.list()
+history = checkout.history("retry-pattern")
+scope_info = checkout.info()
+
+# Readonly scopes prevent accidental writes
+readonly = mem.scope("checkout-service", readonly=True)
+readonly.write("key", "value")  # raises PermissionError
+```
+
+### Scope Utilities
+
+```python
+# List all entity paths that contain entries
+scopes = mem.list_scopes()
+
+# Get summary info about a scope
+info = mem.info("checkout-service")
+# ScopeInfo(path, entry_count, avg_confidence, keys, oldest, newest)
+
+# Render entity paths as an indented tree
+print(mem.tree())
+# myapp (5)
+#   auth (2)
+#   checkout-service (3)
+```
+
+---
+
 ## History (Temporal Queries)
 
 Retrieve the full version history of an entry with optional time filtering:
@@ -242,8 +403,8 @@ Inspect the causal chain — which entries were read during the current session 
 ```python
 chain = mem.explain()
 print(chain["session_id"])
-print(chain["causal_keys"])   # list of entity_path/key pairs that were read
-print(chain["entries"])       # full entry details for each causal key
+print(chain["causal_entries"])     # full entry details for each causal key
+print(chain["external_contexts"])  # tool/API inputs that informed the decision
 ```
 
 Filter by outcome reference:
@@ -258,7 +419,7 @@ chain = mem.explain(outcome_ref="INC-1042")
 
 When you call `commit_outcome()`, AMFS snapshots the full decision trace — every entry that was read, every context that was recorded, and every query that was made. The resulting trace is persisted and can be retrieved later.
 
-### Getting the trace from an outcome
+### Getting the Trace from an Outcome
 
 ```python
 mem.record_context("ci-check", "All tests green", source="GitHub Actions")
@@ -266,33 +427,33 @@ entry = mem.read("checkout-service", "retry-pattern")
 
 updated = mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
 
-# The trace is attached to the outcome
+# The trace is available after commit
 trace = mem._last_trace
 print(f"Trace ID: {trace.id}")
 print(f"Causal entries: {len(trace.causal_entries)}")
 print(f"External contexts: {len(trace.external_contexts)}")
+print(f"Session duration: {trace.session_duration_ms}ms")
 ```
 
-### Browsing past traces
+### Browsing Past Traces
 
 ```python
-# List recent traces
-traces = mem._adapter.list_traces(limit=10)
+# List recent traces (via adapter)
+traces = mem.adapter.list_traces(limit=10)
 for t in traces:
-    print(f"{t['id']} — {t['agent_id']} — {t['outcome_ref']} ({t['outcome_type']})")
+    print(f"{t.id} — {t.agent_id} — {t.outcome_ref} ({t.outcome_type})")
 
 # Get a specific trace
-trace = mem._adapter.get_trace("ddbcefff-901a-4fa6-...")
+trace = mem.adapter.get_trace("ddbcefff-901a-4fa6-...")
 print(trace.decision_summary)
-print(f"Session duration: {trace.session_duration_ms}ms")
 for entry in trace.causal_entries:
     print(f"  Read: {entry.entity_path}/{entry.key} (v{entry.version})")
 ```
 
-### Filtering traces
+### Filtering Traces
 
 ```python
-traces = mem._adapter.list_traces(
+traces = mem.adapter.list_traces(
     entity_path="checkout-service",
     agent_id="deploy-agent",
     outcome_type="success",
@@ -306,7 +467,7 @@ traces = mem._adapter.list_traces(
 
 When agents call external tools or APIs, there are two ways to capture that context in AMFS depending on your needs.
 
-### Record in the causal chain (lightweight)
+### Record in the Causal Chain (Lightweight)
 
 Use `record_context()` to add external inputs to the causal chain without writing to storage. This makes `explain()` return a complete decision trace:
 
@@ -331,7 +492,7 @@ print(chain["causal_entries"])     # AMFS entries that were read
 print(chain["external_contexts"])  # tool/API inputs that informed the decision
 ```
 
-### Persist for other agents (durable)
+### Persist for Other Agents (Durable)
 
 Use `MemoryType.EXPERIENCE` with a TTL to store tool results so downstream agents can retrieve them:
 
@@ -351,6 +512,25 @@ The next agent reads it with `mem.read("checkout-service", "tool-result-pagerdut
 
 ---
 
+## Timeline
+
+View the event log for this agent — every read, write, outcome, and cross-agent interaction:
+
+```python
+events = mem.timeline(limit=50)
+for event in events:
+    print(f"[{event.event_type}] {event.summary}")
+
+# Filter by event type
+writes = mem.timeline(event_type="WRITE", limit=20)
+
+# Filter by time
+from datetime import datetime, timedelta, timezone
+recent = mem.timeline(since=datetime.now(timezone.utc) - timedelta(hours=24))
+```
+
+---
+
 ## Watch
 
 Get real-time notifications when entries change:
@@ -363,6 +543,140 @@ handle = mem.watch("checkout-service", on_change)
 
 # Stop watching
 handle.cancel()
+```
+
+<Note>
+Watch behavior depends on the adapter. The filesystem adapter supports real-time watches. The HTTP adapter currently logs a warning and returns a no-op handle — use the MCP server's streaming capabilities for remote real-time updates.
+</Note>
+
+---
+
+## Transactions
+
+Group multiple writes into an atomic commit:
+
+```python
+with mem.transaction("update retry configs") as tx:
+    tx.write("checkout-service", "retry-pattern", {"max_retries": 5})
+    tx.write("checkout-service", "timeout-config", {"timeout_ms": 3000})
+    tx.write("payment-service", "retry-pattern", {"max_retries": 2})
+    print(tx.pending_count)  # 3
+# All writes committed atomically on exit
+
+# Access commit info after
+print(tx.commit.id)
+print(len(tx.entries))
+```
+
+---
+
+## Integrity Verification
+
+Verify content hashes and integrity chains for stored entries:
+
+```python
+result = mem.verify("checkout-service")
+# Or verify all: mem.verify()
+
+print(result["total_checked"])
+print(result["valid"])
+print(result["corrupted"])     # list of corrupted entry info
+print(result["chain_breaks"])  # list of chain break info
+```
+
+---
+
+## Commit Log & DAG
+
+Inspect the commit history and navigate the commit DAG:
+
+```python
+# Get recent commits on the current branch
+commits = mem.commit_log(limit=10)
+for c in commits:
+    print(f"{c.id} — {c.message} ({len(c.entries)} entries)")
+
+# Get a single commit
+commit = mem.get_commit("abc123...")
+
+# Find common ancestor of two commits
+ancestor = mem.common_ancestor(commit_a_id, commit_b_id)
+```
+
+---
+
+## Diff & Patch
+
+Compute structural diffs between entry versions:
+
+```python
+# Diff between the two most recent versions
+diff = mem.diff("checkout-service", "retry-pattern")
+print(diff)
+
+# Diff against a specific old version
+diff = mem.diff("checkout-service", "retry-pattern", old_version=1)
+
+# Create a serializable patch
+patch = mem.create_patch("checkout-service", "retry-pattern")
+# Or from a specific source version
+patch = mem.create_patch("checkout-service", "retry-pattern", source_version=2)
+```
+
+---
+
+## Agent Binding
+
+### Profile
+
+Set a profile for this agent (description, defaults, tags):
+
+```python
+mem.set_profile(
+    description="Handles deployment decisions for checkout-service",
+    default_branch="main",
+    auto_context_paths=["checkout-service", "payment-service"],
+    tags=["deploy", "infra"],
+)
+```
+
+### Capabilities
+
+Declare capabilities so other agents can discover you:
+
+```python
+mem.declare_capability(
+    "deployment-analysis",
+    description="Analyzes deployment readiness based on CI, PagerDuty, and recent changes",
+    entity_paths=["checkout-service", "payment-service"],
+)
+```
+
+### Contracts
+
+Set memory contracts that define expectations for entries:
+
+```python
+mem.set_contracts([
+    {
+        "entity_path": "checkout-service",
+        "key_pattern": "retry-*",
+        "min_confidence": 0.5,
+        "max_confidence": 1.0,
+        "required_fields": ["max_retries"],
+        "ttl_required": False,
+        "description": "Retry configuration entries",
+    }
+])
+```
+
+### Discovery
+
+Find other agents by capability or entity path:
+
+```python
+agents = mem.discover_agents(capability="deployment-analysis")
+agents = mem.discover_agents(entity_path="checkout-service")
 ```
 
 ---
@@ -394,6 +708,7 @@ for digest in briefs:
 | `entity_path` | `str \| None` | Focus on digests relevant to this entity |
 | `agent_id` | `str \| None` | Focus on digests relevant to this agent |
 | `limit` | `int` | Maximum number of digests to return (default: 10) |
+| `branch` | `str \| None` | Branch to read digests from (defaults to active branch) |
 
 ### Digest Types
 
@@ -404,28 +719,200 @@ for digest in briefs:
 | `source` | Source ID (e.g. `github`) | Summary of external data from a connector — events ingested, entities touched |
 | `connection_map` | Cross-entity scope | Cross-entity relationships (Pro) |
 
-### Workflow Integration
+### Resolution Order
 
-Call `briefing()` at the start of a task to get context before making decisions:
+The briefing method tries multiple backends in order:
+
+1. **Adapter-native `briefing()`** — e.g. `HttpAdapter` proxies to the server
+2. **`amfs_cortex.BriefingService`** — full Cortex scoring (if `amfs-cortex` is installed)
+3. **Inline scoring via adapter `list_digests()`** — fallback when Cortex is not installed but adapter has digest access
+
+If none are available, `briefing()` returns an empty list — your agent code can safely call it without checking.
+
+---
+
+## Knowledge Graph
+
+The knowledge graph builds automatically as agents write, commit outcomes, and learn from each other. Pattern refs and causal chains create edges. You can traverse it directly:
 
 ```python
-with AgentMemory(agent_id="deploy-agent", adapter=adapter) as mem:
-    # Step 1: Get a briefing on what you need to know
-    briefs = mem.briefing(entity_path="myapp/checkout-service", limit=5)
-    for digest in briefs:
-        print(f"[{digest.digest_type}] {digest.scope}: {digest.summary.get('narrative', '')}")
-
-    # Step 2: Read specific entries based on the briefing
-    entry = mem.read("myapp/checkout-service", "retry-pattern")
-
-    # Step 3: Do your work, record context
-    mem.record_context("ci-pipeline", "All tests passing, deploy ready", source="GitHub Actions")
-
-    # Step 4: Commit the outcome
-    mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
+edges = mem.graph_neighbors(
+    "checkout-service/retry-pattern",
+    direction="both",
+    depth=2,
+    min_confidence=0.5,
+    limit=50,
+)
+for edge in edges:
+    print(f"{edge.source_entity} --{edge.relation}--> {edge.target_entity}")
 ```
 
-If the Cortex is not running, `briefing()` returns an empty list — your agent code can safely call it without checking.
+| Parameter | Type | Description |
+|:----------|:-----|:------------|
+| `entity` | `str` | Starting entity to explore |
+| `relation` | `str \| None` | Filter by relation type (e.g. `"references"`, `"informed"`, `"learned_from"`, `"co_occurs_with"`) |
+| `direction` | `str` | `"outgoing"`, `"incoming"`, or `"both"` |
+| `depth` | `int` | Traversal depth (1 = direct neighbors, >1 for multi-hop) |
+| `min_confidence` | `float` | Minimum edge confidence (default: 0.0) |
+| `limit` | `int` | Maximum results (default: 50) |
+
+<Note>
+Multi-hop traversal (`depth > 1`) requires the Postgres adapter. The Filesystem and S3 adapters return an empty list for graph methods.
+</Note>
+
+---
+
+## Semantic Search
+
+If you configure an embedder, you can search by meaning:
+
+```python
+results = mem.semantic_search(
+    "how do we handle retries?",
+    entity_path="checkout-service",
+    limit=10,
+    min_confidence=0.5,
+    min_similarity=0.3,
+)
+for entry, score in results:
+    print(f"{entry.key} (similarity: {score:.3f})")
+```
+
+| Parameter | Type | Description |
+|:----------|:-----|:------------|
+| `text` | `str` | The query text to search by meaning |
+| `entity_path` | `str \| None` | Filter to a specific entity |
+| `min_confidence` | `float` | Minimum entry confidence (default: 0.0) |
+| `limit` | `int` | Maximum results (default: 10) |
+| `min_similarity` | `float` | Minimum cosine similarity threshold (default: 0.0) |
+
+---
+
+## Context Manager
+
+Use `AgentMemory` as a context manager for automatic cleanup:
+
+```python
+with AgentMemory(agent_id="my-agent") as mem:
+    mem.write("svc", "key", "value")
+    entry = mem.read("svc", "key")
+# Watchers, TTL sweepers, and background threads are cleaned up
+```
+
+---
+
+## Connecting to AMFS
+
+Set two env vars and the SDK connects automatically — no adapter setup needed:
+
+```bash
+export AMFS_HTTP_URL="https://amfs.sense-lab.ai"
+export AMFS_API_KEY="<your-api-key>"
+```
+
+```python
+from amfs import AgentMemory
+
+mem = AgentMemory(agent_id="my-agent")
+mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
+```
+
+See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide for details.
+
+---
+
+## Rooms & Collaboration
+
+The SDK includes room-based collaboration APIs for multi-agent knowledge sharing. These require an HTTP adapter connection.
+
+```python
+# List rooms available to this agent
+rooms = mem.my_rooms()
+
+# Join a room
+mem.room_join("room-123")
+
+# Get room details
+info = mem.room_info("room-123")
+
+# Get recent activity
+updates = mem.room_updates("room-123", since="2026-05-01T00:00:00Z")
+
+# Post a discussion message
+mem.room_discuss(
+    "room-123",
+    "I've updated the retry config based on recent incidents",
+    message_type="update",
+    addressed_to="deploy-agent",
+)
+
+# Read discussions
+messages = mem.room_discussions("room-123", limit=20)
+
+# Leave a room (snapshots are preserved)
+mem.room_leave("room-123")
+```
+
+### Negotiation
+
+Rooms support structured negotiation sessions between agents:
+
+```python
+# Create a negotiation session
+session = mem.negotiate_create(
+    "room-123",
+    "Retry Config Agreement",
+    description="Agree on shared retry parameters",
+    max_rounds=5,
+)
+
+# Make a proposal
+mem.negotiate_propose(
+    "room-123", session["id"],
+    action="propose",
+    proposal={"max_retries": 3, "backoff_ms": 1000},
+    rationale="Based on P99 latency data from last week",
+)
+
+# Respond to a proposal
+mem.negotiate_respond(
+    "room-123", session["id"],
+    action="accept",
+    rationale="Aligns with our SLA requirements",
+)
+
+# Check negotiation status
+status = mem.negotiate_status("room-123", session["id"])
+```
+
+<Note>
+Room and negotiation methods require an HTTP adapter that exposes the rooms API. Set `AMFS_HTTP_URL` to enable these features.
+</Note>
+
+---
+
+## Conflict Handling
+
+Handle concurrent writes to the same key:
+
+```python
+from amfs import ConflictPolicy
+
+# Raise an error on conflict
+mem = AgentMemory(
+    agent_id="my-agent",
+    conflict_policy=ConflictPolicy.RAISE,
+)
+
+# Custom conflict resolution
+def merge(existing, incoming, value):
+    return {**existing.value, **value}
+
+mem = AgentMemory(
+    agent_id="my-agent",
+    on_conflict=merge,
+)
+```
 
 ---
 
@@ -449,98 +936,47 @@ importer.restore("backup.json")
 
 ---
 
-## Knowledge Graph
-
-The knowledge graph builds automatically as agents write, commit outcomes, and learn from each other. You can also traverse it directly:
+## Exports
 
 ```python
-edges = mem.graph_neighbors(
-    "checkout-service/retry-pattern",
-    direction="both",
-    depth=2,
-    min_confidence=0.5,
-)
-for edge in edges:
-    print(f"{edge.source_entity} --{edge.relation}--> {edge.target_entity}")
-```
+from amfs import (
+    # Classes
+    AgentMemory,
+    MemoryScope,
 
-| Parameter | Description |
-|:----------|:------------|
-| `entity` | Starting entity to explore |
-| `relation` | Filter by relation type (e.g. `"references"`, `"informed"`) |
-| `direction` | `"outgoing"`, `"incoming"`, or `"both"` |
-| `depth` | Traversal depth (1 = direct neighbors, >1 for multi-hop) |
+    # Models
+    MemoryEntry,
+    MemoryStats,
+    MemoryType,
+    OutcomeType,
+    OutcomeRecord,
+    Provenance,
+    ProvenanceTier,
+    DecisionTrace,
+    Event,
+    RecallConfig,
+    ScoredEntry,
+    SearchQuery,
+    SemanticQuery,
+    SessionMetadata,
+    ConflictPolicy,
+    QualityIssue,
+    QualityReport,
 
-<Note>
-Multi-hop traversal (`depth > 1`) requires the Postgres adapter. The Filesystem and S3 adapters return an empty list for graph methods.
-</Note>
-
----
-
-## Semantic Search
-
-If you configure an embedder, you can search by meaning:
-
-```python
-results = mem.semantic_search("how do we handle retries?", top_k=5)
-for entry, score in results:
-    print(f"{entry.key} (similarity: {score:.3f})")
-```
-
----
-
-## Context Manager
-
-Use `AgentMemory` as a context manager for automatic cleanup:
-
-```python
-with AgentMemory(agent_id="my-agent") as mem:
-    mem.write("svc", "key", "value")
-    entry = mem.read("svc", "key")
-# Watchers, TTL sweepers, and background threads are cleaned up
-```
-
----
-
-## Connecting to AMFS
-
-Set two env vars and the SDK connects automatically — no adapter setup needed:
-
-```bash
-export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
-export AMFS_API_KEY="<your-api-key>"
-```
-
-```python
-from amfs import AgentMemory
-
-mem = AgentMemory(agent_id="my-agent")
-mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
-```
-
-See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide for details.
-
----
-
-## Conflict Handling
-
-Handle concurrent writes to the same key:
-
-```python
-from amfs_core.models import ConflictPolicy
-
-# Raise an error on conflict
-mem = AgentMemory(
-    agent_id="my-agent",
-    conflict_policy=ConflictPolicy.RAISE,
-)
-
-# Custom conflict resolution
-def merge(existing, incoming, value):
-    return {**existing.value, **value}
-
-mem = AgentMemory(
-    agent_id="my-agent",
-    on_conflict=merge,
+    # Abstract base
+    EmbedderABC,
 )
 ```
+
+---
+
+## Properties
+
+| Property | Type | Description |
+|:---------|:-----|:------------|
+| `agent_id` | `str` | This agent's identifier |
+| `session_id` | `str` | Current session identifier |
+| `namespace` | `str` | Active namespace |
+| `adapter` | `AdapterABC` | The underlying storage adapter |
+| `session_metadata` | `SessionMetadata \| None` | Get/set session metadata (model, client, platform) |
+| `read_log` | `list[str]` | Entry keys read during this session |
