@@ -85,7 +85,7 @@
         ]
       },
       {
-        "product": "AMFS",
+        "product": "SenseLab",
         "tabs": [
           {
             "tab": "Guides",
@@ -161,7 +161,8 @@
               }
             ]
           }
-        ]
+        ],
+        "description": "Continuous Learning for Agents"
       }
     ]
   },
