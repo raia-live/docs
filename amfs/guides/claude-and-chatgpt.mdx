@@ -1,0 +1,134 @@
+---
+title: "Claude and ChatGPT"
+description: "Connect SenseLab to Claude or ChatGPT with one sign-in. No install, no API key, no config file."
+icon: "link"
+---
+
+SenseLab runs a hosted connector that Claude and ChatGPT connect to directly. You sign in once, approve what the connector may do, and your memory is available in the conversation from then on.
+
+This is different from [MCP Setup](/amfs/guides/mcp), which configures a server on your own machine for coding agents like Cursor and Claude Code. Use this page for the chat apps, that one for your IDE.
+
+<Note>
+  The connector URL is `https://mcp.sense-lab.ai/mcp`. That is the only value you need, and it is the same for everyone — there is no per-account URL to look up.
+</Note>
+
+## Connect Claude
+
+Claude supports custom connectors on the web and desktop apps.
+
+<Steps>
+  <Step title="Open your connector settings">
+    In Claude, go to **Settings → Connectors**, then choose **Add custom connector**.
+  </Step>
+  <Step title="Paste the SenseLab URL">
+    Enter `https://mcp.sense-lab.ai/mcp`. Leave any client ID or secret fields blank — SenseLab registers Claude automatically, so there is nothing to copy across.
+  </Step>
+  <Step title="Sign in and approve">
+    Claude opens a SenseLab sign-in page. Sign in with the account whose memory you want Claude to reach, then review the permissions described in [What you are approving](#what-you-are-approving) and confirm.
+  </Step>
+  <Step title="Check the tools arrived">
+    Back in Claude, the connector should list its available tools. If it shows none, use the connector's **Refresh** control once — some clients cache an empty tool list from before you finished signing in.
+  </Step>
+</Steps>
+
+## Connect ChatGPT
+
+<Steps>
+  <Step title="Open connector settings">
+    In ChatGPT, go to **Settings → Connectors** and add a connector by URL.
+  </Step>
+  <Step title="Paste the SenseLab URL">
+    Enter `https://mcp.sense-lab.ai/mcp` and continue.
+  </Step>
+  <Step title="Sign in and approve">
+    Approve the permissions on the SenseLab consent screen.
+  </Step>
+  <Step title="Check the tools arrived">
+    If ChatGPT reports no actions for SenseLab, refresh the connector once. The tools load on the first refresh after the connection completes.
+  </Step>
+</Steps>
+
+<Tip>
+  Both apps move these settings around from time to time. If the menus above do not match what you see, search their own help for "custom connector" or "MCP server" — the URL you paste does not change.
+</Tip>
+
+---
+
+## What You Are Approving
+
+The consent screen asks for three permissions. In full:
+
+| Scope | What it allows |
+| --- | --- |
+| `memory.read` | Read your memories, search them, and read shared rooms you belong to. |
+| `memory.write` | Create and update memories, post in rooms, and record decisions and outcomes. |
+| `offline_access` | Refresh its own access without asking you to sign in again. Removing the connector ends this. |
+
+Authorization uses OAuth 2.1 with PKCE. SenseLab never sees your Claude or ChatGPT credentials, and the tokens it issues are stored only as hashes — a copy of our database yields nothing anyone could replay.
+
+## What the Connector Can Reach
+
+A connector approved through the consent screen above gets SenseLab's full surface: **51 tools**, covering memory, search, rooms, negotiations, decision traces and agent identity.
+
+This is deliberately more than a pasted API key gets. A connection configured with an API key — the pattern used by Cursor in URL mode and by builder platforms — sees six tools only:
+
+<CodeGroup>
+```text API key connections
+amfs_briefing
+amfs_commit_outcome
+amfs_record_context
+amfs_retrieve
+amfs_search
+amfs_write
+```
+</CodeGroup>
+
+The reason is consent. A connection someone set up months ago should not silently gain the ability to delete a room because we shipped a release. The wider surface goes only to connections whose owner was shown it and agreed.
+
+---
+
+## What Leaves SenseLab When You Connect
+
+Worth being plain about, because it is the point of a connector rather than a side effect.
+
+When Claude or ChatGPT calls a SenseLab tool, **the text of the memories it asked for is sent to that provider** and becomes part of that conversation, held under that provider's privacy policy and retention rules rather than ours.
+
+That is what makes the memory useful in the chat. It also means the provider ends up holding whatever you ask it to recall, and their settings — not ours — govern what happens to the conversation afterwards, including whether it is used to improve their models.
+
+Our side of it is described in the [Privacy Policy](https://amfs.sense-lab.ai/privacy), which names every service that receives data and why.
+
+---
+
+## Disconnecting
+
+Remove the connector in the app you added it to — **Settings → Connectors**, then remove or disconnect SenseLab. That revokes its access immediately, and no further memory is sent.
+
+Two things to know:
+
+- **Disconnecting does not reach backwards.** Memories already sent are part of conversations that provider holds. Delete those conversations in that app if you want them gone.
+- **Your memories stay in SenseLab.** Disconnecting removes an app's access; it does not delete anything. To delete the memories themselves, see [Data deletion](https://amfs.sense-lab.ai/data-deletion).
+
+You can also ask us to revoke a connection for you at [privacy@sense-lab.ai](mailto:privacy@sense-lab.ai), which is useful if you have lost access to the app that holds it.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="The connector shows no tools or actions">
+    Use the client's **Refresh** control on the connector once. Both apps can cache an empty tool list captured before the sign-in finished, and they do not always re-ask on their own.
+  </Accordion>
+  <Accordion title="Sign-in succeeds but tool calls fail with an authorization error">
+    The connector's access has been revoked, or the account it was approved against was removed. Remove the connector and add it again.
+  </Accordion>
+  <Accordion title="A tool says it is not available on this connection">
+    That connection is authenticated with an API key rather than through the consent screen, so it has the six tools listed above. Add it as a connector by URL instead, and approve it.
+  </Accordion>
+  <Accordion title="Rooms appear empty">
+    Check you signed in with the account that belongs to the room. Room membership follows the account, so approving the connector against a different one shows you that account's rooms instead.
+  </Accordion>
+</AccordionGroup>
+
+## Support
+
+Something not covered here: [support@sense-lab.ai](mailto:support@sense-lab.ai). Security reports: [security@sense-lab.ai](mailto:security@sense-lab.ai).
