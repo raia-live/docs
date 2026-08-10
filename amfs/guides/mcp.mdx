@@ -6,16 +6,67 @@ icon: "plug"
 
 Add SenseLab to Cursor, Claude Code, or any MCP client. Your agents get persistent memory that compounds across sessions, machines, and teammates.
 
-## Cursor
+## Install script
+
+One command configures every MCP client on your machine:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/raia-live/amfs/main/install-mcp.sh | bash -s -- --api-key <your-api-key>
+```
+
+It finds the clients you already have installed, installs [uv](https://docs.astral.sh/uv/) if it is missing, writes the config for each one, and pre-warms the server package so the first launch is not a cold start.
+
+<Tip>
+  Grab the command with your key already filled in from your [SenseLab Dashboard → Agents page](https://amfs.sense-lab.ai/agents).
+</Tip>
+
+### Clients it configures
+
+| Client | What it writes |
+| :-- | :-- |
+| Cursor | `~/.cursor/mcp.json` |
+| Claude Desktop | `claude_desktop_config.json` in your OS application support directory |
+| Claude Code | Registers through `claude mcp add`, plus a memory skill and a guide block in `~/.claude/CLAUDE.md` |
+| Codex | Registers through `codex mcp add`, plus a guide block in `~/.codex/AGENTS.md` |
+| Windsurf | `~/.windsurf/mcp.json` |
+| VS Code | `~/.vscode/mcp.json` |
+
+The server is registered as **`senselab`** in each config, so it is easy to spot and easy to remove.
+
+### Options
+
+| Flag | What it does |
+| :-- | :-- |
+| `--api-key <key>` | Connect to SenseLab Cloud. Without it you get a local, filesystem-backed store |
+| `--client <name>` | Configure one client instead of auto-detecting. Accepts `cursor`, `claude-desktop`, `claude-code`, `codex`, `windsurf`, `vscode`, or `all` |
+| `--api-url <url>` | Point at a self-hosted API instead of `https://amfs-login.sense-lab.ai` |
+| `-y`, `--yes` | Skip the confirmation prompts |
+| `--uninstall` | Remove the SenseLab config from the clients it finds |
+
+Re-running the script is safe: it replaces its own entry and leaves the rest of your config alone.
+
+<Note>
+  Passing `--api-key` installs `amfs-mcp-server-pro`. Without a key you get the
+  open-source `amfs-mcp-server`, which exposes only the open-source tools — no
+  rooms, negotiations, documents, or intelligence tools.
+</Note>
+
+---
+
+## Manual setup
+
+If you would rather not run a script, or your client is not in the list above.
+
+### Cursor
 
 Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 
 ```json
 {
   "mcpServers": {
-    "amfs": {
+    "senselab": {
       "command": "uvx",
-      "args": ["amfs-mcp-server-pro"],
+      "args": ["--refresh", "amfs-mcp-server-pro"],
       "env": {
         "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
         "AMFS_API_KEY": "<your-api-key>"
@@ -25,25 +76,20 @@ Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 }
 ```
 
-<Tip>
-  Copy the ready-made snippet from your [SenseLab Dashboard → Agents page](https://amfs.sense-lab.ai/agents). The **MCP Connection Card** has your URL and key pre-filled.
-</Tip>
-
-<Note>
-  Use `amfs-mcp-server-pro` whenever you have an API key. The plain
-  `amfs-mcp-server` is the open-source build: it connects to the same API, but
-  exposes only the open-source tools, so rooms, negotiations, documents, and the
-  intelligence tools are missing.
-</Note>
-
-## Claude Code
+### Claude Code
 
 ```bash
-claude mcp add amfs \
-  --env AMFS_HTTP_URL=https://amfs-login.sense-lab.ai \
-  --env AMFS_API_KEY=<your-api-key> \
-  -- uvx amfs-mcp-server-pro
+claude mcp add senselab \
+  -e AMFS_HTTP_URL=https://amfs-login.sense-lab.ai \
+  -e AMFS_API_KEY=<your-api-key> \
+  -- uvx --refresh amfs-mcp-server-pro
 ```
+
+<Warning>
+  Keep the `--refresh` flag. Without it `uvx` reuses whatever build it cached the
+  first time you ran the server, so you stay on that version even after we
+  publish a fix.
+</Warning>
 
 ## Verify
 
@@ -121,6 +167,12 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 ## SenseLab Skill
 
 Use this skill at the start of any session where SenseLab MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or referring to SenseLab (agent memory) or persistent memory across sessions.
+
+<Note>
+  The install script sets this up for you on Claude Code and writes an
+  equivalent guide into `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Copy it
+  in by hand for other clients.
+</Note>
 
 ```markdown
 ---
@@ -227,7 +279,9 @@ Machine B (Claude Code / Alice):
 
 ## Pinning a Version
 
-To pin to a specific MCP server version:
+To pin to a specific MCP server version, put the version in the package
+argument and drop `--refresh` — the whole point of that flag is to pick up newer
+builds:
 
 ```json
 "args": ["amfs-mcp-server-pro@0.7.12"]
@@ -237,9 +291,11 @@ To pin to a specific MCP server version:
 
 ## Troubleshooting
 
-| Problem | Fix |  |
-| :-- | :-- | --- |
-| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): \`curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh\` |
-| Agent doesn't use memory tools | Add the [agent rules file](#agent-rules) to your project |  |
-| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |  |
-| `403 Scope Denied` | Your key doesn't have permission for that entity path |  |
+| Problem | Fix |
+| :-- | :-- |
+| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/), or re-run the install script, which does it for you |
+| Agent doesn't use memory tools | Add the [SenseLab Skill](#senselab-skill) to your project |
+| A fixed bug still reproduces | Your client is launching a cached build. Check that `--refresh` is in the `args` |
+| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |
+| `403 Scope Denied` | Your key doesn't have permission for that entity path |
+| Server missing after an update | Re-run the install script; it replaces its own entry and leaves the rest of your config alone |
