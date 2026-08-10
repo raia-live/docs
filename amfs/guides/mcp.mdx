@@ -169,14 +169,15 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 Use this skill at the start of any session where SenseLab MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or referring to SenseLab (agent memory) or persistent memory across sessions.
 
 <Note>
-  The install script sets this up for you on Claude Code and writes an
-  equivalent guide into `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Copy it
-  in by hand for other clients.
+  The install script sets this up for you on Claude Code, writing it to
+  `~/.claude/skills/senselab-memory/SKILL.md` along with an equivalent guide in
+  `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Copy it in by hand for other
+  clients.
 </Note>
 
 ```markdown
 ---
-name: amfs
+name: senselab-memory
 description: "Use this skill at the start of any session where SenseLab MCP tools are connected. Covers the full session lifecycle: set identity, briefing, read/write, commit outcome. Also use when storing decisions, retrieving past context, or any mention of SenseLab, agent memory, or persistent memory across sessions."
 ---
 
