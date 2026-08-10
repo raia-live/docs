@@ -14,8 +14,8 @@ Getting started with SenseLab only takes a few seconds
 1. Create a [**SenseLab**](https://amfs.sense-lab.ai) account
 2. Go to **Settings → API Keys** to create a scoped key
 3. Go to the [SenseLab Dashboard → Agents](https://amfs.sense-lab.ai/agents) page
-4. The **MCP Connection Card** shows your **Server URL**
-5. Copy the ready-made JSON snippet — paste it into your IDE config
+4. The **MCP Connection Card** shows your **Server URL** and a one-line install command with your key already in it
+5. Run that command, or copy the ready-made JSON snippet into your IDE config
 
 Need more keys? Go to **Settings → API Keys** to create scoped keys per agent or service.
 
@@ -23,16 +23,44 @@ Need more keys? Go to **Settings → API Keys** to create scoped keys per agent 
 
 ## Connect Your IDE
 
-### Cursor
+### The fast way: one command
+
+This configures every MCP client on your machine at once, so most people never
+need to edit a config file:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/raia-live/amfs/main/install-mcp.sh | bash -s -- --api-key <your-api-key>
+```
+
+It detects the clients you already have — Cursor, Claude Desktop, Claude Code,
+Codex, Windsurf, and VS Code — installs [uv](https://docs.astral.sh/uv/) if it is
+missing, writes the config for each one, and pre-warms the server package so your
+first session is not a cold start. On Claude Code it also installs a memory skill
+that teaches the agent when to reach for memory.
+
+<Tip>
+  Your [Dashboard → Agents](https://amfs.sense-lab.ai/agents) page shows this
+  command with your API key already filled in.
+</Tip>
+
+Re-running it is safe — it replaces its own entry and leaves the rest of your
+config alone. `--uninstall` removes it again. See the
+[MCP Setup guide](/amfs/guides/mcp) for every flag and the full tool list.
+
+### Manual setup
+
+If you would rather not run a script.
+
+#### Cursor
 
 Add to `.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "amfs": {
+    "senselab": {
       "command": "uvx",
-      "args": ["amfs-mcp-server-pro"],
+      "args": ["--refresh", "amfs-mcp-server-pro"],
       "env": {
         "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
         "AMFS_API_KEY": "<your-api-key>"
@@ -42,19 +70,29 @@ Add to `.cursor/mcp.json`:
 }
 ```
 
-### Claude Code
+#### Claude Code
 
 ```bash
-claude mcp add amfs -- uvx amfs-mcp-server-pro
+claude mcp add senselab \
+  -e AMFS_HTTP_URL=https://amfs-login.sense-lab.ai \
+  -e AMFS_API_KEY=<your-api-key> \
+  -- uvx --refresh amfs-mcp-server-pro
 ```
 
-Then set `AMFS_HTTP_URL` and `AMFS_API_KEY` in the environment Claude Code runs in.
+<Warning>
+  Keep the `--refresh` flag. Without it `uvx` reuses the build it cached the
+  first time it ran the server, so you stay on that version even after we ship a
+  fix.
+</Warning>
 
 <Note>
   `amfs-mcp-server-pro` is the right package whenever you have an API key. The
   plain `amfs-mcp-server` also talks to the API, but it only exposes the
   open-source tool surface — no rooms, no negotiations, no documents.
 </Note>
+
+Restart your IDE, then ask the agent to run `amfs_stats()`. If it returns a
+response, you're connected.
 
 ---
 
@@ -127,7 +165,7 @@ See the [API Reference](/amfs/reference/api) for the full endpoint list.
 
 ## Security
 
-**Account isolation** — Postgres Row-Level Security ensures tenants can't see each other's data, even if there's an application bug.
+**Account isolation** — SenseLab Security enforces hard isolation at the storage layer, so one account cannot see another's data even if there's a bug in application code.
 
 **Scoped keys** — Restrict keys to specific entity paths and permissions:
 
@@ -146,8 +184,10 @@ amfs_sk_live_abc123  →  checkout-service/**  [READ_WRITE]
 
 ## Troubleshooting
 
-| Problem | Fix |  |
-| :-- | :-- | --- |
-| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |  |
-| `403 Scope Denied` | Key doesn't have permission for that entity path — check scopes |  |
-| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/): \`curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh\` |
+| Problem | Fix |
+| :-- | :-- |
+| `401 Unauthorized` | Check your API key in Dashboard → Settings → API Keys |
+| `403 Scope Denied` | Key doesn't have permission for that entity path — check scopes |
+| `uvx: command not found` | Install [uv](https://docs.astral.sh/uv/), or re-run the install script, which does it for you |
+| Dashboard stays empty | The SDK is writing locally — pass an `HttpAdapter`, as shown above |
+| A fixed bug still reproduces | Your client is launching a cached build. Check `--refresh` is in the `args` |

@@ -10,7 +10,7 @@ The foundation for running SenseLab as a hosted service. Every API request is au
 
 ## Account Isolation
 
-Hard isolation between tenants using Postgres Row-Level Security. Company A cannot see Company B's data, even if there's a bug in application code.
+SenseLab Security enforces hard isolation between tenants at the storage layer, below the application. Company A cannot see Company B's data, even if there's a bug in application code.
 
 ## RBAC
 
