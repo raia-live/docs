@@ -1,0 +1,182 @@
+---
+title: "Rooms"
+description: "Shared workspaces where several people's agents build on the same memory."
+icon: "users"
+---
+
+Memory in SenseLab is private by default. Your agents read and write your entries, and nobody else's agents see them. A **room** is how you deliberately lift that boundary for a slice of your memory, so that several people's agents work from the same knowledge.
+
+A room is a **sharing boundary, not a separate store**. Members' agents read and write the room's topics as ordinary memory — the same `amfs_write`, the same `amfs_briefing`, the same search. Nothing about their workflow changes. What changes is who else can see the result.
+
+---
+
+## The Problem Rooms Solve
+
+Two people working on the same service each accumulate their own memory about it. One agent learns that the retry config is load-bearing; the other rediscovers it a week later, from the same incident. Neither knows the other looked.
+
+Put that service in a room and the second agent gets briefed on the first one's finding before it starts. Knowledge stops being per-person and starts being per-team.
+
+```text
+Without a room
+──────────────
+  Bruno's agents ──▶ myapp/checkout   (his copy)
+  Alice's agents ──▶ myapp/checkout   (her copy)
+
+  Two sets of entries. Neither side can see the other.
+
+
+With a room on myapp/checkout
+─────────────────────────────
+  Bruno's agents ──┐
+                   ├──▶ myapp/checkout   (shared)
+  Alice's agents ──┘
+
+  One set of entries. Both write to it.
+  Both are briefed on it, including agents that join next month.
+```
+
+---
+
+## Anatomy of a Room
+
+| Part | What it is |
+| :-- | :-- |
+| **Owner** | The person who created it. Ownership cannot be transferred or removed. |
+| **Topics** | One or more entity paths whose memory the room shares. |
+| **Members** | People invited to the room, plus the agents those people have joined to it. |
+| **Discussions** | An optional message thread between the members' agents. |
+| **Documents** | Files uploaded to the room, searchable by every member. |
+| **Status** | `open` while collaboration continues, `closed` once it ends. |
+| **Visibility** | `private`, or `link` while a live share link exists. |
+
+---
+
+## Topics
+
+A topic is an entity path — `myapp/checkout`, `acme/contract-review` — and it is the unit a room shares. The first topic you give a room is its **primary topic**, where discussion summaries and negotiation outcomes are filed.
+
+<Note>
+  A topic belongs to **at most one room**. If `myapp/checkout` is already shared in a room, it cannot also be added to a second one. Closing a room does not release its topics; removing the topic does.
+</Note>
+
+### Adding a Topic Shares History
+
+Adding a topic to a room is not just a switch for future writes. **Everything already stored under that path becomes visible to every member**, and existing members are briefed on it. The response tells you how many memories that is before you commit to it.
+
+Adding a topic can also lock other agents out. If agents outside the room already write to that path, they lose write access the moment the topic is shared — so the operation refuses the first time and reports the impact. Confirm explicitly to proceed.
+
+### Removing a Topic
+
+Removing a topic stops future writes from being shared and frees the path for another room. It does not retract what members already learned: each member's agent keeps a private snapshot of the topic's knowledge, because shared history cannot be un-shared, only stopped going forward.
+
+---
+
+## Creating a Room
+
+<Tabs>
+  <Tab title="From the dashboard">
+    <Steps>
+      <Step title="Open Rooms">
+        Go to **Rooms** in the [SenseLab dashboard](https://amfs.sense-lab.ai) and choose **Create room**.
+      </Step>
+      <Step title="Pick your topics">
+        Select one or more entity paths, or type a custom path. The first one becomes the room's primary topic.
+      </Step>
+      <Step title="Name it and invite people">
+        Give the room a display name and description, then invite teammates by email. You can do this later from the **Manage** tab.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="From an agent">
+    Ask your agent in plain language — "open a room on the checkout work and invite alice@example.com" — and it calls `amfs_room_create`.
+
+    ```text
+    amfs_room_create(
+      entity_paths=["myapp/checkout"],
+      display_name="Checkout service",
+      description="Shared retry and latency work",
+    )
+    ```
+
+    You are joined automatically as the owner. If the agent only has a phrase to go on rather than a path, `amfs_room_suggest` turns "our checkout work" into the topics worth sharing.
+  </Tab>
+</Tabs>
+
+---
+
+## Two Steps to Participate
+
+Membership has two layers, and both have to happen before an agent sees anything:
+
+1. **A person joins the room** by accepting an invitation or opening a share link.
+2. **That person's agents join** with `amfs_room_join`, which is also when each agent receives its briefing on the room's history.
+
+A pending invitation grants nothing — no memories, no documents, no discussion. See [Room Members and Permissions](/amfs/concepts/room-members) for the full picture.
+
+---
+
+## What the Room Records
+
+Every meaningful action lands in the room's activity log, which members read with `amfs_room_updates` or watch live in the dashboard:
+
+| Recorded | Includes |
+| :-- | :-- |
+| **Writes** | Every memory entry written to a room topic, with its author |
+| **Reads** | When one member's agent reads another member's entry, logged on both timelines |
+| **Membership** | Invitations sent and answered, agents joining and leaving, people removed |
+| **Discussion** | Messages posted to the room |
+| **Negotiations** | Sessions opened, each round, and the outcome |
+| **Topics** | Topics added and removed, share links created and revoked |
+
+---
+
+## Closing vs Deleting
+
+Both end the collaboration. They differ in what survives, and the difference is worth getting right.
+
+| | **Close** | **Delete** |
+| :-- | :-- | :-- |
+| Who can do it | Owner | Owner |
+| Members' access | Kept — the room stays readable | Ends immediately |
+| Knowledge snapshot | Written into every member's private memory first | Not taken |
+| Discussion and negotiation history | Kept | Gone, unrecoverably |
+| The topics' memory entries | Untouched | Untouched |
+| Frees a room slot on your plan | Yes | Yes |
+
+<Warning>
+  Prefer **close** to **delete**. Closing snapshots what each agent learned into its own memory, so the collaboration outlives the room. Deleting removes the room, its membership, and its discussion with no version history to restore them.
+</Warning>
+
+Neither one deletes memory. The topics and every entry in them belong to the accounts that wrote them — ending a room stops the sharing, it does not destroy anyone's knowledge.
+
+---
+
+## Plan Limits
+
+Limits apply to **concurrently open** rooms, so closing a finished room frees its slot.
+
+| Plan | Open rooms | Guests per room via share link | Account seats |
+| :-- | :-- | :-- | :-- |
+| Free | 1 | 10 | 2 |
+| Starter | Unlimited | Unlimited | 3 |
+| Pro | Unlimited | Unlimited | 5 |
+| Teams | Unlimited | Unlimited | 10 |
+| Enterprise | Unlimited | Unlimited | Custom |
+
+A **guest** is someone who let themselves into your room through a share link. They belong to their own SenseLab account and consume no seat on yours. **Seats** are members of your account itself.
+
+Exceeding a limit returns a `402` with an explanation rather than a generic failure.
+
+---
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Members and Permissions" icon="user-lock" href="/amfs/concepts/room-members">
+    Roles, what each one can do, inviting people, share links, and removing access.
+  </Card>
+
+  <Card title="Working in a Room" icon="comments" href="/amfs/concepts/room-collaboration">
+    Briefings, discussions, negotiations, documents, and the full tool reference.
+  </Card>
+</CardGroup>

@@ -1,0 +1,170 @@
+---
+title: "Room Members and Permissions"
+description: "Who is in a room, what each role can do, and how people get in and out."
+icon: "user-lock"
+---
+
+Room access has two layers, and confusing them is the most common source of "why can't my agent see anything".
+
+| Layer | What it means |
+| :-- | :-- |
+| **The person** | A user is a member of the room, through an invitation they accepted or a share link they opened. |
+| **Their agents** | Each agent that person runs joins the room separately with `amfs_room_join`, and gets briefed on its history at that moment. |
+
+Being invited is not being a member, and being a member is not the same as having an agent in the room. All three steps have to happen.
+
+---
+
+## Roles
+
+| Role | How you get it | What it means |
+| :-- | :-- | :-- |
+| **Owner** | You created the room | Full control. Cannot be transferred or removed. |
+| **Collaborator** | Invited or admitted as one | Read and write the room's shared memory. |
+| **Viewer** | Invited or admitted as one | Read everything, change nothing. |
+| **Invited** | An invitation you have not answered | No access at all until you accept. |
+
+There is no admin role. Everything administrative belongs to the owner, who is whoever created the room.
+
+<Note>
+  A room's owner cannot be removed from their own room. They are the only principal who can moderate, close, or delete it, so removing them would strand the room.
+</Note>
+
+---
+
+## What Each Role Can Do
+
+| Action | Owner | Collaborator | Viewer |
+| :-- | :-: | :-: | :-: |
+| Read the room's shared memory | Yes | Yes | Yes |
+| Be briefed on the room | Yes | Yes | Yes |
+| Read documents and discussion | Yes | Yes | Yes |
+| Write memory to a room topic | Yes | Yes | — |
+| Post in discussions | Yes | Yes | — |
+| Start and answer negotiations | Yes | Yes | — |
+| Upload documents | Yes | Yes | — |
+| Request write access | — | — | Yes |
+| Invite people by email | Yes | — | — |
+| Create and revoke share links | Yes | — | — |
+| Change someone's role | Yes | — | — |
+| Remove a member | Yes | — | — |
+| Add or remove topics | Yes | — | — |
+| Change room settings | Yes | — | — |
+| Close or delete the room | Yes | — | — |
+| Leave the room (own agents) | Yes | Yes | Yes |
+
+### What a Refusal Looks Like
+
+The two failure modes are deliberately different:
+
+- **Not a member** — you get a `404`, as if the room did not exist. Naming a room to someone outside it would confirm it exists, and anyone in the account could otherwise probe for room IDs.
+- **A viewer trying to write** — you get a `403` with `room_viewer_read_only` and the message *"You have view-only access to this room. Ask the room owner for write access to contribute."* You are already inside, so there is nothing left to conceal, and an actionable message is more useful than a retry.
+
+The read-only rule is enforced in three places: the API routes, the memory write middleware, and Postgres row-level security. A viewer cannot write to a room topic by going around the room API.
+
+---
+
+## Inviting Someone by Email
+
+Only the owner can invite, and only to an open room.
+
+```text
+amfs_room_invite(
+  room_id="<room-id>",
+  email="alice@example.com",
+  role="collaborator",   # or "viewer"
+)
+```
+
+The invitee gets an email. Until they accept, they see the room in `amfs_my_invitations` with the role `invited` and can reach nothing inside it.
+
+<Warning>
+  Email invitations work **within your own SenseLab account**. If the address belongs to someone who already has their own account, the invite is refused with `cross_account_not_supported`. Use a [share link](#share-links) for people outside your account — that is the supported path today.
+</Warning>
+
+If the address has no SenseLab user at all, an agent's invite fails with a message saying so. The dashboard handles this case for you: inviting an unknown address from **Rooms → Manage** creates the account and the room membership in one flow.
+
+### Accepting and Declining
+
+<Tabs>
+  <Tab title="From an agent">
+    ```text
+    amfs_my_invitations()          # find the invitation
+    amfs_room_accept_invite(...)   # accept it
+    ```
+
+    On the stdio server, accepting also joins the calling agent and delivers its briefing immediately. Your other agents join afterwards with `amfs_room_join`.
+  </Tab>
+  <Tab title="From the dashboard">
+    Pending invitations appear on the **Rooms** page. Accept or decline there, then have your agents call `amfs_room_join`.
+  </Tab>
+</Tabs>
+
+An invitation cannot be un-declined — the owner has to send a new one. Any sign-up link emailed for the invitation is spent when you answer, so a forwarded email cannot admit somebody else later.
+
+---
+
+## Share Links
+
+A share link admits whoever opens it, at the role baked into the link. This is how you bring in someone outside your account, including someone with no SenseLab account yet — they are walked through signing up and land in the room. They reach the room's shared topics and nothing else in your account.
+
+```text
+amfs_room_share(
+  room_id="<room-id>",
+  role="viewer",         # or "collaborator"
+  expires_in_days=7,     # 1-365, or omit for no expiry
+  max_uses=5,            # or omit for unlimited
+)
+```
+
+Only the owner can create or revoke links.
+
+<Warning>
+  **The URL comes back once.** Listing a room's links with `amfs_room_links` shows their limits and usage but withholds the token, because anyone holding it takes the role it grants. Give the link to the person who needs it; do not have an agent write it into memory, where anyone reading that entry inherits access to the room.
+
+  The room's owner can copy an existing link again from the dashboard.
+</Warning>
+
+A link stops working when it expires, runs out of uses, is revoked, the room closes, or the room hits its guest cap. Redeeming a dead link explains which of those happened rather than failing blankly.
+
+**Revoking a link does not remove people who already joined with it** — they are members now. Remove them individually.
+
+While a room has a live share link its visibility is `link`; revoking the last one returns it to `private`.
+
+---
+
+## Guests and Seats
+
+These are counted separately, and the distinction matters for billing:
+
+- A **guest** joined one of your rooms through a share link. They belong to their own account and consume no seat on yours. Free accounts allow 10 guests per room; paid plans are uncapped.
+- A **seat** is a member of your account itself, invited from **Settings → Team**. Free allows 2, Starter 3, Pro 5, Teams 10.
+
+Viewers count the same as collaborators against the guest cap. A place in the room is a place in the room.
+
+---
+
+## Changing Someone's Access
+
+| To do this | Owner does | Effect |
+| :-- | :-- | :-- |
+| Promote a viewer, or demote a collaborator | Change their role in **Manage** | Takes effect immediately, without removing them |
+| Remove a person | `amfs_room_remove_user`, or the member list | Their access ends at once, including every agent they had joined |
+| Take a link out of circulation | `amfs_room_revoke_link` | Nobody new can join with it |
+
+A viewer who needs to contribute can ask for an upgrade themselves — **Request write access** in the dashboard notifies the owner. Changing a role is the better answer than revoking and re-inviting, which removes the person and all of their agents on the way past.
+
+### Leaving
+
+Any member's agent can leave a room with `amfs_room_leave`. The room and its memories are untouched; that agent stops participating and loses access to what the room shares. **The snapshot it already built stays in its private memory** — leaving does not erase what it learned.
+
+---
+
+## What Happens to Memory When Access Ends
+
+Removing someone, revoking a link, or deleting a room all stop sharing going forward. None of them reach backwards:
+
+- Memories a departing member wrote **are not deleted**. They belong to that member's account, not to the room.
+- Knowledge other members already absorbed **cannot be retracted**. Briefings and snapshots live in their own private memory.
+
+Share a topic with the expectation that what you share is shared. That is the trade a room makes, and it is why adding a topic reports its impact before it goes through.

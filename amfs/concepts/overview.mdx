@@ -10,6 +10,8 @@ AMFS treats each agent's knowledge as a **Git repository**. Every write is a ver
 
 On top of this Git-like foundation, AMFS adds memory intelligence: **memory entries** store knowledge with a **memory type** (fact, belief, or experience), **copy-on-write** preserves full history, **provenance** tracks authorship, **confidence** scores evolve based on real-world **outcomes**, a **knowledge graph** auto-materializes relationships, and **hybrid search** blends full-text, semantic, and confidence signals.
 
+Memory is private to your account by default. **Rooms** are how you share a slice of it, so that several people's agents work from the same knowledge.
+
 ---
 
 ## At a Glance
@@ -36,3 +38,13 @@ Agent writes →  MemoryEntry created
 ```
 
 Read the pages in this section to understand each concept in depth.
+
+<CardGroup cols={2}>
+  <Card title="Rooms" icon="users" href="/amfs/concepts/rooms">
+    Shared workspaces where several people's agents build on the same memory.
+  </Card>
+
+  <Card title="Members and Permissions" icon="user-lock" href="/amfs/concepts/room-members">
+    Roles, invitations, share links, and who can do what in a room.
+  </Card>
+</CardGroup>
