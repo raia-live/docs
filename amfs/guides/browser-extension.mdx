@@ -1,0 +1,116 @@
+---
+title: "Browser Extension"
+description: "Save any page or selection into your memory, so your agents can read what you read."
+icon: "chrome"
+---
+
+Your browser keeps the URL. Your agent keeps nothing. The SenseLab extension
+closes that gap: click save, and the page's actual text goes into your memory
+where any agent connected to your account can read it.
+
+A few days later you ask Cursor or Claude "what did I save about connection
+pooling?" and it answers from the content, not from a bookmark.
+
+<Card title="SenseLab — Save to Memory" icon="chrome" href="https://chromewebstore.google.com/detail/akcgipdnkabchbfmchbcgebboiaimcgg">
+  Install from the Chrome Web Store. Works in Chrome and Edge.
+</Card>
+
+## Setup
+
+1. Create a free account at [amfs.sense-lab.ai](https://amfs.sense-lab.ai) if you
+   do not have one
+2. Install the extension
+3. Open the popup and choose **Connect to SenseLab**
+
+Connecting opens the dashboard, which mints an API key for the extension and
+hands it back automatically. If that handshake does not complete — it can fail
+on Firefox or if the browser blocks the message — the dashboard shows the key
+once so you can paste it into the extension's options page instead.
+
+## Saving
+
+Three ways, whichever fits your hands:
+
+| Action | How |
+| :-- | :-- |
+| Save the whole page | Click the toolbar button, or press <kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> |
+| Save part of a page | Highlight the text first, then right-click and choose **Save selection** |
+| Save with a reminder | Add a note in the popup before saving |
+
+The extension extracts the readable article text rather than the raw HTML, so
+what lands in memory is the content, not the navigation and cookie banners. The
+original URL is stored alongside it, which means the save survives the page
+going offline or behind a paywall.
+
+### Where it goes
+
+Saves are organised by the site they came from:
+
+| Field | Value |
+| :-- | :-- |
+| Entity path | `web/<hostname>` — for example `web/news.ycombinator.com` |
+| Key | A slug of the title plus a hash of the URL |
+| Memory type | `experience` |
+| Agent | `web-clipper` |
+
+The key is stable per URL, so saving the same page twice does not create a
+duplicate — it writes a new version of the same entry. Re-saving an article
+after it has been updated gives you both versions in history.
+
+### Saving into a room
+
+On paid plans the popup offers a destination picker. Choosing a room writes the
+clip to that room's entity path instead of your personal memory, so every
+member's agents can read it. This is the fastest way to share research with a
+team without anyone forwarding a link.
+
+---
+
+## Asking your agent about it
+
+Nothing extra is needed. Saves are ordinary memory entries, so any connected
+agent finds them:
+
+```
+amfs_retrieve(query="the pricing page I saved last month")
+```
+
+Because retrieval is semantic, you can describe what you remember rather than
+recalling the exact title.
+
+---
+
+## Privacy
+
+The extension reads a page only when you explicitly save it. There is no
+background script watching your tabs — it requests `activeTab` and injects the
+extractor at the moment you click, rather than holding permission to read
+everything you browse.
+
+Saving is **disabled by default** on banking, health, webmail, and password
+manager sites. You can disable any other site from the popup with one click.
+
+Full permission list:
+
+| Permission | Why |
+| :-- | :-- |
+| `activeTab` | Read the current tab, only when you save |
+| `scripting` | Inject the article extractor at save time |
+| `storage` | Hold your API key and settings locally |
+| `contextMenus` | Add the right-click save items |
+
+Usage analytics are optional and can be turned off in the options page.
+
+---
+
+## Limits
+
+Saves count against your plan's operation budget. A save is a write, so the free
+tier's 1,000 monthly operations works out to roughly 500 saves — enough to find
+out whether the habit sticks. See [Editions](/amfs/editions) for the tiers.
+
+<Note>
+  The Chrome Web Store listing covers Chrome and Edge. A Firefox build exists in
+  the open-source repository and can be built and loaded manually, but it is not
+  yet published to Mozilla's add-on store. There is no Safari version.
+</Note>

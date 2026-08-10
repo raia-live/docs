@@ -39,6 +39,7 @@
                 "pages": [
                   "amfs/guides/mcp",
                   "amfs/guides/claude-and-chatgpt",
+                  "amfs/guides/browser-extension",
                   "amfs/guides/python",
                   "amfs/guides/typescript",
                   "amfs/guides/connectors",
