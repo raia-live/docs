@@ -1,14 +1,14 @@
 ---
 title: "CLI"
-description: "Inspect, diff, and manage AMFS memory from the command line."
+description: "Inspect, diff, and manage SenseLab memory from the command line."
 icon: "terminal"
 ---
 
 <Note>
-The CLI is for self-hosted AMFS. On the managed platform, use the [Dashboard](https://amfs-login.sense-lab.ai) or [REST API](/amfs/guides/http-server) instead.
+The CLI is for self-hosted SenseLab. On the managed platform, use the [Dashboard](https://amfs-login.sense-lab.ai) or [REST API](/amfs/guides/http-server) instead.
 </Note>
 
-The AMFS CLI provides commands for inspecting, diffing, and snapshotting local memory from the terminal.
+The SenseLab CLI provides commands for inspecting, diffing, and snapshotting local memory from the terminal.
 
 ---
 
@@ -107,7 +107,7 @@ amfs inspect list -c /path/to/amfs.yaml
 
 ---
 
-## Connecting to AMFS
+## Connecting to SenseLab
 
 CLI commands work against local storage by default. To interact with the managed platform, use the HTTP API directly or configure the MCP server with `AMFS_HTTP_URL`.
 
@@ -124,7 +124,7 @@ With these set, the MCP server and HTTP server automatically route through the a
 Never use `AMFS_POSTGRES_DSN` for external agents in multi-tenant mode. Always use `AMFS_HTTP_URL` + `AMFS_API_KEY`.
 </Warning>
 
-See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide and [Environment Variables](/amfs/reference/environment-variables) for details.
+See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide and [Environment Variables](/amfs/reference/environment-variables) for details.
 
 ---
 

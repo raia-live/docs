@@ -1,10 +1,10 @@
 ---
 title: "Context Graphs"
-description: "How AMFS captures decision traces that explain not just what happened, but why."
+description: "How SenseLab captures decision traces that explain not just what happened, but why."
 icon: "diagram-project"
 ---
 
-AMFS doesn't just store what agents know — it captures **why** they acted. Every read, write, tool consultation, and outcome forms a decision trace that becomes searchable precedent.
+SenseLab doesn't just store what agents know — it captures **why** they acted. Every read, write, tool consultation, and outcome forms a decision trace that becomes searchable precedent.
 
 ---
 
@@ -25,7 +25,7 @@ Traditional systems of record (CRMs, ERPs, ticketing systems) store the **final 
 A **decision trace** is a structured record of how an agent turned context into action:
 
 ```
-Agent reads AMFS entries:
+Agent reads SenseLab entries:
   checkout-service/retry-pattern (v3, confidence: 0.92)
   checkout-service/risk-race-condition (v1, confidence: 0.78)
 
@@ -45,13 +45,13 @@ This trace is queryable. The next agent — or a human auditor — can replay ex
 
 ---
 
-## How AMFS Captures Decision Traces
+## How SenseLab Captures Decision Traces
 
-AMFS's existing primitives map directly to each component of a decision trace:
+SenseLab's existing primitives map directly to each component of a decision trace:
 
 ### 1. What the agent knew
 
-Every `read()` call is automatically logged by the `ReadTracker`. When the agent later commits an outcome, AMFS knows exactly which entries informed the decision.
+Every `read()` call is automatically logged by the `ReadTracker`. When the agent later commits an outcome, SenseLab knows exactly which entries informed the decision.
 
 ```python
 entry = mem.read("checkout-service", "retry-pattern")
@@ -60,7 +60,7 @@ entry = mem.read("checkout-service", "risk-race-condition")
 
 ### 2. What external inputs were gathered
 
-`record_context()` captures tool calls, API responses, and other external inputs without writing to storage. These appear in the causal chain alongside AMFS reads.
+`record_context()` captures tool calls, API responses, and other external inputs without writing to storage. These appear in the causal chain alongside SenseLab reads.
 
 ```python
 mem.record_context(
@@ -152,13 +152,13 @@ Over time, this graph captures institutional knowledge that no single agent or p
 
 - **Precedent** — "The last time we saw this pattern, we rolled back and it worked."
 - **Exception logic** — "We always check PagerDuty before deploying changes to retry logic."
-- **Cross-system synthesis** — "The decision combined AMFS memory, PagerDuty incidents, and git history."
+- **Cross-system synthesis** — "The decision combined SenseLab memory, PagerDuty incidents, and git history."
 
 ---
 
 ## The Knowledge Graph
 
-AMFS now has a **persisted knowledge graph** that complements the session-scoped decision trace. The two layers serve different purposes:
+SenseLab now has a **persisted knowledge graph** that complements the session-scoped decision trace. The two layers serve different purposes:
 
 | Layer | Scope | Storage | Purpose |
 |:------|:------|:--------|:--------|
@@ -209,7 +209,7 @@ The Memory Cortex also compiles `CONNECTION_MAP` digests from graph edges, surfa
 
 ## The Feedback Loop
 
-Decision traces compound through AMFS's outcome system:
+Decision traces compound through SenseLab's outcome system:
 
 ```
 Agent makes decision → writes entry + records trace
@@ -233,7 +233,7 @@ Entries validated by positive outcomes decay slower. Entries correlated with inc
 
 ## Enriched Decision Traces
 
-When `commit_outcome()` is called, AMFS automatically captures a rich snapshot of the session:
+When `commit_outcome()` is called, SenseLab automatically captures a rich snapshot of the session:
 
 ```python
 mem.read("checkout-service", "retry-pattern")
@@ -261,7 +261,7 @@ The resulting trace includes:
 
 ## Per-Agent Memory Graph
 
-AMFS tracks which agents interact with which entities, enabling per-agent memory views:
+SenseLab tracks which agents interact with which entities, enabling per-agent memory views:
 
 ```
 GET /api/v1/agents                              → list all agents
@@ -275,7 +275,7 @@ The agent memory graph shows every entity an agent has read from or written to, 
 
 ## Immutability and Replay
 
-Because AMFS uses Copy-on-Write versioning, decision traces are **immutable**. You can reconstruct the exact state of the world at any past decision point:
+Because SenseLab uses Copy-on-Write versioning, decision traces are **immutable**. You can reconstruct the exact state of the world at any past decision point:
 
 ```python
 from datetime import datetime, timezone
@@ -291,7 +291,7 @@ versions = mem.history(
 state_at_decision = versions[-1] if versions else None
 ```
 
-This is the difference between a system of record (stores the current state) and a context graph (stores the decision lineage). AMFS preserves both.
+This is the difference between a system of record (stores the current state) and a context graph (stores the decision lineage). SenseLab preserves both.
 
 ### Pro: Immutable Decision Trace Store
 

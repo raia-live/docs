@@ -4,7 +4,7 @@ description: "Give your AI coding agents persistent, shared memory in under 2 mi
 icon: "plug"
 ---
 
-Add AMFS to Cursor, Claude Code, or any MCP client. Your agents get persistent memory that compounds across sessions, machines, and teammates.
+Add SenseLab to Cursor, Claude Code, or any MCP client. Your agents get persistent memory that compounds across sessions, machines, and teammates.
 
 ## Cursor
 
@@ -26,7 +26,7 @@ Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 ```
 
 <Tip>
-  Copy the ready-made snippet from your [AMFS Dashboard → Agents page](https://amfs-login.sense-lab.ai). The **MCP Connection Card** has your URL and key pre-filled.
+  Copy the ready-made snippet from your [SenseLab Dashboard → Agents page](https://amfs-login.sense-lab.ai). The **MCP Connection Card** has your URL and key pre-filled.
 </Tip>
 
 ## Claude Code
@@ -119,22 +119,22 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 
 ---
 
-## AMFS Skill
+## SenseLab Skill
 
-Use this skill at the start of any session where AMFS MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or referring to AMFS (agent memory) or persistent memory across sessions.
+Use this skill at the start of any session where SenseLab MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or referring to SenseLab (agent memory) or persistent memory across sessions.
 
 ```markdown
 ---
 name: amfs
-description: "Use this skill at the start of any session where AMFS MCP tools are connected. Covers the full session lifecycle: set identity, briefing, read/write, commit outcome. Also use when storing decisions, retrieving past context, or any mention of AMFS, agent memory, or persistent memory across sessions."
+description: "Use this skill at the start of any session where SenseLab MCP tools are connected. Covers the full session lifecycle: set identity, briefing, read/write, commit outcome. Also use when storing decisions, retrieving past context, or any mention of SenseLab, agent memory, or persistent memory across sessions."
 ---
 
-# AMFS Skill
+# SenseLab Skill
 
-Use this skill whenever AMFS MCP tools are available — reading context, storing decisions, or committing outcomes across sessions.
+Use this skill whenever SenseLab MCP tools are available — reading context, storing decisions, or committing outcomes across sessions.
 
 ## Trigger conditions
-- Starting any session where AMFS MCP is connected
+- Starting any session where SenseLab MCP is connected
 - User asks to remember, store, or retrieve something
 - After making a significant decision or completing meaningful work
 - When context from a previous session may be relevant

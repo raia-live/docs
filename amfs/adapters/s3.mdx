@@ -1,6 +1,6 @@
 ---
 title: "S3 Adapter"
-description: "Store AMFS memory in any S3-compatible object storage."
+description: "Store SenseLab memory in any S3-compatible object storage."
 icon: "cloud"
 ---
 
@@ -10,7 +10,7 @@ icon: "cloud"
 
 ## Overview
 
-The S3 adapter stores memory entries as versioned JSON objects in any S3-compatible bucket. This makes AMFS compatible with the broader cloud storage ecosystem — AWS S3, Accelerated Cloud Storage (ACS), Cloudflare R2, MinIO, DigitalOcean Spaces, and others.
+The S3 adapter stores memory entries as versioned JSON objects in any S3-compatible bucket. This makes SenseLab compatible with the broader cloud storage ecosystem — AWS S3, Accelerated Cloud Storage (ACS), Cloudflare R2, MinIO, DigitalOcean Spaces, and others.
 
 Best for:
 
@@ -99,7 +99,7 @@ Each version is a complete snapshot of the `MemoryEntry` — no deltas, no depen
 
 ## Using with ACS (Accelerated Cloud Storage)
 
-[Accelerated Cloud Storage](https://www.acceleratedcloudstorage.com/) provides S3-compatible object storage optimized for AI workloads. To use AMFS with ACS:
+[Accelerated Cloud Storage](https://www.acceleratedcloudstorage.com/) provides S3-compatible object storage optimized for AI workloads. To use SenseLab with ACS:
 
 ```yaml
 namespace: production
@@ -162,5 +162,5 @@ The S3 adapter implements `watch()` via periodic polling (every 5 seconds by def
 ## Next Steps
 
 - [Postgres Adapter](/amfs/adapters/postgres) — full-text + vector search with native SQL
-- [HTTP API Server](/amfs/guides/http-server) — serve AMFS over REST for any client
-- [Docker & Kubernetes](/amfs/guides/docker) — deploy AMFS with S3 backend on Kubernetes
+- [HTTP API Server](/amfs/guides/http-server) — serve SenseLab over REST for any client
+- [Docker & Kubernetes](/amfs/guides/docker) — deploy SenseLab with S3 backend on Kubernetes

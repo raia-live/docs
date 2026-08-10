@@ -1,22 +1,22 @@
 ---
 title: "Docker & Kubernetes"
-description: "Run AMFS in Docker or deploy to Kubernetes with Helm."
+description: "Run SenseLab in Docker or deploy to Kubernetes with Helm."
 icon: "docker"
 ---
 
 <Note>
-This guide is for self-hosted deployments. Using the managed platform? You don't need Docker — see [Connect to AMFS](/amfs/getting-started/saas-connection).
+This guide is for self-hosted deployments. Using the managed platform? You don't need Docker — see [Connect to SenseLab](/amfs/getting-started/saas-connection).
 </Note>
 
 ---
 
 ## Overview
 
-AMFS ships with a production-ready Docker image and a Helm chart for Kubernetes. You can go from zero to a running AMFS server in one command — no Python installation required.
+SenseLab ships with a production-ready Docker image and a Helm chart for Kubernetes. You can go from zero to a running SenseLab server in one command — no Python installation required.
 
 The Docker image includes:
 
-- The AMFS HTTP API server (FastAPI)
+- The SenseLab HTTP API server (FastAPI)
 - All storage adapters (filesystem, Postgres, S3)
 - The MCP server
 - The Memory Cortex (streaming digest compiler)
@@ -70,7 +70,7 @@ All [environment variables](/amfs/reference/environment-variables) work inside t
 
 ## Docker Compose
 
-For local development, `docker-compose.yml` brings up AMFS + Postgres (with pgvector) in one command:
+For local development, `docker-compose.yml` brings up SenseLab + Postgres (with pgvector) in one command:
 
 ```bash
 docker compose up
@@ -80,7 +80,7 @@ This starts:
 
 | Service | Port | Description |
 |:--------|:-----|:------------|
-| `amfs` | 8080 | AMFS HTTP API server |
+| `amfs` | 8080 | SenseLab HTTP API server |
 | `cortex` | — | Memory Cortex streaming digest compiler (no inbound port) |
 | `postgres` | 5432 | PostgreSQL 16 with pgvector |
 
@@ -159,7 +159,7 @@ curl http://localhost:8080/api/v1/entries
 
 ### Connecting the Dashboard (Pro)
 
-If you have access to the AMFS Pro dashboard, point it at the running Docker Compose stack by setting two environment variables in `dashboard/.env.local`:
+If you have access to the SenseLab Pro dashboard, point it at the running Docker Compose stack by setting two environment variables in `dashboard/.env.local`:
 
 ```bash
 # Server-side (used by Next.js API routes and server components)
@@ -205,7 +205,7 @@ helm install amfs ./helm/amfs \
 
 | Value | Description | Default |
 |:------|:------------|:--------|
-| `replicaCount` | Number of AMFS pods | `1` |
+| `replicaCount` | Number of SenseLab pods | `1` |
 | `image.repository` | Docker image | `ghcr.io/raia-live/amfs` |
 | `image.tag` | Image tag | `latest` |
 | `service.type` | Kubernetes service type | `ClusterIP` |
@@ -217,7 +217,7 @@ helm install amfs ./helm/amfs \
 | `s3.bucket` | S3 bucket name | — |
 | `s3.endpoint` | Custom S3 endpoint | — |
 | `amfs.apiKeys` | API keys for authentication | — |
-| `amfs.namespace` | AMFS namespace | `default` |
+| `amfs.namespace` | SenseLab namespace | `default` |
 | `ingress.enabled` | Enable Kubernetes Ingress | `false` |
 | `cortex.enabled` | Deploy the Cortex worker | `true` |
 | `cortex.replicas` | Number of Cortex worker pods (only 1 active via advisory lock) | `1` |
@@ -231,7 +231,7 @@ helm install amfs ./helm/amfs \
 
 ### Ingress
 
-To expose AMFS externally:
+To expose SenseLab externally:
 
 ```yaml
 # values.yaml

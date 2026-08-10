@@ -1,16 +1,16 @@
 ---
-title: "AMFS vs Competitors"
-description: "How AMFS compares to Mem0, Zep, Hindsight, Letta/MemGPT, Cognee, and other AI memory systems."
+title: "SenseLab vs Competitors"
+description: "How SenseLab compares to Mem0, Zep, Hindsight, Letta/MemGPT, Cognee, and other AI memory systems."
 icon: "chart-bar"
 ---
 
-Every other memory system is a smarter store. SenseLab's AMFS is the only one that treats agent memory like code — with version control, branching, pull requests, and rollbacks.
+Every other memory system is a smarter store. SenseLab is the only one that treats agent memory like code — with version control, branching, pull requests, and rollbacks.
 
 ---
 
 ## Feature Matrix
 
-| Feature | AMFS | Mem0 | Zep / Graphiti | Hindsight | Letta | Cognee | LangMem |
+| Feature | SenseLab | Mem0 | Zep / Graphiti | Hindsight | Letta | Cognee | LangMem |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | **Git-like collaboration** |  |  |  |  |  |  |  |
 | Branching (isolated experiments) | Pro | No | No | No | No | No | No |
@@ -45,120 +45,120 @@ Every other memory system is a smarter store. SenseLab's AMFS is the only one th
 
 ---
 
-## AMFS vs Mem0
+## SenseLab vs Mem0
 
 [Mem0](https://mem0.ai) is the most widely adopted memory library (41K\+ stars). It extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
 
 **Where Mem0 excels:** Simple API, automatic fact extraction from chat, optional graph memory, wide framework integrations (CrewAI, LangGraph, Flowise).
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
 - **Git model for collaboration** — Branching, PRs, diff, merge, rollback, access control. Mem0 has no collaboration model — it's a single-writer store.
-- **Outcome feedback loop** — AMFS confidence evolves from production events. Mem0 stores facts without trust signals.
+- **Outcome feedback loop** — SenseLab confidence evolves from production events. Mem0 stores facts without trust signals.
 - **CoW versioning** — Every write is immutable and replayable. Mem0 overwrites.
-- **Multi-agent provenance** — AMFS tracks authorship, detects conflicts, and auto-links causality. Mem0 is single-user oriented.
+- **Multi-agent provenance** — SenseLab tracks authorship, detects conflicts, and auto-links causality. Mem0 is single-user oriented.
 - **Four-signal decay** — Time \+ type \+ outcomes \+ access frequency. Mem0 has no decay model.
 - **Tiered memory** — Hot/Warm/Archive with progressive retrieval. Mem0 searches everything.
 
 ---
 
-## AMFS vs Zep / Graphiti
+## SenseLab vs Zep / Graphiti
 
 [Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). Facts carry time ranges; queries can ask "what was true at time T?"
 
 **Where Zep excels:** Temporal knowledge graphs with time-bounded edges, entity resolution across conversations, strong on multi-hop temporal queries.
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
 - **Git model for collaboration** — Branching, PRs, diff, merge, rollback. Zep has no collaboration or version control model.
-- **Outcome back-propagation** — AMFS learns from production events. Zep tracks temporal validity but doesn't learn from what happens after retrieval.
-- **CoW vs temporal graph** — Different models. AMFS versions individual entries; Graphiti maintains a graph with time-bounded edges. AMFS is simpler; Graphiti captures richer temporal relationships.
-- **Multi-agent** — AMFS has conflict detection and per-agent provenance. Zep targets single-assistant use.
-- **Operational context** — AMFS ingests infrastructure events via webhooks. Zep only processes conversations.
+- **Outcome back-propagation** — SenseLab learns from production events. Zep tracks temporal validity but doesn't learn from what happens after retrieval.
+- **CoW vs temporal graph** — Different models. SenseLab versions individual entries; Graphiti maintains a graph with time-bounded edges. SenseLab is simpler; Graphiti captures richer temporal relationships.
+- **Multi-agent** — SenseLab has conflict detection and per-agent provenance. Zep targets single-assistant use.
+- **Operational context** — SenseLab ingests infrastructure events via webhooks. Zep only processes conversations.
 
 ---
 
-## AMFS vs Hindsight
+## SenseLab vs Hindsight
 
 [Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation). It reports 91.4% on LongMemEval, the strongest published accuracy in the space.
 
 **Where Hindsight excels:** Benchmark accuracy, clean separation of evidence vs inference (Opinion Network has confidence scores), multi-session temporal reasoning (21% -\> 80% on LongMemEval multi-session questions).
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
-- **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. AMFS's confidence changes when deploys succeed or incidents occur.
-- **Versioning** — Hindsight overwrites network state. AMFS preserves full CoW history.
-- **Tiered memory** — AMFS's Hot/Warm/Archive with priority scoring is data-driven, vs Hindsight's fixed 4-network separation. AMFS's tiers rebalance automatically based on access patterns and importance.
+- **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. SenseLab's confidence changes when deploys succeed or incidents occur.
+- **Versioning** — Hindsight overwrites network state. SenseLab preserves full CoW history.
+- **Tiered memory** — SenseLab's Hot/Warm/Archive with priority scoring is data-driven, vs Hindsight's fixed 4-network separation. SenseLab's tiers rebalance automatically based on access patterns and importance.
 - **Importance scoring** — Pro evaluates entries across behavioral alignment, reasoning utility, and contextual persistence — three LLM-scored dimensions that feed into tier assignment.
-- **Knowledge graph** — AMFS auto-materializes a graph from normal operations. Hindsight's networks are structurally defined.
+- **Knowledge graph** — SenseLab auto-materializes a graph from normal operations. Hindsight's networks are structurally defined.
 - **Enterprise features** — Multi-tenant isolation, RBAC, scoped API keys, audit logging, webhooks, dashboard. Hindsight is a research tool without enterprise infrastructure.
 
 ---
 
-## AMFS vs Letta / MemGPT
+## SenseLab vs Letta / MemGPT
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
 
 **Where Letta excels:** Transparent memory management (the LLM decides what to page in/out), inspectable memory blocks, elegant OS metaphor.
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
-- **Data-driven tiering** — AMFS's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
-- **Outcome feedback** — AMFS confidence evolves from production events. Letta doesn't connect memory to outcomes.
+- **Data-driven tiering** — SenseLab's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
+- **Outcome feedback** — SenseLab confidence evolves from production events. Letta doesn't connect memory to outcomes.
 - **CoW versioning** — Full history. Letta's archival store doesn't version.
-- **Multi-agent native** — AMFS supports per-agent provenance, conflict detection, and cross-agent knowledge transfer. Letta is single-agent.
+- **Multi-agent native** — SenseLab supports per-agent provenance, conflict detection, and cross-agent knowledge transfer. Letta is single-agent.
 
 ---
 
-## AMFS vs Cognee
+## SenseLab vs Cognee
 
 [Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction. Backed by OpenAI and FAIR founders.
 
 **Where Cognee excels:** Document-to-graph construction, multi-hop reasoning (HotpotQA), ontology-based validation.
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
-- **Agent-oriented vs document-oriented** — AMFS is for agents that read, write, and act. Cognee processes documents into queryable graphs.
-- **Outcome feedback** — AMFS connects knowledge to production reality. Cognee's graph doesn't learn from post-retrieval events.
-- **Versioning and provenance** — AMFS preserves full history. Cognee updates its graph in place.
+- **Agent-oriented vs document-oriented** — SenseLab is for agents that read, write, and act. Cognee processes documents into queryable graphs.
+- **Outcome feedback** — SenseLab connects knowledge to production reality. Cognee's graph doesn't learn from post-retrieval events.
+- **Versioning and provenance** — SenseLab preserves full history. Cognee updates its graph in place.
 
 ---
 
-## AMFS vs LangMem
+## SenseLab vs LangMem
 
 [LangMem](https://langchain-ai.github.io/long-term-memory/) is LangChain's long-term memory library for the LangGraph ecosystem.
 
 **Where LangMem excels:** Native LangGraph integration, managed service via LangSmith, namespace scoping.
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
-- **Framework-agnostic** — AMFS works with CrewAI, LangGraph, AutoGen, or standalone. LangMem is tied to LangChain.
-- **Outcome feedback** — AMFS's core differentiator. No LangMem equivalent.
+- **Framework-agnostic** — SenseLab works with CrewAI, LangGraph, AutoGen, or standalone. LangMem is tied to LangChain.
+- **Outcome feedback** — SenseLab's core differentiator. No LangMem equivalent.
 - **MCP-native** — Built-in MCP server for IDE integration (Cursor, Claude Code).
 - **Self-hosted** — Pluggable backends (filesystem, Postgres, S3). LangMem is primarily managed.
 
 ---
 
-## AMFS vs Memvid
+## SenseLab vs Memvid
 
 [Memvid](https://github.com/memvid/memvid) packages memory into a single `.mv2` file — data, embeddings, index, metadata. No database, no server.
 
 **Where Memvid excels:** Zero infrastructure, 0.025ms P50 retrieval, portable single-file memory, ideal for offline/edge agents.
 
-**Where AMFS differs:**
+**Where SenseLab differs:**
 
-- **Different category** — Memvid is a read-mostly, append-only search tool. AMFS is a multi-agent memory platform with versioning, outcomes, and enterprise features.
+- **Different category** — Memvid is a read-mostly, append-only search tool. SenseLab is a multi-agent memory platform with versioning, outcomes, and enterprise features.
 - **Multi-agent** — Memvid has no concurrent writes, no conflict detection, no provenance.
-- **Tiered memory** — AMFS's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
-- **Production feedback** — Memvid stores and retrieves. AMFS learns from outcomes.
+- **Tiered memory** — SenseLab's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
+- **Production feedback** — Memvid stores and retrieves. SenseLab learns from outcomes.
 
-Memvid is the right choice for single-user, offline, or edge scenarios where infrastructure is a non-starter. AMFS is for production multi-agent systems that need versioning, feedback, and collaboration.
+Memvid is the right choice for single-user, offline, or edge scenarios where infrastructure is a non-starter. SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration.
 
 ---
 
-## What Makes AMFS Unique
+## What Makes SenseLab Unique
 
-1. **GitHub for agent memory** — No other system treats agent knowledge like code. AMFS gives every agent a brain (repo), with branching, pull requests, diff, merge, rollback, access control, and fork. The mental model is already in every developer's head. No competitor has any of this.
+1. **GitHub for agent memory** — No other system treats agent knowledge like code. SenseLab gives every agent a brain (repo), with branching, pull requests, diff, merge, rollback, access control, and fork. The mental model is already in every developer's head. No competitor has any of this.
 2. **Memory that learns from production** — Confidence scoring evolves from incidents, deployments, and regressions. No other system connects memory to real-world outcomes.
 3. **Self-organizing memory** — Tiered memory (Hot/Warm/Archive), frequency-modulated decay, multi-dimensional importance scoring, and progressive retrieval. Not just a retrieval layer — a memory system that reorganizes itself based on what matters.
 4. **Copy-on-Write versioning** — Every write is immutable. Replay history, compare versions, and audit decisions. Most competitors overwrite.

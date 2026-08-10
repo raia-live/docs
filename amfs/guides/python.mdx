@@ -1,6 +1,6 @@
 ---
 title: "Python SDK"
-description: "Complete guide to the AMFS Python SDK."
+description: "Complete guide to the SenseLab Python SDK."
 icon: "python"
 ---
 
@@ -417,7 +417,7 @@ chain = mem.explain(outcome_ref="INC-1042")
 
 ## Decision Traces
 
-When you call `commit_outcome()`, AMFS snapshots the full decision trace — every entry that was read, every context that was recorded, and every query that was made. The resulting trace is persisted and can be retrieved later.
+When you call `commit_outcome()`, SenseLab snapshots the full decision trace — every entry that was read, every context that was recorded, and every query that was made. The resulting trace is persisted and can be retrieved later.
 
 ### Getting the Trace from an Outcome
 
@@ -465,7 +465,7 @@ traces = mem.adapter.list_traces(
 
 ## Tool Context
 
-When agents call external tools or APIs, there are two ways to capture that context in AMFS depending on your needs.
+When agents call external tools or APIs, there are two ways to capture that context in SenseLab depending on your needs.
 
 ### Record in the Causal Chain (Lightweight)
 
@@ -488,7 +488,7 @@ mem.record_context(
 mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
 
 chain = mem.explain()
-print(chain["causal_entries"])     # AMFS entries that were read
+print(chain["causal_entries"])     # SenseLab entries that were read
 print(chain["external_contexts"])  # tool/API inputs that informed the decision
 ```
 
@@ -801,7 +801,7 @@ with AgentMemory(agent_id="my-agent") as mem:
 
 ---
 
-## Connecting to AMFS
+## Connecting to SenseLab
 
 Set two env vars and the SDK connects automatically — no adapter setup needed:
 
@@ -817,7 +817,7 @@ mem = AgentMemory(agent_id="my-agent")
 mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
 ```
 
-See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide for details.
+See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide for details.
 
 ---
 

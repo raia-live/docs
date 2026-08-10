@@ -1,12 +1,12 @@
 ---
 title: "Multi-Tenant SaaS"
-description: "Run AMFS as a hosted service with account isolation, RBAC, scoped API keys, and audit logging."
+description: "Run SenseLab as a hosted service with account isolation, RBAC, scoped API keys, and audit logging."
 icon: "building"
 ---
 
 # Multi-Tenant SaaS Foundation
 
-The foundation for running AMFS as a hosted service. Every API request is authenticated, authorized, scoped, and audited.
+The foundation for running SenseLab as a hosted service. Every API request is authenticated, authorized, scoped, and audited.
 
 ## Account Isolation
 
@@ -35,7 +35,7 @@ Agents can only access memory within their permitted scope — this is **permiss
 
 ## HTTP API-Based Tenant Isolation
 
-All external agent access (MCP clients, SDKs, REST calls) is routed through the AMFS HTTP API using `AMFS_HTTP_URL` + `AMFS_API_KEY`. The API resolves the tenant, enforces entity-path scopes, sets the Postgres RLS context, and logs the operation — agents never touch the database directly. MCP clients connect transparently via the `HttpAdapter`, which converts memory operations into authenticated HTTP requests.
+All external agent access (MCP clients, SDKs, REST calls) is routed through the SenseLab HTTP API using `AMFS_HTTP_URL` + `AMFS_API_KEY`. The API resolves the tenant, enforces entity-path scopes, sets the Postgres RLS context, and logs the operation — agents never touch the database directly. MCP clients connect transparently via the `HttpAdapter`, which converts memory operations into authenticated HTTP requests.
 
 ## Audit Logging
 

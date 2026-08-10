@@ -267,7 +267,7 @@ explain(
 ) -> dict[str, Any]
 ```
 
-Returns the causal chain for the current session: which AMFS entries were read, which external contexts were recorded, and their details. If `outcome_ref` is provided, labels the explanation with that reference.
+Returns the causal chain for the current session: which SenseLab entries were read, which external contexts were recorded, and their details. If `outcome_ref` is provided, labels the explanation with that reference.
 
 Returns:
 
@@ -277,7 +277,7 @@ Returns:
     "agent_id": str,
     "session_id": str,
     "causal_chain_length": int,
-    "causal_entries": list[dict],       # AMFS entries that were read
+    "causal_entries": list[dict],       # SenseLab entries that were read
     "external_contexts": list[dict],    # tool/API inputs via record_context()
 }
 ```
@@ -345,7 +345,7 @@ class MemoryEntry:
 
 ## ArtifactRef
 
-Link memory entries to external blobs — model weights, datasets, logs, screenshots, or any binary artifact stored outside AMFS.
+Link memory entries to external blobs — model weights, datasets, logs, screenshots, or any binary artifact stored outside SenseLab.
 
 ```python
 class ArtifactRef:
@@ -875,7 +875,7 @@ Authentication is via the `X-AMFS-API-Key` header. Set `AMFS_API_KEYS` to enable
 
 ## Pro MCP Tools
 
-The following tools are available only with the AMFS Pro MCP server.
+The following tools are available only with the SenseLab Pro MCP server.
 
 ### amfs_critique
 

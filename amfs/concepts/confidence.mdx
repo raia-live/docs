@@ -4,7 +4,7 @@ description: "How confidence scores evolve based on real-world outcomes."
 icon: "chart-line"
 ---
 
-Every memory entry carries a **confidence score** that evolves over time based on real-world outcomes. This is AMFS's feedback loop — connecting agent observations to production reality.
+Every memory entry carries a **confidence score** that evolves over time based on real-world outcomes. This is SenseLab's feedback loop — connecting agent observations to production reality.
 
 ---
 
@@ -80,7 +80,7 @@ Over many successes, confidence trends toward zero — the risk signal fades. A 
 
 ## Auto-Causal Linking
 
-If you don't specify `causal_entry_keys`, AMFS automatically links the outcome to **every entry the agent read during the current session**:
+If you don't specify `causal_entry_keys`, SenseLab automatically links the outcome to **every entry the agent read during the current session**:
 
 ```python
 # Agent reads several entries during its work
@@ -99,7 +99,7 @@ This is powered by the **ReadTracker**, which logs every `read()` call during a 
 
 ## Four-Signal Decay Model
 
-When `decay_half_life_days` is configured, AMFS uses four signals to determine how fast an entry's effective confidence decays:
+When `decay_half_life_days` is configured, SenseLab uses four signals to determine how fast an entry's effective confidence decays:
 
 | Signal | Effect | Mechanism |
 |:-------|:-------|:----------|

@@ -1,16 +1,16 @@
 ---
 title: "Git-like Timeline"
-description: "How AMFS treats each agent's memory as a Git repository."
+description: "How SenseLab treats each agent's memory as a Git repository."
 icon: "code-branch"
 ---
 
-AMFS models every agent's memory as a **Git repository**. Each write, outcome, cross-agent read, and brain brief is recorded as an event on the agent's timeline — like commits in Git. This gives you full auditability, rollback capability, and branch-based collaboration.
+SenseLab models every agent's memory as a **Git repository**. Each write, outcome, cross-agent read, and brain brief is recorded as an event on the agent's timeline — like commits in Git. This gives you full auditability, rollback capability, and branch-based collaboration.
 
 ---
 
 ## The Mental Model
 
-When an agent is created in AMFS, it implicitly gets a **repository** with a `main` branch. Every operation the agent performs is logged as an **event** on that branch:
+When an agent is created in SenseLab, it implicitly gets a **repository** with a `main` branch. Every operation the agent performs is logged as an **event** on that branch:
 
 ```
 Agent A creates its first memory
@@ -107,7 +107,7 @@ amfs_timeline(agent_id="deploy-agent", limit=50)
 
 ## Branches (Pro)
 
-With AMFS Pro, you can create branches from an agent's main timeline — just like Git branches. Branches let you:
+With SenseLab Pro, you can create branches from an agent's main timeline — just like Git branches. Branches let you:
 
 - **Experiment safely** — write to a branch without affecting main memory
 - **Share selectively** — grant read or read/write access to specific users, teams, or API keys
@@ -267,4 +267,4 @@ print(f"Forked {count} entries to deploy-agent-v2")
 └─────────────────────────────────────────────────────┘
 ```
 
-The timeline is always available in OSS (main branch only). Branching, merging, tags, rollback, and access control require AMFS Pro.
+The timeline is always available in OSS (main branch only). Branching, merging, tags, rollback, and access control require SenseLab Pro.

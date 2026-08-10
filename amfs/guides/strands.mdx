@@ -4,7 +4,7 @@ description: "Add persistent, versioned memory with automatic causal tracing to 
 icon: "link"
 ---
 
-AMFS integrates with [Strands Agents](https://github.com/strands-agents/strands) as a plugin, giving your agents persistent, versioned memory with automatic causal tracing — deeper than tool-only integrations.
+SenseLab integrates with [Strands Agents](https://github.com/strands-agents/strands) as a plugin, giving your agents persistent, versioned memory with automatic causal tracing — deeper than tool-only integrations.
 
 ---
 
@@ -68,9 +68,9 @@ export AMFS_AGENT_ID="my-agent"
 
 ## Key Features
 
-**Versioning** — AMFS tracks how agent knowledge evolves through copy-on-write versions. Every write creates a new version; older versions remain queryable.
+**Versioning** — SenseLab tracks how agent knowledge evolves through copy-on-write versions. Every write creates a new version; older versions remain queryable.
 
-**Provenance** — AMFS records which agent wrote each entry, in which session, and when. Entries from different agents in a shared memory space are always attributable.
+**Provenance** — SenseLab records which agent wrote each entry, in which session, and when. Entries from different agents in a shared memory space are always attributable.
 
 **Automatic Causal Tracing** — The plugin automatically records non-AMFS tool calls into causal chains. No extra instrumentation needed.
 
@@ -113,7 +113,7 @@ mem = AgentMemory(agent_id="my-agent", adapter=adapter)
 
 ## Multi-Agent Setup
 
-Use separate `agent_id` values for each agent. AMFS handles provenance automatically — all agents can share the same memory space while keeping their writes attributable:
+Use separate `agent_id` values for each agent. SenseLab handles provenance automatically — all agents can share the same memory space while keeping their writes attributable:
 
 ```python
 researcher = AgentMemory(agent_id="researcher")
@@ -136,9 +136,9 @@ plugin = AMFSPlugin(mem, auto_trace=False)
 
 <CardGroup cols={2}>
   <Card title="Framework Integrations" icon="puzzle-piece" href="/amfs/guides/integrations">
-    Use AMFS with CrewAI, LangGraph, LangChain, and AutoGen.
+    Use SenseLab with CrewAI, LangGraph, LangChain, and AutoGen.
   </Card>
   <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">
-    Understand versioning, provenance, and causal graphs in AMFS.
+    Understand versioning, provenance, and causal graphs in SenseLab.
   </Card>
 </CardGroup>

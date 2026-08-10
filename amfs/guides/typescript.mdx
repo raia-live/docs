@@ -1,6 +1,6 @@
 ---
 title: "TypeScript SDK"
-description: "Using AMFS from TypeScript and Node.js applications."
+description: "Using SenseLab from TypeScript and Node.js applications."
 icon: "js"
 ---
 
@@ -69,7 +69,7 @@ interface AgentMemoryOptions {
 }
 ```
 
-By default, the SDK uses an in-memory adapter. Pass an `HttpAdapter` to connect to a remote AMFS server, or implement `AmfsAdapter` for custom storage.
+By default, the SDK uses an in-memory adapter. Pass an `HttpAdapter` to connect to a remote SenseLab server, or implement `AmfsAdapter` for custom storage.
 
 ---
 
@@ -290,7 +290,7 @@ console.log(stats.entities); // Record<string, number>
 
 ---
 
-## Connecting to AMFS
+## Connecting to SenseLab
 
 ### Using the HttpAdapter
 
@@ -354,7 +354,7 @@ const response = await fetch("https://amfs.sense-lab.ai/api/v1/entries", {
 });
 ```
 
-See the [Connect to AMFS](/amfs/getting-started/saas-connection) guide, [MCP server](/amfs/guides/mcp), and [REST API reference](/amfs/guides/http-server) for details.
+See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide, [MCP server](/amfs/guides/mcp), and [REST API reference](/amfs/guides/http-server) for details.
 
 ---
 
@@ -685,9 +685,9 @@ enum OutcomeType {
 ## Notes
 
 <Note>
-The TypeScript SDK uses an in-memory adapter by default. To persist data remotely, pass an `HttpAdapter` instance configured with your AMFS server URL and API key. The `HttpAdapter` provides both sync (stub) and async methods — use the async variants (`readAsync`, `writeAsync`, etc.) for remote operations.
+The TypeScript SDK uses an in-memory adapter by default. To persist data remotely, pass an `HttpAdapter` instance configured with your SenseLab server URL and API key. The `HttpAdapter` provides both sync (stub) and async methods — use the async variants (`readAsync`, `writeAsync`, etc.) for remote operations.
 </Note>
 
 <Note>
-Room and negotiation APIs require an HTTP connection to AMFS and return Promises. They are available on the `AgentMemory` instance when using an adapter that exposes a base URL.
+Room and negotiation APIs require an HTTP connection to SenseLab and return Promises. They are available on the `AgentMemory` instance when using an adapter that exposes a base URL.
 </Note>

@@ -1,6 +1,6 @@
 ---
 title: "Environment Variables"
-description: "All environment variables supported by AMFS."
+description: "All environment variables supported by SenseLab."
 icon: "gear"
 ---
 
@@ -10,7 +10,7 @@ These are the only variables most users need:
 
 | Variable | Description |
 |:---------|:------------|
-| `AMFS_HTTP_URL` | Your AMFS API URL (e.g. `https://amfs-login.sense-lab.ai`) |
+| `AMFS_HTTP_URL` | Your SenseLab API URL (e.g. `https://amfs-login.sense-lab.ai`) |
 | `AMFS_API_KEY` | Your API key (from Dashboard → Settings → API Keys) |
 
 When `AMFS_HTTP_URL` is set, all memory operations route through the authenticated HTTP API.
@@ -57,7 +57,7 @@ Identity is auto-detected from the IDE environment (Cursor, Claude Code). Set `A
 
 ## Auto-Detection (Read-Only)
 
-These are set by IDEs and read by AMFS for agent identity detection. You don't set these yourself.
+These are set by IDEs and read by SenseLab for agent identity detection. You don't set these yourself.
 
 | Variable | Set By | Used For |
 |:---------|:-------|:---------|
@@ -69,7 +69,7 @@ These are set by IDEs and read by AMFS for agent identity detection. You don't s
 
 ## Self-Hosted Only
 
-These variables are for self-hosted AMFS deployments. You don't need them on the managed platform.
+These variables are for self-hosted SenseLab deployments. You don't need them on the managed platform.
 
 | Variable | Description | Default |
 |:---------|:------------|:--------|
@@ -89,8 +89,8 @@ These variables are for self-hosted AMFS deployments. You don't need them on the
 | `AMFS_CORTEX_DEBOUNCE_MS` | Digest recompilation debounce (ms) | `3000` |
 | `AMFS_PRO_URL` | Pro API URL for hybrid deployments | — |
 | `AMFS_PRO_API_KEY` | API key for the Pro API | — |
-| `AMFS_API_URL` | Dashboard: AMFS server URL (server-side) | `http://localhost:8080` |
-| `NEXT_PUBLIC_AMFS_API_URL` | Dashboard: AMFS server URL (client-side) | — |
+| `AMFS_API_URL` | Dashboard: SenseLab server URL (server-side) | `http://localhost:8080` |
+| `NEXT_PUBLIC_AMFS_API_URL` | Dashboard: SenseLab server URL (client-side) | — |
 | `AMFS_ROOT` | Dashboard: path to `.amfs` directory | — |
 | `AMFS_DEMO` | Dashboard: force demo mode | `false` |
 | `AMFS_TEST_PG_DSN` | Postgres DSN for integration tests | — |

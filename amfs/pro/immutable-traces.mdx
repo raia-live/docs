@@ -55,7 +55,7 @@ traces = recorder.search_traces(entity_path="checkout-service", outcome_type="cr
 
 ## OpenTelemetry Export
 
-Export AMFS decision traces as OpenTelemetry spans for integration with existing observability stacks (Jaeger, Grafana Tempo, Datadog, Honeycomb). Traces are mapped to hierarchical spans following GenAI semantic conventions — each LLM call becomes a `gen_ai` span, and memory operations become `amfs` spans.
+Export SenseLab decision traces as OpenTelemetry spans for integration with existing observability stacks (Jaeger, Grafana Tempo, Datadog, Honeycomb). Traces are mapped to hierarchical spans following GenAI semantic conventions — each LLM call becomes a `gen_ai` span, and memory operations become `amfs` spans.
 
 ```python
 from amfs_otel import TraceExporter, configure_otel

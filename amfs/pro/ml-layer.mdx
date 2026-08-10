@@ -6,7 +6,7 @@ icon: "chart-line"
 
 # ML Layer
 
-AMFS Pro's ML layer learns from your outcome data to make retrieval smarter, confidence scoring more accurate, and your agents' decision traces exportable as fine-tuning datasets.
+SenseLab Pro's ML layer learns from your outcome data to make retrieval smarter, confidence scoring more accurate, and your agents' decision traces exportable as fine-tuning datasets.
 
 <Note>
 The ML layer is a Pro-only feature. The OSS layer captures all the data — reads, writes, outcomes, causal chains — and the ML layer learns from it.
@@ -14,7 +14,7 @@ The ML layer is a Pro-only feature. The OSS layer captures all the data — read
 
 ## Prerequisites
 
-- AMFS Pro MCP server running (see [MCP Setup](/amfs/guides/mcp))
+- SenseLab Pro MCP server running (see [MCP Setup](/amfs/guides/mcp))
 - Outcome data in your memory store — the ML layer trains on `commit_outcome` history
 - At least 20 outcome-linked entries for learned ranking, 5 per outcome type for calibration
 
@@ -24,7 +24,7 @@ The ML layer is a Pro-only feature. The OSS layer captures all the data — read
 
 ### The Problem
 
-AMFS's multi-strategy retrieval uses fixed weights (semantic: 0.4, keyword: 0.2, temporal: 0.2, confidence: 0.2) merged via Reciprocal Rank Fusion. These work well as defaults, but they can't capture domain-specific patterns like "for this entity, recency matters more than confidence" or "entries from production agents are more reliable for deployment decisions."
+SenseLab's multi-strategy retrieval uses fixed weights (semantic: 0.4, keyword: 0.2, temporal: 0.2, confidence: 0.2) merged via Reciprocal Rank Fusion. These work well as defaults, but they can't capture domain-specific patterns like "for this entity, recency matters more than confidence" or "entries from production agents are more reliable for deployment decisions."
 
 ### How It Works
 
@@ -94,7 +94,7 @@ With fewer than 20 training samples, the ranker falls back to confidence-based s
 
 ### The Problem
 
-AMFS uses fixed outcome multipliers:
+SenseLab uses fixed outcome multipliers:
 
 | Outcome | Default Multiplier |
 |:--------|:-------------------|
@@ -174,7 +174,7 @@ for em in report.entity_multipliers:
 
 ### The Problem
 
-AMFS captures structured decision traces: what the agent read, what it decided, and what happened next. These traces are the exact data structure needed for fine-tuning — `(context, action, reward)` tuples — but they're locked inside the memory store.
+SenseLab captures structured decision traces: what the agent read, what it decided, and what happened next. These traces are the exact data structure needed for fine-tuning — `(context, action, reward)` tuples — but they're locked inside the memory store.
 
 ### How It Works
 
@@ -244,7 +244,7 @@ with open("training_data.jsonl", "w") as f:
 
 ### Integration with Fine-Tuning Pipelines
 
-AMFS generates the data; you bring the training infrastructure. The exported formats are compatible with common fine-tuning workflows:
+SenseLab generates the data; you bring the training infrastructure. The exported formats are compatible with common fine-tuning workflows:
 
 | Format | Compatible With |
 |:-------|:----------------|
@@ -283,7 +283,7 @@ The ML layer works best with Postgres, which persists outcome records. The files
 ## How the Pieces Fit Together
 
 ```
-Agents use AMFS normally:
+Agents use SenseLab normally:
   read → decide → write → commit_outcome
       │                        │
       │                        ▼

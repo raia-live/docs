@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "SenseLab AMFS — Agent Memory File System."
+description: "SenseLab — persistent, versioned memory for AI agents."
 icon: "brain"
 ---
 
@@ -10,12 +10,12 @@ When agents share memory today, it's chaos — last write wins, no branching, no
 
 The problem isn't "agents need permissions." The problem is that agents have no way to collaborate on knowledge the way developers collaborate on code.
 
-## What is SenseLab's AMFS?
+## What is SenseLab?
 
-AMFS applies the Git model to agent memory. The mental model is already in every developer's head — you're not learning something new, you're getting the tool you've been waiting for.
+SenseLab applies the Git model to agent memory. The mental model is already in every developer's head — you're not learning something new, you're getting the tool you've been waiting for.
 
 ```text
-Every developer knows this:          AMFS does the same for agent memory:
+Every developer knows this:          SenseLab does the same for agent memory:
 
   repo                                 agent brain
   ├── main branch                      ├── main (what the agent knows)
@@ -73,10 +73,10 @@ entry = mem.read("checkout-service", "risk-race-condition")
 
 ## Get Started
 
-The fastest way to start is with SenseLab AMFS — no infrastructure required.
+The fastest way to start is with SenseLab Cloud — no infrastructure required.
 
 <CardGroup cols={2}>
-  <Card title="Connect to AMFS" icon="cloud" href="/amfs/getting-started/saas-connection">
+  <Card title="Connect to SenseLab" icon="cloud" href="/amfs/getting-started/saas-connection">
     Two env vars. Up and running in 30 seconds.
   </Card>
 
@@ -87,7 +87,7 @@ The fastest way to start is with SenseLab AMFS — no infrastructure required.
 
 ---
 
-## How Agents Use AMFS
+## How Agents Use SenseLab
 
 ```text
 1. Identify yourself         →  amfs_set_identity("checkout-agent", "Fixing retry logic")
@@ -120,9 +120,9 @@ The Memory Cortex compiles raw entries into ranked digests, so the next agent �
 
 ## OSS vs Pro
 
-SenseLab AMFS is open source under [Apache 2.0](https://github.com/raia-live/amfs/blob/main/LICENSE). The OSS edition gives you the full memory engine with a single-branch repo model — versioned writes, confidence scoring, outcome feedback, causal traces, knowledge graph, hybrid search, tiered memory, and a git-like timeline on `main`, SDKs, adapters, HTTP API, MCP server, and CLI.
+SenseLab is open source under [Apache 2.0](https://github.com/raia-live/amfs/blob/main/LICENSE). The OSS edition gives you the full memory engine with a single-branch repo model — versioned writes, confidence scoring, outcome feedback, causal traces, knowledge graph, hybrid search, tiered memory, and a git-like timeline on `main`, SDKs, adapters, HTTP API, MCP server, and CLI.
 
-**AMFS Pro** unlocks the full Git model: branching, merging, pull requests, access control, tags, rollback, cherry-picking, and forking. Plus multi-tenant SaaS isolation, immutable decision traces, automated pattern detection, an intelligence layer, and a web dashboard.
+**SenseLab Pro** unlocks the full Git model: branching, merging, pull requests, access control, tags, rollback, cherry-picking, and forking. Plus multi-tenant SaaS isolation, immutable decision traces, automated pattern detection, an intelligence layer, and a web dashboard.
 
 OSS gives you a repo with full history. Pro gives you GitHub.
 
@@ -132,10 +132,10 @@ OSS gives you a repo with full history. Pro gives you GitHub.
   </Card>
 
   <Card title="vs Vector DBs" icon="database" href="/amfs/vs-vector-databases">
-    When to use AMFS, when to use a vector database.
+    When to use SenseLab, when to use a vector database.
   </Card>
 
   <Card title="vs Competitors" icon="chart-bar" href="/amfs/vs-competitors">
-    How AMFS compares to Mem0, Zep, Letta, and more.
+    How SenseLab compares to Mem0, Zep, Letta, and more.
   </Card>
 </CardGroup>

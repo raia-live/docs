@@ -1,10 +1,10 @@
 ---
-title: "AMFS vs Vector Databases"
-description: "When to use AMFS, when to use a vector database, and how they work together."
+title: "SenseLab vs Vector Databases"
+description: "When to use SenseLab, when to use a vector database, and how they work together."
 icon: "database"
 ---
 
-Vector databases and AMFS solve different problems. Understanding the distinction helps you pick the right tool — or use both.
+Vector databases and SenseLab solve different problems. Understanding the distinction helps you pick the right tool — or use both.
 
 ---
 
@@ -12,15 +12,15 @@ Vector databases and AMFS solve different problems. Understanding the distinctio
 
 **Vector databases** store embeddings and retrieve them by similarity. They answer: *"what is most relevant to this query?"*
 
-**AMFS** is version control for what agents know. It answers: *"what does this agent know, who wrote it, how confident are we, what happened when we acted on it, and how do we collaborate on changing it?"*
+**SenseLab** is version control for what agents know. It answers: *"what does this agent know, who wrote it, how confident are we, what happened when we acted on it, and how do we collaborate on changing it?"*
 
-A vector database is a **search index**. AMFS is **GitHub for agent memory** — versioning, branching, pull requests, rollback, and a collaboration model developers already understand.
+A vector database is a **search index**. SenseLab is **GitHub for agent memory** — versioning, branching, pull requests, rollback, and a collaboration model developers already understand.
 
 ---
 
 ## Side-by-Side Comparison
 
-| Dimension | Vector Database | AMFS |
+| Dimension | Vector Database | SenseLab |
 |:----------|:----------------|:-----|
 | **Primary operation** | Similarity search over embeddings | Read/write versioned knowledge with provenance |
 | **Collaboration model** | Shared index — last write wins | Git model — branch, diff, PR, merge, rollback, access control |
@@ -64,9 +64,9 @@ Vector databases are **stateless retrieval indexes**. They don't track:
 
 ---
 
-## What AMFS Does Differently
+## What SenseLab Does Differently
 
-AMFS is designed for **agent memory** — the layer between retrieval and action:
+SenseLab is designed for **agent memory** — the layer between retrieval and action:
 
 ### Knowledge has identity
 
@@ -105,7 +105,7 @@ versions = mem.history("checkout-service", "retry-pattern", since=last_week)
 
 ### Decisions are explainable
 
-The causal chain shows exactly what informed a decision — both AMFS entries and external tool context:
+The causal chain shows exactly what informed a decision — both SenseLab entries and external tool context:
 
 ```python
 chain = mem.explain("DEP-500")
@@ -117,34 +117,34 @@ chain = mem.explain("DEP-500")
 
 ## Using Both Together
 
-AMFS and vector databases are complementary. A common architecture:
+SenseLab and vector databases are complementary. A common architecture:
 
 ```
-                    Agent
-                   /     \
-                  /       \
-         ┌──────▼──┐  ┌──▼──────────┐
-         │  AMFS   │  │ Vector DB   │
-         │ Memory  │  │ (RAG index) │
-         └─────────┘  └─────────────┘
-         What we know  What's relevant
-         + trust       to this query
+                     Agent
+                    /     \
+                   /       \
+         ┌────────▼──┐  ┌──▼──────────┐
+         │ SenseLab  │  │  Vector DB  │
+         │  Memory   │  │ (RAG index) │
+         └───────────┘  └─────────────┘
+         What we know    What's relevant
+         + trust         to this query
          + history
          + outcomes
 ```
 
 1. **Vector DB for retrieval** — Agent queries the vector database to find relevant documents or code snippets for the current task.
-2. **AMFS for memory** — Agent reads AMFS for known patterns, risks, and past decisions about the entity it's working on.
-3. **AMFS for recording** — After completing its task, the agent writes findings, decisions, and risks to AMFS with provenance and confidence.
-4. **AMFS for learning** — Outcomes (deploys, incidents) back-propagate through AMFS, adjusting confidence scores so future agents see which patterns are trustworthy.
+2. **SenseLab for memory** — Agent reads SenseLab for known patterns, risks, and past decisions about the entity it's working on.
+3. **SenseLab for recording** — After completing its task, the agent writes findings, decisions, and risks to SenseLab with provenance and confidence.
+4. **SenseLab for learning** — Outcomes (deploys, incidents) back-propagate through SenseLab, adjusting confidence scores so future agents see which patterns are trustworthy.
 
-AMFS supports hybrid search — combining full-text (Postgres tsvector), semantic (cosine similarity via pluggable embedders), recency, and confidence into a single ranked result set. For small-to-medium memory stores, this eliminates the need for a separate vector database. AMFS also auto-materializes a knowledge graph from normal operations, capturing entity relationships and causal links that pure similarity search cannot surface. For large-scale RAG over millions of documents, a dedicated vector database is the right choice.
+SenseLab supports hybrid search — combining full-text (Postgres tsvector), semantic (cosine similarity via pluggable embedders), recency, and confidence into a single ranked result set. For small-to-medium memory stores, this eliminates the need for a separate vector database. SenseLab also auto-materializes a knowledge graph from normal operations, capturing entity relationships and causal links that pure similarity search cannot surface. For large-scale RAG over millions of documents, a dedicated vector database is the right choice.
 
 ---
 
 ## The Compounding Loop
 
-The fundamental difference becomes clear over time. A vector database stores static embeddings that you retrieve. AMFS builds a **compounding knowledge asset** that gets more valuable the longer you use it:
+The fundamental difference becomes clear over time. A vector database stores static embeddings that you retrieve. SenseLab builds a **compounding knowledge asset** that gets more valuable the longer you use it:
 
 ```
 Week 1:   Agent writes patterns → basic memory
@@ -156,13 +156,13 @@ Week 52:  Learned ranking personalizes retrieval → domain-calibrated intellige
 
 With Pro, this loop extends to cross-system context (PagerDuty incidents, GitHub PRs, Slack threads automatically ingested), persistent decision traces queryable months later, and automated pattern detection that surfaces recurring failures before they become incidents.
 
-No vector database provides this lifecycle. They are a retrieval layer. AMFS is a **memory system that compounds**.
+No vector database provides this lifecycle. They are a retrieval layer. SenseLab is a **memory system that compounds**.
 
 ---
 
 ## Summary
 
-| | Vector Database | AMFS |
+| | Vector Database | SenseLab |
 |:--|:----------------|:-----|
 | **Think of it as** | A search index for embeddings | GitHub for agent memory |
 | **Best for** | Finding relevant data | Collaborating on knowledge the way developers collaborate on code |

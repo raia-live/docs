@@ -1,6 +1,6 @@
 ---
 title: "OSS vs SaaS"
-description: "What's in SenseLab's Agent Memory File System (AMFS) open-source vs. AMFS SaaS — and when you need which."
+description: "What's in the SenseLab open-source core vs. SenseLab Cloud — and when you need which."
 icon: "scale-balanced"
 ---
 
@@ -210,7 +210,7 @@ The SaaS offering wraps the OSS layer — it never replaces it. All Pro features
 
 ### Memory Branching — Git for Agent Memory
 
-While OSS provides the git-like timeline engine (event logging on `main`), SenseLab AMFS SaaS adds the full branching model — branches, merges, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
+While OSS provides the git-like timeline engine (event logging on `main`), SenseLab Cloud adds the full branching model — branches, merges, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
 
 <Card title="Memory Branching Deep Dive" icon="code-branch" href="/amfs/pro/branching">
   Full documentation on branches, merge strategies, pull requests, access control, tags, rollback, cherry-pick, fork, and the Sacred Timeline visualization.
@@ -234,7 +234,7 @@ The OSS `explain()` works within the active session and captures enriched trace 
 
 ### Cross-System Ingestion
 
-Automatically ingest events from external systems into AMFS memory. The connector framework transforms raw events into AMFS `write()` or `record_context()` operations, with HMAC verification, deduplication, and pluggable transforms.
+Automatically ingest events from external systems into SenseLab memory. The connector framework transforms raw events into SenseLab `write()` or `record_context()` operations, with HMAC verification, deduplication, and pluggable transforms.
 
 <Card title="Cross-System Ingestion" icon="webhook" href="/amfs/pro/ingestion">
   Webhook ingester, connector framework, and built-in connectors for PagerDuty, Slack, GitHub, and Jira.
@@ -258,7 +258,7 @@ LLM-powered tools for memory quality and retrieval: extraction (raw text → str
 
 ### Dashboard
 
-A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decisions, and managing your AMFS deployment.
+A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decisions, and managing your SenseLab deployment.
 
 | Page | Description |
 | :-- | :-- |

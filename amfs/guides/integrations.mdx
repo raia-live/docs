@@ -1,12 +1,12 @@
 ---
 title: "Framework Integrations"
-description: "Use AMFS with CrewAI, LangGraph, LangChain, and AutoGen."
+description: "Use SenseLab with CrewAI, LangGraph, LangChain, and AutoGen."
 icon: "puzzle-piece"
 ---
 
 # Framework Integrations
 
-AMFS integrates with popular multi-agent frameworks so you can add persistent memory to your existing workflows.
+SenseLab integrates with popular multi-agent frameworks so you can add persistent memory to your existing workflows.
 
 ---
 
@@ -23,7 +23,7 @@ export AMFS_API_KEY="<your-api-key>"
 
 ## CrewAI
 
-Add AMFS tools to your CrewAI agents:
+Add SenseLab tools to your CrewAI agents:
 
 ```bash
 pip install amfs-crewai
@@ -53,7 +53,7 @@ The tools give your CrewAI agents the ability to read, write, and list memory en
 
 ## LangGraph
 
-Use AMFS as a checkpointer for LangGraph:
+Use SenseLab as a checkpointer for LangGraph:
 
 ```bash
 pip install amfs-langgraph
@@ -69,13 +69,13 @@ checkpointer = AMFSCheckpointer(mem)
 # Pass to your LangGraph graph builder
 ```
 
-The checkpointer persists graph state to AMFS, enabling cross-session graph execution.
+The checkpointer persists graph state to SenseLab, enabling cross-session graph execution.
 
 ---
 
 ## LangChain
 
-Use AMFS as chat memory for LangChain:
+Use SenseLab as chat memory for LangChain:
 
 ```bash
 pip install amfs-langchain
@@ -102,7 +102,7 @@ history = chat_memory.load_memory_variables({})
 
 ## AutoGen
 
-Use AMFS as a memory store for AutoGen agents:
+Use SenseLab as a memory store for AutoGen agents:
 
 ```bash
 pip install amfs-autogen

@@ -1,10 +1,10 @@
 ---
 title: "Connectors"
-description: "Feed external events into AMFS — PagerDuty, GitHub, Slack, Jira, and custom webhooks."
+description: "Feed external events into SenseLab — PagerDuty, GitHub, Slack, Jira, and custom webhooks."
 icon: "plug"
 ---
 
-Connectors let AMFS ingest events from external systems and turn them into structured memory entries that agents can query and learn from.
+Connectors let SenseLab ingest events from external systems and turn them into structured memory entries that agents can query and learn from.
 
 <Note>
   Looking for the SenseLab connector inside Claude or ChatGPT? That is the other direction — memory going out to an assistant — and it is covered in [Claude and ChatGPT](/amfs/guides/claude-and-chatgpt). This page is about events coming in.
@@ -36,7 +36,7 @@ Ingests incident lifecycle events: triggered, acknowledged, resolved.
 **Entity path:** `incidents/pagerduty/{service_name}`
 
 **Setup:**
-1. In AMFS Dashboard → Connectors, enable **PagerDuty**
+1. In SenseLab Dashboard → Connectors, enable **PagerDuty**
 2. Copy the webhook URL
 3. In PagerDuty → Integrations → Generic Webhooks (v3), add the URL
 
@@ -54,7 +54,7 @@ Ingests pull request events, deployment statuses, and issue updates.
 **Entity path:** `repos/{owner}/{repo}`
 
 **Setup:**
-1. In AMFS Dashboard → Connectors, enable **GitHub**
+1. In SenseLab Dashboard → Connectors, enable **GitHub**
 2. Copy the webhook URL and signing secret
 3. In your GitHub repo → Settings → Webhooks, add the URL with the secret
 
@@ -72,7 +72,7 @@ Ingests channel messages and thread context relevant to incidents or decisions.
 **Entity path:** `comms/slack/{channel}`
 
 **Setup:**
-1. In AMFS Dashboard → Connectors, enable **Slack**
+1. In SenseLab Dashboard → Connectors, enable **Slack**
 2. Copy the webhook URL
 3. In your Slack app → Event Subscriptions, add the URL
 
@@ -90,7 +90,7 @@ Ingests issue transitions, sprint events, and release notes.
 **Entity path:** `projects/jira/{project_key}`
 
 **Setup:**
-1. In AMFS Dashboard → Connectors, enable **Jira**
+1. In SenseLab Dashboard → Connectors, enable **Jira**
 2. Copy the webhook URL
 3. In Jira → System → Webhooks, add the URL
 
@@ -132,7 +132,7 @@ URL:    https://amfs-login.sense-lab.ai/api/v1/webhooks/pagerduty
 Header: X-AMFS-API-Key: <your-api-key>
 ```
 
-AMFS also validates the source system's signature (e.g., PagerDuty's `X-PagerDuty-Signature`, GitHub's `X-Hub-Signature-256`) using the signing secret configured in Dashboard → Connectors.
+SenseLab also validates the source system's signature (e.g., PagerDuty's `X-PagerDuty-Signature`, GitHub's `X-Hub-Signature-256`) using the signing secret configured in Dashboard → Connectors.
 
 ---
 
