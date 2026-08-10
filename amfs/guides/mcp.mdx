@@ -166,41 +166,63 @@ If `amfs_set_identity` isn't called, the MCP server auto-detects identity from t
 
 ## SenseLab Skill
 
-Use this skill at the start of any session where SenseLab MCP tools are connected. This skill covers the full session lifecycle: set identity, briefing, read/write, and commit outcome. Also use when storing decisions, retrieving past context, or referring to SenseLab (agent memory) or persistent memory across sessions.
+Agents use memory well when they are told when to reach for it. This skill covers the full session lifecycle — set identity, get briefed, read and write, commit the outcome — and, most importantly, tells the agent to search memory before answering any question about what it knows or remembers.
 
 <Note>
-  The install script sets this up for you on Claude Code, writing it to
-  `~/.claude/skills/senselab-memory/SKILL.md` along with an equivalent guide in
-  `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Copy it in by hand for other
-  clients.
+  On Claude Code the install script writes a short version of this to
+  `~/.claude/skills/senselab-memory/SKILL.md`, and the same guidance into
+  `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. The version below is the fuller
+  one — it adds the naming, memory-type, and confidence conventions. Paste it
+  over the installed file, or copy it in by hand on other clients.
 </Note>
 
 ```markdown
 ---
 name: senselab-memory
-description: "Use this skill at the start of any session where SenseLab MCP tools are connected. Covers the full session lifecycle: set identity, briefing, read/write, commit outcome. Also use when storing decisions, retrieving past context, or any mention of SenseLab, agent memory, or persistent memory across sessions."
+description: "Use SenseLab as persistent memory. When the user asks what you know, remember, or have saved about anything — including personal preferences — call amfs_retrieve BEFORE answering. Save durable facts and decisions with amfs_write. Also covers the session lifecycle: set identity, briefing, commit outcome."
 ---
 
 # SenseLab Skill
 
-Use this skill whenever SenseLab MCP tools are available — reading context, storing decisions, or committing outcomes across sessions.
+SenseLab is persistent memory shared across every tool, session, and machine on
+this account. Anything saved from one client is recallable from another.
+
+It stores **whatever was saved** — personal facts and preferences ("what food do
+I like?", names, dates, how the user likes things done) just as much as code
+decisions and runbooks. Never tell the user that SenseLab is only for work or
+agent memory.
+
+## Recall first (the rule that matters most)
+
+When the user asks what you know / remember / have saved about **anything**,
+call `amfs_retrieve` before you answer:
+
+`amfs_retrieve(query="<the user's own words>")`
+
+`entity_path` and `key` are optional — it searches by meaning across everything
+you can see, so a plain phrase is enough. Never tell the user you have no memory
+of something without running `amfs_retrieve` first.
+
+`amfs_read` and `amfs_recall` need an **exact** key. A miss there means "try
+`amfs_retrieve`", not "nothing is stored".
 
 ## Trigger conditions
 - Starting any session where SenseLab MCP is connected
 - User asks to remember, store, or retrieve something
+- User shares a durable fact, preference, or decision
 - After making a significant decision or completing meaningful work
 - When context from a previous session may be relevant
 
 ## Session workflow (always follow this order)
 
-1. **Set identity** — always first, every session. Use a stable kebab-case name that persists across conversations about the same domain.
-   `amfs_set_identity("your-agent-name", "what you're doing this session")`
+1. **Set identity** — always first, every session. Use a stable kebab-case name that persists across conversations about the same domain. Pass `model=` so decision traces record which model made each call.
+   `amfs_set_identity("your-agent-name", "what you're doing this session", model="your-model")`
    Good names: `api-agent`, `infra-agent`, `dashboard-agent`
    Bad names: `fix-button` (too specific), `agent-1` (meaningless)
 
-2. **Get briefing** — one call replaces many reads
-   `amfs_briefing(entity_path="repo/module")`
-   If briefing is empty, use `amfs_list` or `amfs_read` to pull specific keys.
+2. **Check memory before working** — reuse what is already there instead of re-deriving it.
+   `amfs_briefing(entity_path="repo/module")` for compiled context on a codebase.
+   `amfs_retrieve(query="<topic>")` for anything you cannot address by path.
 
 3. **Work** — read before decisions, write after meaningful ones
 
@@ -232,6 +254,7 @@ Examples:
 Prefer `amfs_briefing` over multiple individual reads — one briefing returns compiled, ranked knowledge for an entity.
 
 ## What to write
+- Durable personal facts and preferences the user shares, and anything they say "remember…" about
 - Decisions with rationale (why, not just what)
 - Risks or blockers discovered
 - Patterns worth reusing
@@ -254,9 +277,10 @@ Prefer `amfs_briefing` over multiple individual reads — one briefing returns c
 - `0.4–0.6` — hypothesis, needs validation
 - `< 0.4` — speculative, early signal
 
-## Known issues
-- `amfs_commit_batch` may throw a CausalTagger session_id error — use individual `amfs_write` calls instead
-- `amfs_briefing` returns empty on new stores until the Memory Cortex compiles digests (async)
+## Good to know
+- `amfs_briefing` still answers on a new store: if the Memory Cortex has not compiled a digest yet, it falls back to recent raw entries for that entity
+- `amfs_commit_batch` writes several entries as one atomic commit — use it when you have a group of related entries to save
+- Rooms are shared workspaces with teammates' agents. `amfs_my_rooms()` lists them; entries on a room's entity are visible to every member, so check before writing anything private
 ```
 
 ---
