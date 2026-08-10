@@ -61,16 +61,16 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Sacred Timeline (3D interactive visualization) | — | Yes |
 | **Connectors** |  |  |
 | Connector framework (`ConnectorABC`) | Yes | Yes |
-| Connector CLI (`amfs connector install/list/remove`) | Yes | Yes |
-| Built-in connectors (PagerDuty, GitHub, Slack, Jira) | Yes | Yes |
+| Built-in PagerDuty connector | Yes | Yes |
 | Webhook receiver (`/api/v1/webhooks/{name}`) | Yes | Yes |
+| Direct event ingestion (`/api/v1/events`) | Yes | Yes |
 | **Adapters & Infrastructure** |  |  |
 | Filesystem adapter | Yes | Yes |
 | Postgres adapter (triggers, LISTEN/NOTIFY) | Yes | Yes |
 | S3 adapter | Yes | Yes |
 | HTTP/REST API server | Yes | Yes |
 | Docker \+ Docker Compose \+ Helm charts | Yes | Yes |
-| MCP server (12 tools) | Yes | Yes |
+| MCP server (36 tools) | Yes | Yes |
 | **SDKs & Clients** |  |  |
 | Python SDK (full parity) | Yes | Yes |
 | TypeScript SDK (full parity) | Yes | Yes |
@@ -128,7 +128,22 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Usage analytics & quota monitoring | — | Yes |
 | Snapshot capture, compare, and export | — | Yes |
 | Memory Tiers dashboard (distribution, entry browser) | — | Yes |
+| Knowledge Graph explorer and "Who Knows What" expertise map | — | Yes |
 | Extended MCP server (Pro tools) | — | Yes |
+| **Rooms (Pro)** |  |  |
+| Shared rooms over selected entity paths | — | Yes |
+| Email invitations and shareable join links | — | Yes |
+| Member and viewer roles with per-room enforcement | — | Yes |
+| Agent-to-agent discussions with mentions and threading | — | Yes |
+| Structured negotiations with proposals and consensus | — | Yes |
+| Room documents (PDF, DOCX, Markdown, text) with page-cited search | — | Yes |
+| **Hosted Connectors (Pro)** |  |  |
+| OAuth connector for Claude and ChatGPT (`mcp.sense-lab.ai`) | — | Yes |
+| **Memory Governance (Pro)** |  |  |
+| Security findings: secrets, credentials, PII, poisoning, contamination | — | Yes |
+| Custom policy rules with dry-run preview | — | Yes |
+| SIEM forwarding (webhook, Datadog, Splunk, Microsoft Sentinel) | — | Yes |
+| Memory consolidation with reviewable proposals | — | Yes |
 
 ---
 
@@ -138,7 +153,7 @@ Self-serve tiers for the SaaS version are summarized below:
 
 | Tier | Indicative price | Included ops/month | Notes |
 | :-- | :-- | :-- | :-- |
-| **Free** | \$0 | 1K | Solo; no team invites; hard cap |
+| **Free** | \$0 | 1K | 2 seats, 1 room, 10 guests; hard cap |
 | **Starter** | \$29 | 25K | Entry tier; auto top-up near limit (paid) |
 | **Pro** | \$149 | 50K | Production agent teams |
 | **Teams** | \$449 | 300K | Org scale; lower overage unit / 10K ops |
@@ -162,9 +177,9 @@ The open-source layer ([github.com/raia-live/amfs](https://github.com/raia-live/
 | `amfs-adapter-postgres` | PostgreSQL adapter with PL/pgSQL triggers for outcome propagation and `LISTEN/NOTIFY` for watch |
 | `amfs-adapter-s3` | Amazon S3 / S3-compatible adapter for cloud-native storage |
 | `amfs-http-server` | REST API server (FastAPI/Uvicorn) for remote access, branch-aware endpoints |
-| `amfs-mcp-server` | MCP server exposing 12 tools: `amfs_read`, `amfs_write`, `amfs_search`, `amfs_retrieve`, `amfs_list`, `amfs_stats`, `amfs_commit_outcome`, `amfs_record_context`, `amfs_history`, `amfs_explain`, `amfs_graph_neighbors`, `amfs_timeline` |
+| `amfs-mcp-server` | MCP server exposing 36 tools, including `amfs_read`, `amfs_write`, `amfs_search`, `amfs_retrieve`, `amfs_briefing`, `amfs_recall`, `amfs_list`, `amfs_stats`, `amfs_commit_outcome`, `amfs_record_context`, `amfs_history`, `amfs_explain`, `amfs_graph_neighbors`, and `amfs_timeline`. Set `AMFS_TOOLSET=core` to expose only the 16 essential tools |
 | `amfs-cli` | Terminal tools for inspecting, diffing, snapshotting, and restoring memory |
-| `@amfs/sdk` | TypeScript SDK (full parity with Python: ReadTracker, search, stats, history, explain, recordContext) |
+| `@senselab-ai/amfs` | TypeScript SDK (full parity with Python: ReadTracker, search, stats, history, explain, recordContext) |
 
 ### Key Primitives
 
@@ -228,23 +243,23 @@ Every API request is authenticated, authorized, scoped, and audited. Includes ac
 
 The OSS `explain()` works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). SaaS builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever. Includes LLM call span tracking with token/cost analytics and OpenTelemetry export.
 
-<Card title="Decision Trace Store" icon="fingerprint" href="/amfs/pro/traces">
+<Card title="Decision Trace Store" icon="fingerprint" href="/amfs/pro/immutable-traces">
   Durable causal chains, cryptographic integrity, LLM call spans, precedent search, and OpenTelemetry export.
 </Card>
 
 ### Cross-System Ingestion
 
-Automatically ingest events from external systems into SenseLab memory. The connector framework transforms raw events into SenseLab `write()` or `record_context()` operations, with HMAC verification, deduplication, and pluggable transforms.
+Automatically ingest events from external systems into SenseLab memory. The connector framework transforms raw events into SenseLab `write()` operations, with HMAC verification, deduplication, and pluggable transforms.
 
-<Card title="Cross-System Ingestion" icon="webhook" href="/amfs/pro/ingestion">
-  Webhook ingester, connector framework, and built-in connectors for PagerDuty, Slack, GitHub, and Jira.
+<Card title="Cross-System Ingestion" icon="webhook" href="/amfs/guides/connectors">
+  Webhook ingester, the connector framework, the built-in PagerDuty connector, and direct event ingestion.
 </Card>
 
 ### Automated Pattern Detection
 
 Continuously analyze your memory store to surface recurring patterns, anomalies, and risks — before they become incidents. Detects recurring failures, hot entities, stale clusters, and confidence drift with configurable alert rules and cooldown-based suppression.
 
-<Card title="Pattern Detection" icon="magnifying-glass-chart" href="/amfs/pro/patterns">
+<Card title="Pattern Detection" icon="magnifying-glass-chart" href="/amfs/pro/pattern-detection">
   Pattern types, severity levels, alert rules, cooldown suppression, and callback routing.
 </Card>
 
@@ -293,7 +308,7 @@ A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decis
               ▼                             ▼
    ┌─────────────────┐          ┌───────────────────────────┐
    │  MCP Server OSS │          │  MCP Server Pro            │
-   │  (12 tools)     │          │  (12 + 8 tools)            │
+   │  (36 tools)     │          │  (~78 tools)               │
    └────────┬────────┘          │                           │
             │                   │  Branching Layer:         │
             │                   │  Branches · Merge · PRs   │
@@ -310,7 +325,7 @@ A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decis
             │                   │                           │
             │                   │  Ingestion Layer:         │
             │                   │  Webhooks · Connectors    │
-            │                   │  PagerDuty · Slack · etc. │
+            │                   │  PagerDuty · Events API   │
             │                   │                           │
             │                   │  Pattern Detection:       │
             │                   │  Detector · AlertManager  │
@@ -392,7 +407,7 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
     Install with `pip install amfs` and start writing memory in minutes.
   </Card>
 
-  <Card title="Pro Access" icon="key" href="https://raia.live">
-    Contact us at raia.live for Pro access and setup instructions.
+  <Card title="Connect to SenseLab Cloud" icon="key" href="/amfs/getting-started/saas-connection">
+    Create an account, generate an API key, and point your agents at the hosted service.
   </Card>
 </CardGroup>

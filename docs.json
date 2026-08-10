@@ -47,6 +47,26 @@
                 ]
               },
               {
+                "group": "Self-Hosting",
+                "icon": "server",
+                "pages": [
+                  "amfs/getting-started/installation",
+                  "amfs/guides/docker",
+                  "amfs/guides/cli",
+                  {
+                    "group": "Adapters",
+                    "icon": "database",
+                    "root": "amfs/adapters/overview",
+                    "pages": [
+                      "amfs/adapters/filesystem",
+                      "amfs/adapters/postgres",
+                      "amfs/adapters/s3",
+                      "amfs/adapters/custom"
+                    ]
+                  }
+                ]
+              },
+              {
                 "group": "Core Concepts",
                 "icon": "brain",
                 "pages": [
@@ -78,6 +98,9 @@
                   "amfs/pro/immutable-traces",
                   "amfs/pro/pattern-detection",
                   "amfs/pro/intelligence",
+                  "amfs/pro/consolidation",
+                  "amfs/pro/knowledge-graph",
+                  "amfs/pro/security",
                   "amfs/pro/ml-layer",
                   "amfs/pro/dashboard",
                   "amfs/pro/billing"
@@ -118,7 +141,7 @@
     "primary": {
       "type": "button",
       "label": "Get Started",
-      "href": "https://app.raia.live"
+      "href": "https://amfs.sense-lab.ai"
     }
   },
   "contextual": {
@@ -140,5 +163,5 @@
       "linkedin": "https://linkedin.com/company/sense-lab"
     }
   },
-  "description": "AI Trust Layer for SLDC"
+  "description": "AI Trust Layer for the SDLC"
 }

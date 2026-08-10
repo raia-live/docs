@@ -1,104 +1,33 @@
 ---
 title: "Connectors"
-description: "Feed external events into SenseLab — PagerDuty, GitHub, Slack, Jira, and custom webhooks."
+description: "Feed external events into SenseLab through webhooks, the events API, or a connector you write yourself."
 icon: "plug"
 ---
 
-Connectors let SenseLab ingest events from external systems and turn them into structured memory entries that agents can query and learn from.
+Connectors let SenseLab ingest events from external systems and turn them into
+memory entries that agents can query and learn from. An incident that paged
+someone at 3am becomes something the next agent working on that service can read.
 
 <Note>
-  Looking for the SenseLab connector inside Claude or ChatGPT? That is the other direction — memory going out to an assistant — and it is covered in [Claude and ChatGPT](/amfs/guides/claude-and-chatgpt). This page is about events coming in.
+  Looking for the SenseLab connector inside Claude or ChatGPT? That is the other
+  direction — memory going out to an assistant — and it is covered in
+  [Claude and ChatGPT](/amfs/guides/claude-and-chatgpt). This page is about
+  events coming in.
 </Note>
 
-## How It Works
+## Three ways in
 
-1. Enable a connector in **Dashboard → Connectors**
-2. Copy your webhook URL
-3. Paste it into the external system's webhook settings
-4. Events flow in automatically — agents see them via `search()` and `briefing()`
-
-Every event is validated, deduplicated, and transformed into versioned memory entries with proper entity paths and confidence scores.
-
----
-
-## Available Connectors
-
-### PagerDuty
-
-Ingests incident lifecycle events: triggered, acknowledged, resolved.
-
-**What it captures:**
-- Incident title, severity, and status
-- Assigned responders
-- Service and escalation policy
-- Resolution notes
-
-**Entity path:** `incidents/pagerduty/{service_name}`
-
-**Setup:**
-1. In SenseLab Dashboard → Connectors, enable **PagerDuty**
-2. Copy the webhook URL
-3. In PagerDuty → Integrations → Generic Webhooks (v3), add the URL
+| Route | Use it when |
+| :-- | :-- |
+| **Events API** | The sending system can post JSON to a URL. Simplest option, no connector needed. |
+| **Webhook receiver** | You want signature verification and deduplication handled for you. |
+| **Custom connector** | You need to reshape a vendor's payload into meaningful entity paths and keys. |
 
 ---
 
-### GitHub
+## Events API
 
-Ingests pull request events, deployment statuses, and issue updates.
-
-**What it captures:**
-- PR opened/merged/closed events with diff stats
-- Deployment success/failure with environment info
-- Issue state changes and label updates
-
-**Entity path:** `repos/{owner}/{repo}`
-
-**Setup:**
-1. In SenseLab Dashboard → Connectors, enable **GitHub**
-2. Copy the webhook URL and signing secret
-3. In your GitHub repo → Settings → Webhooks, add the URL with the secret
-
----
-
-### Slack
-
-Ingests channel messages and thread context relevant to incidents or decisions.
-
-**What it captures:**
-- Messages from monitored channels
-- Thread context around incident discussions
-- Bot interaction logs
-
-**Entity path:** `comms/slack/{channel}`
-
-**Setup:**
-1. In SenseLab Dashboard → Connectors, enable **Slack**
-2. Copy the webhook URL
-3. In your Slack app → Event Subscriptions, add the URL
-
----
-
-### Jira
-
-Ingests issue transitions, sprint events, and release notes.
-
-**What it captures:**
-- Issue status transitions (e.g., In Progress → Done)
-- Sprint start/complete events
-- Release creation and deployment tracking
-
-**Entity path:** `projects/jira/{project_key}`
-
-**Setup:**
-1. In SenseLab Dashboard → Connectors, enable **Jira**
-2. Copy the webhook URL
-3. In Jira → System → Webhooks, add the URL
-
----
-
-## Direct Event Ingestion
-
-For any system that doesn't have a built-in connector, push events directly via the REST API:
+The most direct route. Any system that can make an HTTP request can write memory:
 
 ```bash
 curl -X POST https://amfs-login.sense-lab.ai/api/v1/events \
@@ -113,36 +42,135 @@ curl -X POST https://amfs-login.sense-lab.ai/api/v1/events \
   }'
 ```
 
-Events are stored as shared memory entries with `agent_id="external/{source}"`, visible to all agents and automatically included in Cortex digest compilation.
+Events are stored as shared entries with `agent_id="external/{source}"`, visible
+to all your agents and included in Cortex digest compilation.
 
-Use this for:
-- Monitoring alerts (Datadog, Grafana, custom)
-- CI/CD pipelines reporting deployment status
-- Cron jobs pushing periodic metrics
-- Any system with an outgoing webhook
+Good for monitoring alerts, CI/CD pipelines reporting deploy status, cron jobs
+pushing metrics, and anything else with an outgoing webhook.
 
 ---
 
-## Webhook Authentication
+## Webhook receiver
 
-All webhook endpoints require your API key. Include it as a header when configuring webhooks in external systems:
+Each connector gets an endpoint:
 
 ```
-URL:    https://amfs-login.sense-lab.ai/api/v1/webhooks/pagerduty
-Header: X-AMFS-API-Key: <your-api-key>
+POST https://amfs-login.sense-lab.ai/api/v1/webhooks/{connector_name}
 ```
 
-SenseLab also validates the source system's signature (e.g., PagerDuty's `X-PagerDuty-Signature`, GitHub's `X-Hub-Signature-256`) using the signing secret configured in Dashboard → Connectors.
+Requests must carry your API key as `X-AMFS-API-Key`. Two optional headers
+control routing and deduplication:
 
----
+| Header | Purpose |
+| :-- | :-- |
+| `X-Event-Type` | Selects which transform handles the payload |
+| `X-Event-Id` | Deduplication key; falls back to an `id` field in the payload |
 
-## Verifying Events
+If no transform matches the event type, the receiver still writes the raw
+payload, so nothing is silently dropped.
 
-After configuring a webhook, trigger a test event from the external system and check that it arrived:
+### Signature verification
+
+Set an HMAC secret per connector as an environment variable on the server:
 
 ```bash
-curl "https://amfs-login.sense-lab.ai/api/v1/entries?entity_path=incidents/pagerduty" \
+export AMFS_CONNECTOR_PAGERDUTY_SECRET="<shared-secret>"
+```
+
+The signature is read from `X-Webhook-Signature` unless the connector overrides
+the header name. With no secret set, signature checking is skipped.
+
+<Warning>
+  Deduplication is held in memory with a five-minute window, so it is per-process
+  rather than durable. Across replicas, or after a restart, a replayed event can
+  be written twice. Because writes are copy-on-write, a duplicate creates a new
+  version rather than corrupting anything.
+</Warning>
+
+### API key scopes
+
+Keys of type `ingestion` may write to `/api/v1/events`, `/api/v1/entries`, and
+`/api/v1/record-context` — but **not** to `/api/v1/webhooks/*`. Use an agent key
+for webhook endpoints.
+
+---
+
+## Built-in connector: PagerDuty
+
+PagerDuty is the connector that ships with SenseLab.
+
+**What it captures:** incident title, severity, status, assigned responders, and
+the service involved.
+
+**Entity path:** `incidents/{service_name}`
+
+**Setup:**
+
+1. Set `AMFS_CONNECTOR_PAGERDUTY_SECRET` on your server
+2. In PagerDuty, go to **Integrations → Generic Webhooks (v3)** and add
+   `https://amfs-login.sense-lab.ai/api/v1/webhooks/pagerduty`
+3. Add your `X-AMFS-API-Key` header to the webhook configuration
+
+<Note>
+  Incident *triggered* events are written to memory. Acknowledgement and
+  resolution events are currently parsed but not persisted, so an incident's
+  memory entry reflects how it started rather than how it ended.
+</Note>
+
+**Dashboard → Connectors** lists the connectors registered on your server and
+shows each webhook URL. Secrets are configured through environment variables on
+the server, not through the dashboard.
+
+---
+
+## Writing your own connector
+
+A connector implements `ConnectorABC`:
+
+```python
+from amfs_connectors import ConnectorABC, IngestionResult
+
+
+class DeployConnector(ConnectorABC):
+    name = "deploys"
+
+    def validate_event(self, raw_event: dict) -> bool:
+        return "service" in raw_event and "status" in raw_event
+
+    def transform(self, raw_event: dict) -> list[IngestionResult]:
+        return [
+            IngestionResult(
+                action="write",
+                entity_path=f"deploys/{raw_event['service']}",
+                key=f"deploy-{raw_event['sha'][:8]}",
+                value={
+                    "status": raw_event["status"],
+                    "environment": raw_event.get("environment"),
+                },
+            )
+        ]
+```
+
+Register it as an entry point so SenseLab discovers it:
+
+```toml
+[project.entry-points."amfs.connectors"]
+deploys = "my_package.deploys:DeployConnector"
+```
+
+`IngestionResult.action` accepts `"write"`, `"context"`, or `"skip"`. Today only
+`"write"` results are persisted by the webhook handler — `"context"` results are
+accepted but not yet recorded, so build around `"write"`.
+
+---
+
+## Verifying events arrived
+
+Trigger a test event, then read the entity back:
+
+```bash
+curl "https://amfs-login.sense-lab.ai/api/v1/entries?entity_path=incidents/checkout" \
   -H "X-AMFS-API-Key: <your-api-key>"
 ```
 
-Or check the Dashboard → Memory Explorer to see incoming entries in real-time.
+Or open **Dashboard → Memory Explorer** and watch entries appear.

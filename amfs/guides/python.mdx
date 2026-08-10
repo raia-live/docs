@@ -12,22 +12,48 @@ The Python SDK provides the `AgentMemory` class — the primary interface for re
 pip install amfs
 ```
 
-Set the connection env vars and the SDK auto-detects the HTTP adapter:
+To connect to SenseLab Cloud rather than local storage, also install the HTTP
+adapter:
 
 ```bash
-export AMFS_HTTP_URL="https://amfs.sense-lab.ai"
-export AMFS_API_KEY="<your-api-key>"
+pip install amfs-adapter-http
 ```
 
 ---
 
 ## Creating an Instance
 
+By default `AgentMemory` uses the filesystem adapter, so everything stays on the
+local machine:
+
 ```python
 from amfs import AgentMemory
 
-mem = AgentMemory(agent_id="my-agent")
+mem = AgentMemory("my-agent")
 ```
+
+To reach your account, pass an `HttpAdapter`:
+
+```python
+import os
+
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    "my-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
+```
+
+<Note>
+  Setting `AMFS_HTTP_URL` on its own does not switch the SDK to the hosted
+  service — the adapter argument is what decides where memory goes. The
+  environment variable is read by the MCP server and the CLI, not by the SDK.
+</Note>
 
 ### With Custom Configuration
 
@@ -803,17 +829,26 @@ with AgentMemory(agent_id="my-agent") as mem:
 
 ## Connecting to SenseLab
 
-Set two env vars and the SDK connects automatically — no adapter setup needed:
+Install the HTTP adapter and pass it to `AgentMemory`:
 
 ```bash
-export AMFS_HTTP_URL="https://amfs.sense-lab.ai"
+pip install amfs-adapter-http
 export AMFS_API_KEY="<your-api-key>"
 ```
 
 ```python
-from amfs import AgentMemory
+import os
 
-mem = AgentMemory(agent_id="my-agent")
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    "my-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
 mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
 ```
 

@@ -1,0 +1,126 @@
+---
+title: "Memory Consolidation"
+description: "Compacting a memory store that has grown faster than it has improved."
+icon: "layer-group"
+---
+
+A memory store that only ever grows gets worse at its job. Superseded beliefs sit
+alongside the facts that replaced them, entries nobody has read in months compete
+for space in briefings, and three agents independently record the same finding in
+slightly different words.
+
+Consolidation compacts the store. It is deliberately conservative: the safe
+operations happen automatically, and anything that changes meaning is proposed
+for review rather than applied.
+
+## Two tiers
+
+### Tier A — applied automatically
+
+These operations do not change what your memory *says*, so they run without
+asking.
+
+| Rule | What happens |
+| :-- | :-- |
+| Superseded belief | A belief sitting under a fact with confidence 0.9 or above is demoted to the archive tier |
+| Stale entry | An entry older than 30 days with no reads and no outcomes is demoted to the archive tier |
+
+Note the word *demoted*. Tier A never deletes. Entries move to the archive tier,
+which takes them out of everyday recall while leaving them readable and
+restorable.
+
+### Tier B — proposed for review
+
+These change meaning, so they need a human or an agent to agree.
+
+| Strategy | Trigger |
+| :-- | :-- |
+| Convergent knowledge | Three or more agents recorded near-identical values for the same key |
+| Outcome rollup | Five or more experience entries with outcomes share a key prefix |
+
+A Tier B candidate is written to a **branch** named
+`cortex/consolidation/{entity_path}/{timestamp}`, with the merged entry on that
+branch. Your `main` timeline is untouched until someone merges it.
+
+---
+
+## Candidates and proposals
+
+The two words mean different things, which matters when reading tool output.
+
+A **candidate** is a detection result computed on the fly and not stored
+anywhere. A **proposal** is a candidate that has been persisted as a branch and
+is waiting for a decision.
+
+Review proposals in the dashboard under agent branches, on the **Consolidation**
+tab. Each shows the diff between what exists now and what the merge would
+produce. **Approve & Merge** applies it through the normal branch merge path;
+**Reject** closes the branch and leaves memory as it was.
+
+---
+
+## When it runs
+
+Tier A runs automatically roughly every six hours. Both tiers also run on
+demand, from the **Memory Distiller** panel on the Pro dashboard or from an
+agent.
+
+```
+amfs_consolidation_status()
+```
+
+Returns counts of consolidation runs, entries auto-archived, proposals pending,
+and entities ready for consolidation.
+
+```
+amfs_consolidation_proposals(status="pending", limit=20)
+```
+
+Lists proposals awaiting review.
+
+```
+amfs_consolidate()
+```
+
+Runs consolidation now: applies Tier A, and records Tier B candidates as
+proposals.
+
+<Note>
+  `amfs_consolidate` accepts a `dry_run` argument, but the service currently
+  ignores it and performs a real run either way. To preview without changing
+  anything, read `amfs_consolidation_candidates` instead. That tool needs an
+  entity path to inspect.
+</Note>
+
+---
+
+## Related tools
+
+Two neighbouring tools are often confused with consolidation because they also
+look at the store as a whole. Neither modifies memory.
+
+**`amfs_critique()`** reports on memory quality — stale, orphaned,
+uncalibrated, contradictory, and toxic entries. It tells you where consolidation
+would help.
+
+**`amfs_distill(min_confidence=0.3, max_entries=500)`** produces a compact
+bootstrap set: the highest-value slice of memory, suitable for seeding a new
+agent. It returns that set to you and leaves the store untouched.
+
+---
+
+## Undoing it
+
+Every consolidation operation is a versioned write, so nothing is lost.
+
+A Tier A demotion can be reversed by writing the entry back to a warmer tier;
+its content and history were never altered. A Tier B proposal you have not
+merged is discarded by rejecting the branch. One you have already merged is
+undone the way any merge is — roll back to a tag or timestamp from before it.
+
+<Note>
+  Embedding-based semantic merging appears in the codebase but is not wired into
+  the running service. Consolidation today works on the rules described above,
+  not on semantic similarity beyond the string comparison used to spot
+  convergent knowledge.
+</Note>

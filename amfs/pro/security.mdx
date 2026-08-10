@@ -1,0 +1,206 @@
+---
+title: "Memory Security"
+description: "Find secrets, PII, poisoning, and contamination in your agents' memory — and do something about them."
+icon: "shield-halved"
+---
+
+Agents write whatever they read. Over months, a memory store accumulates things
+nobody meant to put there: an API key pasted into a debugging note, a customer
+email in an incident summary, a confident-sounding fact that one agent quietly
+overwrote with something wrong.
+
+SenseLab scans your memory for these and raises **findings** you can triage, the
+same way you would triage alerts.
+
+## What gets detected
+
+Three detectors run over your entries, plus any policy rules you define.
+
+### Secrets and credentials
+
+Pattern and entropy matching for the kinds of strings that should never be at
+rest in memory.
+
+| Detected | Severity |
+| :-- | :-- |
+| AWS access key ID, Stripe secret key, OpenAI API key, private key block | Critical |
+| GitHub token (checksum-verified) | Critical |
+| Slack token, Google API key, Twilio key, Azure storage key | High |
+| Hardcoded password, hardcoded API key or secret, database connection string | High |
+| JSON Web Token, generic high-entropy token | Medium |
+
+### Personal data
+
+Email addresses (info), IPv4 addresses (info), US Social Security numbers
+(high), and credit card numbers validated with a Luhn check (high).
+
+### Memory poisoning
+
+Poisoning detection is what a general-purpose secret scanner cannot do, because
+it needs version history and authorship. It only considers edits made by a
+*different* agent than the original author.
+
+| Signal | What it means |
+| :-- | :-- |
+| Trusted fact overwrite | An agent replaced a high-confidence fact rather than refining it |
+| Knowledge conflict | Two or more agents are flipping a value back and forth — an edit war |
+| Confidence inflation | A low-confidence belief was promoted to near-certainty in one step |
+| Confidence downgrade | A trusted fact was sharply devalued by another agent |
+| Type escalation | A belief was quietly re-typed as a fact |
+
+### Contamination
+
+Flags low-trust memory that is spreading. When an entry with confidence at or
+below 0.4 has been read by several agents, it is shaping decisions it was never
+reliable enough to shape. Reads by five or more agents raise the severity.
+
+---
+
+## Severity and verification are separate
+
+A finding carries two independent ratings, and conflating them is the fastest
+way to drown in false positives.
+
+**Severity** — critical, high, medium, low, info — is how bad it would be if
+real.
+
+**Verification** is how sure we are that it *is* real:
+
+| Tier | Meaning |
+| :-- | :-- |
+| `confirmed` | Actively validated — for example, the API key was checked and is live |
+| `structural` | Proven by format: a checksum passed, or two independent signals agree |
+| `heuristic` | A single pattern matched, and nothing corroborates it |
+
+The dashboard splits findings into two lanes on this basis. **Confirmed** holds
+the confirmed and structural findings — start here. **Potential** holds the
+heuristic ones, which are worth a look but include the guesses.
+
+<Note>
+  Liveness checking of discovered secrets is off by default. Turning it on means
+  SenseLab makes an outbound request to the issuing vendor (GitHub, OpenAI,
+  Stripe, Slack) to see whether a key still works. Enable it under
+  **Security → Settings**.
+</Note>
+
+---
+
+## Triaging findings
+
+Each finding moves through `open` → `triaged` → `resolved`, or is closed as
+`false_positive` or `suppressed`. Findings are deduplicated on a fingerprint, so
+re-detecting the same problem updates the existing record rather than making a
+new one. A finding that stops appearing in a scan resolves itself.
+
+For any finding you can inspect the redacted entry and its version history, and
+view its **blast radius** — which agents read the entry and what they did next.
+For contamination this is the important view, because it tells you how far a bad
+entry travelled.
+
+### Remediation
+
+Two actions are available, both of which write a new version rather than erasing
+anything:
+
+**Quarantine** writes a new version with confidence set to zero and sharing
+turned off. The entry stops appearing in recall and briefings but remains in
+history.
+
+**Revert** restores the previous version's value and confidence — the fix for a
+poisoned entry, where a good value already exists further back in the timeline.
+
+Both are attributed to the `security-remediation` agent, so the change is
+visible in provenance.
+
+---
+
+## Policy rules
+
+Beyond the built-in detectors, you can write rules for what *your* organisation
+considers a problem — an internal hostname convention, a project codename that
+should never be in shared memory.
+
+Four kinds of rule are available: `regex`, `keyword`, `entropy`, and
+`condition`. A condition rule is a structured predicate over entry metadata,
+supporting `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, and `contains` against fields
+like `confidence`, `memory_type`, `recall_count`, `agent_id`, `entity_path`,
+`key`, `shared`, and `value`.
+
+Every rule can be scoped to an entity path glob, and previewed before you save
+it — the preview reports how many entries would match and shows redacted
+samples, without storing anything.
+
+<Note>
+  Rules raise findings. A rule cannot yet block or auto-quarantine on match, so
+  treat them as detection rather than enforcement.
+</Note>
+
+### Allowlisting
+
+Some paths are noisy by design — a test fixture full of fake credentials, for
+instance. Add an entity path glob to the allowlist and matching findings are
+dropped before they are stored, with existing open findings on those paths
+resolving on the next scan.
+
+---
+
+## Forwarding to your SIEM
+
+Findings can be pushed to where you already watch alerts:
+
+| Destination | Configuration |
+| :-- | :-- |
+| Webhook | URL, plus an optional secret for HMAC-SHA256 request signing |
+| Datadog | API key and site |
+| Splunk | HEC URL and token |
+| Microsoft Sentinel | Logic App webhook URL |
+
+Each integration has its own minimum severity, defaulting to high. By default
+only confirmed and structural findings are forwarded, so heuristic guesses do
+not page anyone. You can send a sample finding to test the connection before
+relying on it.
+
+---
+
+## Running a scan
+
+Scanning is on-demand: open **Security** in the dashboard and the overview
+triggers a scan, or call the API directly.
+
+```bash
+curl -X POST https://amfs-login.sense-lab.ai/api/v1/pro/security/scan \
+  -H "X-AMFS-API-Key: <your-api-key>"
+```
+
+<Warning>
+  Treat scanning as something you run, not something that runs itself. A
+  continuous background scanner exists in the codebase but is not part of the
+  hosted deployment today, so a secret written just now will not surface until
+  the next scan.
+</Warning>
+
+---
+
+## Access
+
+Security is gated by **role, not plan**. A user needs the `security` or `admin`
+role to see any of it; members without that role cannot reach the pages or the
+API. Admins grant the role under **Security → Access**.
+
+---
+
+## What this does not do
+
+Worth being clear about the boundary, because the name invites assumptions.
+
+**It does not block writes.** The scanner runs after the fact. An agent writing a
+live AWS key will succeed, and the key sits in memory until a scan finds it.
+There is a write-time safety gate in SenseLab, but it currently guards decision
+trace capture and the LLM proxy — not `amfs_write`.
+
+**It does not scan documents.** Room documents are not covered by these
+detectors.
+
+**It is not a substitute for secret hygiene.** The right fix for a leaked
+credential is rotating it at the source. Quarantining the memory entry stops it
+spreading to your agents; it does nothing about the key itself.

@@ -1,0 +1,123 @@
+---
+title: "Knowledge Graph and Expertise"
+description: "Trace how knowledge connects, and see which agent actually knows what."
+icon: "share-nodes"
+---
+
+Every write, outcome, and cross-agent read leaves an edge behind. Over time those
+edges form a graph of how your agents' knowledge actually connects — not how you
+planned it on a whiteboard.
+
+[Context Graphs](/amfs/concepts/context-graphs) covers how edges are created and
+how to walk immediate neighbours. This page covers what SenseLab Cloud adds:
+querying the graph as a whole, and reading it as a map of expertise.
+
+<Note>
+  The persisted graph lives in Postgres. On a filesystem or S3 adapter, edges are
+  not materialized and the graph tools return nothing. This is automatic on the
+  hosted service.
+</Note>
+
+## Finding the path between two things
+
+`amfs_graph_neighbors` answers "what is next to this". The Pro tools answer
+harder questions.
+
+```
+amfs_graph_path(
+    from_entity="checkout-service/retry-pattern",
+    to_entity="incidents/DEP-500",
+    max_depth=5,
+    min_path_confidence=0.1,
+)
+```
+
+This finds the strongest chain connecting two entities, returning the path, its
+overall confidence, and the number of hops. It searches for the most *reliable*
+route rather than the shortest one, weighting each hop by edge confidence — a
+four-hop chain of well-evidenced edges beats a two-hop chain of guesses.
+
+Use it when you want to know whether two things are related at all, and through
+what. "Did this retry pattern have anything to do with that outage?" is a
+question with a path-shaped answer.
+
+## Querying across the whole graph
+
+```
+amfs_graph_query(
+    relation="learned_from",
+    min_confidence=0.5,
+    min_evidence=3,
+    limit=50,
+)
+```
+
+Returns every edge matching a filter, rather than starting from one entity.
+Filter by relation, source type, target type, minimum confidence, and minimum
+evidence count.
+
+The `min_evidence` filter is the useful one. An edge with an evidence count of
+one is a coincidence; an edge seen twenty times is a real relationship. Raising
+the floor is how you separate structure from noise.
+
+---
+
+## In the dashboard
+
+### Knowledge Graph explorer
+
+Search for an entity, choose a depth, and see the subgraph around it with
+relations colour-coded by type: `references`, `informed`, `read`,
+`learned_from`, `co_occurs_with`, and `wrote`.
+
+Useful when an entry is behaving oddly and you want to see what feeds it.
+
+### Who Knows What
+
+The expertise map turns the graph into an agent-by-topic matrix. For every agent
+and every topic, it shows how much of that topic's knowledge the agent holds and
+how strong that knowledge is.
+
+The things worth looking for:
+
+**Siloed topics** — knowledge held by exactly one agent. If that agent stops
+running or its memory is reset, the knowledge goes with it. These are the gaps
+that only become visible once something breaks.
+
+**Shared topics** — where several agents overlap, which tells you where a room
+would help and where you may be duplicating work.
+
+**Learned-from edges** — which agents have actually taught other agents
+anything. An agent that writes constantly but has no outgoing learned-from edges
+is talking to itself.
+
+Filter by siloed, shared, or room-scoped knowledge, and click any cell to see
+the entries behind it.
+
+### Knowledge lineage
+
+For a single entry, lineage shows the chronological chain that produced it —
+which reads informed it, which outcomes validated it, and how its confidence
+moved. It answers "why does this entry say what it says", which is the question
+that matters when an agent has acted on something wrong.
+
+---
+
+## Three graphs, one system
+
+These names are easy to mix up, so it is worth separating them.
+
+| | Scope | Answers |
+| :-- | :-- | :-- |
+| **Context graph** (decision trace) | One session | What did this agent read before it decided? |
+| **Knowledge graph** | All sessions, all agents | How are entries, agents, and outcomes related? |
+| **Expertise map** | Aggregated view of the knowledge graph | Which agent knows which topic, and how well? |
+
+The context graph is a recording. The knowledge graph is what accumulates from
+many recordings. The expertise map is that graph summarised by agent and topic.
+
+<Note>
+  On SenseLab Cloud, graph results respect the same visibility rules as memory
+  reads. Edges touching entries you cannot see are filtered out, so the graph a
+  member sees may be smaller than the whole.
+</Note>

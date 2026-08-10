@@ -298,7 +298,7 @@ console.log(stats.entities); // Record<string, number>
 import { AgentMemory, HttpAdapter } from "@senselab-ai/amfs";
 
 const adapter = new HttpAdapter({
-  url: "https://amfs.sense-lab.ai",
+  url: "https://amfs-login.sense-lab.ai",
   apiKey: process.env.AMFS_API_KEY,
 });
 
@@ -340,7 +340,7 @@ const trace = await adapter.getTraceAsync(traces[0].id);
 ### Direct REST calls
 
 ```typescript
-const response = await fetch("https://amfs.sense-lab.ai/api/v1/entries", {
+const response = await fetch("https://amfs-login.sense-lab.ai/api/v1/entries", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

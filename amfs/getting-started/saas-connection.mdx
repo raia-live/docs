@@ -11,9 +11,9 @@ Getting started with SenseLab only takes a few seconds
   ![Screenshot 2026 04 14 At 12 43 20 PM](/images/Screenshot-2026-04-14-at-12.43.20-PM.png)
 </Frame>
 
-1. Create an [**SenseLab**](https://amfs.sense-lab.ai) account
+1. Create a [**SenseLab**](https://amfs.sense-lab.ai) account
 2. Go to **Settings → API Keys** to create a scoped key
-3. Go to the [SenseLab Dashboard → Agents](https://amfs-login.sense-lab.ai) page
+3. Go to the [SenseLab Dashboard → Agents](https://amfs.sense-lab.ai/agents) page
 4. The **MCP Connection Card** shows your **Server URL**
 5. Copy the ready-made JSON snippet — paste it into your IDE config
 
@@ -32,7 +32,7 @@ Add to `.cursor/mcp.json`:
   "mcpServers": {
     "amfs": {
       "command": "uvx",
-      "args": ["amfs-mcp-server"],
+      "args": ["amfs-mcp-server-pro"],
       "env": {
         "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
         "AMFS_API_KEY": "<your-api-key>"
@@ -44,59 +44,71 @@ Add to `.cursor/mcp.json`:
 
 ### Claude Code
 
-Add to `~/.claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "amfs": {
-      "command": "uvx",
-      "args": ["amfs-mcp-server"],
-      "env": {
-        "AMFS_HTTP_URL": "https://amfs-login.sense-lab.ai",
-        "AMFS_API_KEY": "<your-api-key>"
-      }
-    }
-  }
-}
+```bash
+claude mcp add amfs -- uvx amfs-mcp-server-pro
 ```
+
+Then set `AMFS_HTTP_URL` and `AMFS_API_KEY` in the environment Claude Code runs in.
+
+<Note>
+  `amfs-mcp-server-pro` is the right package whenever you have an API key. The
+  plain `amfs-mcp-server` also talks to the API, but it only exposes the
+  open-source tool surface — no rooms, no negotiations, no documents.
+</Note>
 
 ---
 
 ## Connect via SDK
 
-Set the env vars once — both SDKs pick them up automatically:
-
-```bash
-export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
-export AMFS_API_KEY="<your-api-key>"
-```
+Both SDKs talk to local storage unless you hand them an HTTP adapter. Pass one
+explicitly — setting the environment variables alone will not connect you to the
+hosted service.
 
 ### Python
 
 ```bash
-pip install amfs
+pip install amfs amfs-adapter-http
 ```
 
 ```python
-from amfs import AgentMemory
+import os
 
-mem = AgentMemory(agent_id="my-agent")
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    "my-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
 mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
 ```
 
 ### TypeScript
 
 ```bash
-npm install @amfs/sdk
+npm install @senselab-ai/amfs
 ```
 
 ```typescript
-import { AgentMemory } from "@amfs/sdk";
+import { AgentMemory, HttpAdapter } from "@senselab-ai/amfs";
 
-const mem = new AgentMemory({ agentId: "my-agent" });
+const mem = new AgentMemory("my-agent", {
+  adapter: new HttpAdapter({
+    url: "https://amfs-login.sense-lab.ai",
+    apiKey: process.env.AMFS_API_KEY,
+  }),
+});
 await mem.write("checkout-service", "retry-pattern", { maxRetries: 3 });
 ```
+
+<Warning>
+  Without the adapter, `AgentMemory` writes to local storage — the filesystem in
+  Python, memory in TypeScript. Everything appears to work, but nothing reaches
+  your account and the dashboard stays empty.
+</Warning>
 
 ---
 
