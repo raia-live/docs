@@ -15,6 +15,11 @@ someone at 3am becomes something the next agent working on that service can read
   events coming in.
 </Note>
 
+SenseLab does not ship ready-made integrations for specific vendors. What it
+gives you is the plumbing: an endpoint to post to, signature verification,
+deduplication, and a place to hook your own transform. Wiring up a particular
+tool is something you do, and the routes below are how.
+
 ## Three ways in
 
 | Route | Use it when |
@@ -71,10 +76,11 @@ payload, so nothing is silently dropped.
 
 ### Signature verification
 
-Set an HMAC secret per connector as an environment variable on the server:
+Set an HMAC secret per connector as an environment variable on the server,
+named after the connector:
 
 ```bash
-export AMFS_CONNECTOR_PAGERDUTY_SECRET="<shared-secret>"
+export AMFS_CONNECTOR_DEPLOYS_SECRET="<shared-secret>"
 ```
 
 The signature is read from `X-Webhook-Signature` unless the connector overrides
@@ -93,29 +99,7 @@ Keys of type `ingestion` may write to `/api/v1/events`, `/api/v1/entries`, and
 `/api/v1/record-context` — but **not** to `/api/v1/webhooks/*`. Use an agent key
 for webhook endpoints.
 
----
-
-## Built-in connector: PagerDuty
-
-PagerDuty is the connector that ships with SenseLab.
-
-**What it captures:** incident title, severity, status, assigned responders, and
-the service involved.
-
-**Entity path:** `incidents/{service_name}`
-
-**Setup:**
-
-1. Set `AMFS_CONNECTOR_PAGERDUTY_SECRET` on your server
-2. In PagerDuty, go to **Integrations → Generic Webhooks (v3)** and add
-   `https://amfs-login.sense-lab.ai/api/v1/webhooks/pagerduty`
-3. Add your `X-AMFS-API-Key` header to the webhook configuration
-
-<Note>
-  Incident *triggered* events are written to memory. Acknowledgement and
-  resolution events are currently parsed but not persisted, so an incident's
-  memory entry reflects how it started rather than how it ended.
-</Note>
+### Seeing what is registered
 
 **Dashboard → Connectors** lists the connectors registered on your server and
 shows each webhook URL. Secrets are configured through environment variables on
@@ -169,7 +153,7 @@ accepted but not yet recorded, so build around `"write"`.
 Trigger a test event, then read the entity back:
 
 ```bash
-curl "https://amfs-login.sense-lab.ai/api/v1/entries?entity_path=incidents/checkout" \
+curl "https://amfs-login.sense-lab.ai/api/v1/entries?entity_path=deploys/checkout" \
   -H "X-AMFS-API-Key: <your-api-key>"
 ```
 

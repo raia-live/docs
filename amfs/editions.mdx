@@ -61,7 +61,6 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Sacred Timeline (3D interactive visualization) | — | Yes |
 | **Connectors** |  |  |
 | Connector framework (`ConnectorABC`) | Yes | Yes |
-| Built-in PagerDuty connector | Yes | Yes |
 | Webhook receiver (`/api/v1/webhooks/{name}`) | Yes | Yes |
 | Direct event ingestion (`/api/v1/events`) | Yes | Yes |
 | **Adapters & Infrastructure** |  |  |
@@ -98,7 +97,6 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Generic webhook endpoint with HMAC verification | Yes | Yes |
 | Payload deduplication (idempotency) | Yes | Yes |
 | Pluggable transform pipeline with pattern matching | Yes | Yes |
-| PagerDuty incident connector | Yes | Yes |
 | Extensible connector framework (`ConnectorABC`) | Yes | Yes |
 | **Automated Pattern Detection (Pro)** |  |  |
 | Recurring failure detection across causal chains | — | Yes |
@@ -106,7 +104,7 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Stale cluster detection (unvalidated entries) | — | Yes |
 | Confidence drift detection (outlier entries) | — | Yes |
 | Configurable alert rules with cooldown suppression | — | Yes |
-| Alert callbacks (Slack, PagerDuty, email routing) | — | Yes |
+| Alert callbacks for routing to your own systems | — | Yes |
 | **Intelligence Layer (Pro)** |  |  |
 | LLM-driven memory extraction | — | Yes |
 | Auto entity/relationship extraction from traces | — | Yes |
@@ -250,10 +248,10 @@ The OSS `explain()` works within the active session and captures enriched trace 
 
 ### Cross-System Ingestion
 
-Automatically ingest events from external systems into SenseLab memory. The connector framework transforms raw events into SenseLab `write()` operations, with HMAC verification, deduplication, and pluggable transforms.
+Ingest events from your own systems into SenseLab memory. The connector framework transforms raw payloads into SenseLab `write()` operations, with HMAC verification, deduplication, and pluggable transforms.
 
 <Card title="Cross-System Ingestion" icon="webhook" href="/amfs/guides/connectors">
-  Webhook ingester, the connector framework, the built-in PagerDuty connector, and direct event ingestion.
+  Webhook ingester, the connector framework, and direct event ingestion.
 </Card>
 
 ### Automated Pattern Detection
@@ -326,7 +324,7 @@ A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decis
             │                   │                           │
             │                   │  Ingestion Layer:         │
             │                   │  Webhooks · Connectors    │
-            │                   │  PagerDuty · Events API   │
+            │                   │  Transforms · Events API  │
             │                   │                           │
             │                   │  Pattern Detection:       │
             │                   │  Detector · AlertManager  │
@@ -386,7 +384,7 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
 | OpenTelemetry export for existing observability stacks | **SaaS** |
 | Auto entity/relationship extraction from traces | **SaaS** |
 | Precedent search ("how did we handle similar situations?") | **SaaS** |
-| Auto-ingest PagerDuty/Slack/GitHub events | **SaaS** (connectors) |
+| Ingest events from your own systems via webhook | **SaaS** (connectors) |
 | Detect recurring failure patterns automatically | **SaaS** (pattern detection) |
 | Alert on stale memory or confidence drift | **SaaS** (alert manager) |
 | Need memory quality auditing at scale | **SaaS** |

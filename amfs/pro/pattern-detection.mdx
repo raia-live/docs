@@ -41,4 +41,4 @@ manager.on_alert(lambda eval: send_slack_notification(eval))
 evaluations = manager.evaluate(report)
 ```
 
-Features: severity filtering, entity-path scoping, cooldown-based suppression (prevent alert fatigue), and callback registration for routing to Slack, PagerDuty, email, or custom systems.
+Features: severity filtering, entity-path scoping, cooldown-based suppression (prevent alert fatigue), and callback registration so you can route alerts wherever you already handle them.
