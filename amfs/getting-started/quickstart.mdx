@@ -10,6 +10,18 @@ SenseLab gives each agent a **persistent brain**. When an agent writes, it's for
 This guide assumes you've [connected to SenseLab](/amfs/getting-started/saas-connection). If you haven't, do that first — it takes 30 seconds.
 </Note>
 
+There are two quite different ways to use SenseLab, and most people only need
+the first:
+
+<CardGroup cols={2}>
+  <Card title="In your IDE" icon="robot" href="#in-your-ide">
+    Your coding agent calls memory itself over MCP. You talk to it in plain English — no code to write.
+  </Card>
+  <Card title="In your own code" icon="python" href="#in-your-own-code">
+    You call the SDK directly to build memory into your own agents and services.
+  </Card>
+</CardGroup>
+
 ---
 
 ## How Memory Sharing Works
@@ -20,21 +32,122 @@ By default, every memory is **shared** — any agent can read it. Agents can als
 
 ---
 
-## 1. Create Your Brain
+## In Your IDE
+
+If you connected Cursor, Claude Code, Claude Desktop, or Codex, your agent
+already has the memory tools. You never call them yourself — you just talk to
+the agent, and it decides when to reach for memory.
+
+### Check it's working
+
+Ask your agent:
+
+```text
+Run amfs_stats() and tell me what's in my memory.
+```
+
+If it comes back with a count of entries, you're connected. If it says it has no
+such tool, restart your IDE — MCP servers are only picked up at startup.
+
+### Save something
+
+Anything you'd otherwise repeat to every new chat is worth saving:
+
+```text
+Remember that our staging database resets every night at 2am UTC,
+so any data I ask you to seed needs to be re-seeded in the morning.
+```
+
+The agent picks an entity path and key and calls `amfs_write` for you. Durable
+decisions, gotchas, and preferences are all fair game — it stores personal
+context just as happily as code.
+
+### The part that matters: recall somewhere else
+
+This is the whole point, so it's worth doing once deliberately. Open a
+**different** tool — if you saved from Cursor, use Claude Desktop — and ask:
+
+```text
+What do you know about our staging database?
+```
+
+It answers from the memory you saved in the other tool, on the other client.
+That is the thing a per-tool chat history cannot do.
+
+<Tip>
+  If the agent claims it doesn't know, it likely answered without searching.
+  Tell it to call `amfs_retrieve` first. The
+  [SenseLab Skill](/amfs/guides/mcp#senselab-skill) exists to make that
+  automatic — the install script sets it up on Claude Code.
+</Tip>
+
+### Get briefed before it works
+
+Before an agent touches a codebase, one call gets it the compiled context —
+what's known, what's risky, and who else has worked there:
+
+```text
+Get a SenseLab briefing on myapp/checkout before you start.
+```
+
+### Close the loop
+
+When a task ends, have the agent record how it went. Outcomes feed back into
+confidence, so memories that led somewhere good get trusted more and memories
+that led somewhere bad get trusted less:
+
+```text
+Commit the outcome for this session as a success.
+```
+
+Everything then shows up on your [dashboard](https://amfs.sense-lab.ai) — the
+agents that have been active, what they wrote, and the decision trace behind it.
+
+<Note>
+  Agents work best when told *when* to use memory. Add the
+  [SenseLab Skill](/amfs/guides/mcp#senselab-skill) so yours sets an identity,
+  searches before answering, and commits outcomes without being asked each time.
+</Note>
+
+---
+
+## In Your Own Code
+
+Everything below uses the Python SDK directly. Reach for this when you're
+building your own agent or service rather than working through an IDE. See the
+[TypeScript SDK guide](/amfs/guides/typescript) for the same thing in Node.
+
+### 1. Create Your Brain
 
 Every agent gets its own brain via `AgentMemory`:
 
 ```python
-from amfs import AgentMemory
+import os
 
-mem = AgentMemory(agent_id="review-agent")
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    agent_id="review-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
 ```
 
 The `agent_id` is the agent's identity. Everything it writes is tagged with this ID, and it can later recall only its own memories.
 
+<Warning>
+  The adapter is what connects you to your account. Without it `AgentMemory`
+  writes to local storage — the filesystem in Python, memory in TypeScript —
+  and every example below will appear to work while your dashboard stays empty.
+  Install it with `pip install amfs-adapter-http`.
+</Warning>
+
 ---
 
-## 2. Form a Memory
+### 2. Form a Memory
 
 When your agent learns something, write it to memory:
 
@@ -59,7 +172,7 @@ Every write creates an immutable copy-on-write version. Writing the same key aga
 
 ---
 
-## 3. Keep Things Private
+### 3. Keep Things Private
 
 Not everything should be shared. Use `shared=False` for internal reasoning, scratchpad notes, or sensitive context:
 
@@ -85,7 +198,7 @@ Private entries are invisible to other agents across all methods — `read()`, `
 
 ---
 
-## 4. Recall Your Memory
+### 4. Recall Your Memory
 
 Ask your brain: *"What do I know about this?"*
 
@@ -100,7 +213,7 @@ print(entry.confidence)  # 0.85
 
 ---
 
-## 5. Read Shared Knowledge
+### 5. Read Shared Knowledge
 
 Ask the shared pool: *"What does anyone know about this?"*
 
@@ -112,7 +225,7 @@ entry = mem.read("checkout-service", "retry-pattern")
 
 ---
 
-## 6. Learn from Another Agent
+### 6. Learn from Another Agent
 
 Explicitly pull knowledge from a specific agent's brain:
 
@@ -127,7 +240,7 @@ if entry:
 
 ---
 
-## 7. See What's in Your Brain
+### 7. See What's in Your Brain
 
 List everything this agent has written:
 
@@ -144,25 +257,35 @@ checkout_memories = mem.my_entries("checkout-service")
 
 ---
 
-## 8. Learn from Experience
+### 8. Learn from Experience
 
 When something significant happens, record the outcome. SenseLab automatically adjusts confidence scores on related entries:
 
 ```python
 from amfs import OutcomeType
 
-# An incident related to the retry pattern — confidence increases
+# An incident followed the retry pattern, so confidence in it erodes
 updated = mem.commit_outcome(
     outcome_ref="INC-1042",
     outcome_type=OutcomeType.CRITICAL_FAILURE,
 )
 ```
 
+Failures erode confidence and successes reinforce it, so knowledge that keeps
+working is trusted more over time and knowledge that misleads fades:
+
+| Outcome | Effect on confidence |
+| :-- | :-- |
+| `SUCCESS` | ×1.03 |
+| `MINOR_FAILURE` | ×0.92 |
+| `FAILURE` | ×0.90 |
+| `CRITICAL_FAILURE` | ×0.85 |
+
 <Tip>If you don't pass `causal_entry_keys`, SenseLab uses **auto-causal linking** — it applies the outcome to every entry the agent read during the current session.</Tip>
 
 ---
 
-## 9. Know Who You've Learned From
+### 9. Know Who You've Learned From
 
 Track inter-agent memory relationships:
 
@@ -178,7 +301,7 @@ agents = mem.agents_i_read_from()
 
 ---
 
-## 10. Watch for Changes
+### 10. Watch for Changes
 
 Get notified in real-time when knowledge changes:
 
@@ -194,7 +317,7 @@ handle.cancel()
 
 ---
 
-## 11. Context Manager
+### 11. Context Manager
 
 Use `AgentMemory` as a context manager for clean shutdown:
 
@@ -206,7 +329,21 @@ with AgentMemory(agent_id="review-agent") as mem:
 
 ---
 
-## The Mental Model
+### 12. View Your Timeline
+
+Every operation is recorded on your agent's git-like timeline — like commits in a repo:
+
+```python
+events = mem.timeline(limit=10)
+for event in events:
+    print(f"[{event.event_type}] {event.summary}")
+```
+
+With SenseLab Pro, you can create branches, merge changes, and share memory selectively. See [Git-like Timeline](/amfs/concepts/git-timeline) for details.
+
+---
+
+### The Mental Model
 
 | What you want to do          | Method                  | Sees private?          | Who wrote it?       |
 | ---------------------------- | ----------------------- | ---------------------- | ------------------- |
@@ -221,23 +358,10 @@ with AgentMemory(agent_id="review-agent") as mem:
 
 ---
 
-## 12. View Your Timeline
-
-Every operation is recorded on your agent's git-like timeline — like commits in a repo:
-
-```python
-events = mem.timeline(limit=10)
-for event in events:
-    print(f"[{event.event_type}] {event.summary}")
-```
-
-With SenseLab Pro, you can create branches, merge changes, and share memory selectively. See [Git-like Timeline](/amfs/concepts/git-timeline) for details.
-
----
-
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="MCP Setup" icon="plug" href="/amfs/guides/mcp">Connect every IDE on your machine, and add the memory skill.</Card>
   <Card title="Configuration" icon="gear" href="/amfs/getting-started/configuration">YAML config, adapters, and environment variables.</Card>
   <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">Understand CoW, confidence, and outcome propagation.</Card>
   <Card title="Git-like Timeline" icon="code-branch" href="/amfs/concepts/git-timeline">How agent memory works like Git.</Card>
