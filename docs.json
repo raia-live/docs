@@ -57,9 +57,16 @@
                   "amfs/concepts/provenance",
                   "amfs/concepts/context-graphs",
                   "amfs/concepts/git-timeline",
-                  "amfs/concepts/rooms",
-                  "amfs/concepts/room-members",
-                  "amfs/concepts/room-collaboration"
+                  {
+                    "group": "Rooms",
+                    "icon": "users",
+                    "root": "amfs/concepts/rooms",
+                    "expanded": true,
+                    "pages": [
+                      "amfs/concepts/room-members",
+                      "amfs/concepts/room-collaboration"
+                    ]
+                  }
                 ]
               },
               {
