@@ -43,11 +43,13 @@ the agent, and it decides when to reach for memory.
 Ask your agent:
 
 ```text
-Run amfs_stats() and tell me what's in my memory.
+Check SenseLab and tell me what's in my memory.
 ```
 
-If it comes back with a count of entries, you're connected. If it says it has no
-such tool, restart your IDE — MCP servers are only picked up at startup.
+If it comes back with a count of entries, you're connected — a brand new account
+reporting zero entries still counts, because it had to reach your account to
+know that. If the agent says it has no way to check, restart your IDE: MCP
+servers are only picked up at startup.
 
 ### Save something
 
@@ -76,7 +78,8 @@ That is the thing a per-tool chat history cannot do.
 
 <Tip>
   If the agent claims it doesn't know, it likely answered without searching.
-  Tell it to call `amfs_retrieve` first. The
+  Tell it to search SenseLab first — or name the tool, `amfs_retrieve`, if it
+  still won't. The
   [SenseLab Skill](/amfs/guides/mcp#senselab-skill) exists to make that
   automatic — the install script sets it up on Claude Code.
 </Tip>
@@ -97,7 +100,7 @@ confidence, so memories that led somewhere good get trusted more and memories
 that led somewhere bad get trusted less:
 
 ```text
-Commit the outcome for this session as a success.
+Save how this session went to SenseLab — it worked.
 ```
 
 Everything then shows up on your [dashboard](https://amfs.sense-lab.ai) — the
