@@ -15,10 +15,11 @@ someone at 3am becomes something the next agent working on that service can read
   events coming in.
 </Note>
 
-SenseLab does not ship ready-made integrations for specific vendors. What it
-gives you is the plumbing: an endpoint to post to, signature verification,
-deduplication, and a place to hook your own transform. Wiring up a particular
-tool is something you do, and the routes below are how.
+PagerDuty is the one vendor with a ready-made connector, registered under the
+name `pagerduty` and usable without writing any code. For everything else what
+SenseLab gives you is the plumbing: an endpoint to post to, signature
+verification, deduplication, and a place to hook your own transform. Wiring up a
+particular tool is something you do, and the routes below are how.
 
 ## Three ways in
 
