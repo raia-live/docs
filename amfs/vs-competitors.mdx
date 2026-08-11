@@ -20,6 +20,11 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Branch-level access control | Pro | No | No | No | No | No | No |
 | Fork (clone brain to new agent) | Pro | No | No | No | No | No | No |
 | Git-like timeline (event log) | Yes | No | No | No | No | No | No |
+| **Team collaboration** |  |  |  |  |  |  |  |
+| Shared rooms (many people, one topic) | Pro | No | No | No | No | No | No |
+| Joining briefing for a new agent | Pro | No | No | No | No | No | No |
+| Viewer / collaborator roles at the database | Pro | No | No | No | No | No | No |
+| Cross-agent reads, logged on both sides | Yes | No | No | No | No | No | No |
 | **Memory fundamentals** |  |  |  |  |  |  |  |
 | Persistent memory | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
 | Versioning (full history) | CoW | No | Temporal | No | No | No | No |
@@ -30,14 +35,14 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Causal explainability | Yes | No | No | No | No | No | No |
 | Knowledge graph | Auto | Optional | Yes | Manual | No | Yes | No |
 | Semantic search | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Multi-agent native | Yes | Partial | No | No | No | No | No |
-| Conflict detection | Yes | No | No | No | No | No | No |
+| Multi-agent native | Yes | Partial | Partial | No | No | No | No |
+| Conflict surfacing (on-demand) | Yes | No | No | No | No | No | No |
 | Tiered memory (hot/warm/archive) | Yes | No | No | No | 3-tier | No | No |
 | Frequency-modulated decay | Yes | No | No | No | No | No | No |
 | Progressive retrieval (depth) | Yes | No | No | No | No | No | No |
 | Importance scoring (multi-dim) | Pro | No | No | No | No | No | No |
 | Cortex drift gate | Yes | No | No | No | No | No | No |
-| MCP server | Yes | Yes | No | Yes | No | No | No |
+| MCP server | Yes | Yes | Yes | Yes | Yes | Yes | No |
 | Self-hosted / OSS | Apache 2.0 | OSS\+Cloud | OSS\+Cloud | OSS | OSS | OSS\+Cloud | OSS |
 | Multi-tenant with RLS | Pro | Cloud | Cloud | No | No | Cloud | Cloud |
 | Enterprise dashboard | Pro | Cloud | Cloud | No | No | Cloud | Cloud |
@@ -56,7 +61,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Git model for collaboration** — Branching, PRs, diff, merge, rollback, access control. Mem0 has no collaboration model — it's a single-writer store.
 - **Outcome feedback loop** — SenseLab confidence evolves from production events. Mem0 stores facts without trust signals.
 - **CoW versioning** — Every write is immutable and replayable. Mem0 overwrites.
-- **Multi-agent provenance** — SenseLab tracks authorship, detects conflicts, and auto-links causality. Mem0 is single-user oriented.
+- **Multi-agent provenance** — SenseLab records which agent wrote each version and auto-links causality from reads to outcomes. Mem0 is single-user oriented.
 - **Four-signal decay** — Time \+ type \+ outcomes \+ access frequency. Mem0 has no decay model.
 - **Tiered memory** — Hot/Warm/Archive with progressive retrieval. Mem0 searches everything.
 
@@ -64,17 +69,29 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Zep / Graphiti
 
-[Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). Facts carry time ranges; queries can ask "what was true at time T?"
+[Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). An LLM extracts entities and relationships from each episode — `text`, `json`, or `message` — and the resulting edges carry `valid_at` / `invalid_at` ranges, so a query can ask what was true at a point in time and get an answer that respects when a fact stopped being true.
 
-**Where Zep excels:** Temporal knowledge graphs with time-bounded edges, entity resolution across conversations, strong on multi-hop temporal queries.
+**Where Zep excels:** Automatic entity and relationship extraction from raw input, bi-temporal edges with invalidation, entity resolution across sessions, and multi-hop traversal. If you have a stream of unstructured episodes and want a graph out of it without deciding in advance what is worth keeping, Graphiti does that. SenseLab does not — a SenseLab entry exists because an agent decided to write it.
+
+**The difference in one sentence:** Graphiti models *what was true, and when*. SenseLab models *who learned it, whether it turned out to be right, and how a team shares it.*
 
 **Where SenseLab differs:**
 
-- **Git model for collaboration** — Branching, PRs, diff, merge, rollback. Zep has no collaboration or version control model.
-- **Outcome back-propagation** — SenseLab learns from production events. Zep tracks temporal validity but doesn't learn from what happens after retrieval.
-- **CoW vs temporal graph** — Different models. SenseLab versions individual entries; Graphiti maintains a graph with time-bounded edges. SenseLab is simpler; Graphiti captures richer temporal relationships.
-- **Multi-agent** — SenseLab has conflict detection and per-agent provenance. Zep targets single-assistant use.
-- **Operational context** — SenseLab ingests infrastructure events via webhooks. Zep only processes conversations.
+- **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, enforced by Postgres policies rather than by the interface, and every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
+- **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity, delivered automatically on join and re-runnable on demand. A new hire's agent starts where the team is instead of at the README. Graphiti has no equivalent — a new consumer of the graph must know what to query for.
+- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted: successes multiply it up, failures down, and outcome-validated entries then decay at half the rate. Graphiti tracks when a fact was valid, but nothing flows back from what happened after an agent acted on it.
+- **Per-agent provenance** — Every version records the agent, session and timestamp that produced it, and one agent reading another's memory is logged on both timelines. A Graphiti edge does not record which agent asserted it.
+- **Decision traces** — `record_context()` and `commit_outcome()` capture the full causal chain behind an action: what was read, at what confidence, what external input arrived, what was decided. Pro persists traces with integrity checking. There is no Graphiti equivalent.
+- **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
+- **Git-like history and review** — Diff, full version history and merge-base are in the OSS package; branching, pull requests, tags, fork and cherry-pick are Pro. Graphiti has bi-temporal versioning but no branching or review model.
+
+**Where Zep is the better choice:** Your input is unstructured and you want extraction done for you; multi-hop traversal over a richly connected entity graph is your main query pattern; or you need point-in-time reconstruction of a fact's validity. SenseLab asks the agent to decide what is worth remembering, which is less magic and more control — if you want the graph built for you, take Graphiti.
+
+**On benchmarks:** Zep publishes retrieval accuracy results. SenseLab does not, and we would rather say so than quote a figure we have not measured. If accuracy on a public benchmark is your deciding criterion, test both on your own data — we would sooner lose a measured comparison than win an unmeasured one.
+
+**Running both:** They are not mutually exclusive. Graphiti is a library that builds a graph from episodes; SenseLab is a memory platform with an MCP server, provenance, outcomes and team rooms. Keeping Graphiti for entity-level retrieval and using SenseLab for the durable record of what agents decided and whether it worked is a coherent setup, not a migration.
+
+**Where this is going:** the traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
 
 ---
 
@@ -88,7 +105,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 - **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. SenseLab's confidence changes when deploys succeed or incidents occur.
 - **Versioning** — Hindsight overwrites network state. SenseLab preserves full CoW history.
-- **Tiered memory** — SenseLab's Hot/Warm/Archive with priority scoring is data-driven, vs Hindsight's fixed 4-network separation. SenseLab's tiers rebalance automatically based on access patterns and importance.
+- **Tiered memory** — SenseLab's Hot/Warm/Archive with priority scoring is data-driven, vs Hindsight's fixed 4-network separation. Tiers are recomputed from access patterns and importance rather than fixed at design time.
 - **Importance scoring** — Pro evaluates entries across behavioral alignment, reasoning utility, and contextual persistence — three LLM-scored dimensions that feed into tier assignment.
 - **Knowledge graph** — SenseLab auto-materializes a graph from normal operations. Hindsight's networks are structurally defined.
 - **Enterprise features** — Multi-tenant isolation, RBAC, scoped API keys, audit logging, webhooks, dashboard. Hindsight is a research tool without enterprise infrastructure.
@@ -106,7 +123,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Data-driven tiering** — SenseLab's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
 - **Outcome feedback** — SenseLab confidence evolves from production events. Letta doesn't connect memory to outcomes.
 - **CoW versioning** — Full history. Letta's archival store doesn't version.
-- **Multi-agent native** — SenseLab supports per-agent provenance, conflict detection, and cross-agent knowledge transfer. Letta is single-agent.
+- **Multi-agent native** — SenseLab supports per-agent provenance and cross-agent knowledge transfer. Letta is single-agent.
 
 ---
 
@@ -148,11 +165,44 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 **Where SenseLab differs:**
 
 - **Different category** — Memvid is a read-mostly, append-only search tool. SenseLab is a multi-agent memory platform with versioning, outcomes, and enterprise features.
-- **Multi-agent** — Memvid has no concurrent writes, no conflict detection, no provenance.
+- **Multi-agent** — Memvid has no concurrent writes and no provenance.
 - **Tiered memory** — SenseLab's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
 - **Production feedback** — Memvid stores and retrieves. SenseLab learns from outcomes.
 
 Memvid is the right choice for single-user, offline, or edge scenarios where infrastructure is a non-starter. SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration.
+
+---
+
+## In development: models tuned on your own decision traces
+
+<Note>
+  **Not released.** This is on a development branch. It is not in the production image, has not served customer traffic, and is deliberately absent from the feature matrix above, which lists only what is available today.
+</Note>
+
+It is described here because it is the direction the outcome loop is built for, and because a fair comparison should say what is coming as well as what has shipped.
+
+Every memory system in this document, SenseLab included, stops at retrieval: it decides what the model gets to see. Decision traces make a further step possible, because a trace already records what an agent read, what it decided, which tool it called and whether that turned out well. That is supervised training data, produced as a by-product of working.
+
+How it is built:
+
+- **Positive outcomes only.** Training pairs come from decisions recorded as successful. Failures are deliberately withheld into a holdout so there is something honest to score against.
+- **A readiness gate before anything trains.** Ninety days of history, a floor of 100 and a target of 200 eligible decisions, at least three distinct primary tools, and at least 60% positive outcomes. Below the gate, no run starts.
+- **Scored before promotion.** Candidates are evaluated on a temporal holdout against a tool-agreement threshold, and only promoted automatically when the gate passes, the subscription is active, and the account is under its live model limit.
+- **Served behind the API you already use.** OpenAI-compatible at `/api/v1/chat/completions` and the Anthropic dialect at `/api/v1/messages`, with the model field naming your model — `senselab-s1` or `senselab-s1-pro`.
+- **Fallback is automatic.** An unparseable action, a tool outside the agent's recent set, a safety block or an upstream error falls back to a general model rather than failing the call.
+- **Plan limits.** One live model on Pro, three on Teams, one hundred on Enterprise.
+
+Two things we will not put a number on until they are measured on real traffic: cost and accuracy. A saving multiple depends on facts we do not control, and quoting one before we have shadow-mode measurements would be a number invented for a marketing page. When there is a figure, it will come from your own holdout.
+
+No competitor in this comparison closes this loop. Mem0, Zep, Hindsight, Letta, Cognee and LangMem all improve what the model reads; none of them improve the model.
+
+<Card title="Ask for early access" icon="envelope" href="mailto:hello@sense-lab.ai?subject=Early%20access%3A%20models%20tuned%20on%20decision%20traces">
+  Email us and we will add you to the early group. Worth doing now rather than at
+  launch: the readiness gate needs ninety days of history and at least 100 eligible
+  decisions, so the sooner your agents are recording outcomes, the sooner there is
+  enough to train on. Tell us which tools your agents call and we will tell you
+  where you stand against the gate.
+</Card>
 
 ---
 
@@ -163,7 +213,7 @@ Memvid is the right choice for single-user, offline, or edge scenarios where inf
 3. **Self-organizing memory** — Tiered memory (Hot/Warm/Archive), frequency-modulated decay, multi-dimensional importance scoring, and progressive retrieval. Not just a retrieval layer — a memory system that reorganizes itself based on what matters.
 4. **Copy-on-Write versioning** — Every write is immutable. Replay history, compare versions, and audit decisions. Most competitors overwrite.
 5. **Complete decision traces** — `explain()` \+ `record_context()` capture the full causal chain. Pro persists traces permanently with cryptographic integrity.
-6. **Multi-agent native** — Provenance tracking, conflict detection, auto-causal linking, and per-agent identity. Not bolted on.
-7. **Cross-system context** — Webhooks from your operational tooling flow into the same memory store. No competitor unifies agent memory with operational events.
+6. **Multi-agent native** — Provenance tracking, auto-causal linking, per-agent identity, and tracked cross-agent reads. Not bolted on.
+7. **Cross-system context** — Operational events flow into the same memory store over webhooks. PagerDuty ships as a connector; anything else can post to the generic webhook endpoint. No competitor unifies agent memory with operational events.
 8. **Framework and infrastructure agnostic** — Any framework, any IDE via MCP, any storage backend via adapters.
 9. **Enterprise-grade** — Postgres RLS, RBAC, scoped API keys, audit logging, rate limiting, usage quotas. Purpose-built for multi-tenant SaaS.
