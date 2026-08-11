@@ -52,11 +52,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Mem0
 
-[Mem0](https://mem0.ai) is the most widely adopted memory library (41K\+ stars). It extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
+[Mem0](https://mem0.ai) extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
 
-**Where Mem0 excels:** Simple API, automatic fact extraction from chat, optional graph memory, wide framework integrations (CrewAI, LangGraph, Flowise).
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Git model for collaboration** — Branching, PRs, diff, merge, rollback, access control. Mem0 has no collaboration model — it's a single-writer store.
 - **Outcome feedback loop** — SenseLab confidence evolves from production events. Mem0 stores facts without trust signals.
@@ -71,11 +69,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). An LLM extracts entities and relationships from each episode — `text`, `json`, or `message` — and the resulting edges carry `valid_at` / `invalid_at` ranges, so a query can ask what was true at a point in time and get an answer that respects when a fact stopped being true.
 
-**Where Zep excels:** Automatic entity and relationship extraction from raw input, bi-temporal edges with invalidation, entity resolution across sessions, and multi-hop traversal. If you have a stream of unstructured episodes and want a graph out of it without deciding in advance what is worth keeping, Graphiti does that. SenseLab does not — a SenseLab entry exists because an agent decided to write it.
-
 **The difference in one sentence:** Graphiti models *what was true, and when*. SenseLab models *who learned it, whether it turned out to be right, and how a team shares it.*
 
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, enforced by Postgres policies rather than by the interface, and every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
 - **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity, delivered automatically on join and re-runnable on demand. A new hire's agent starts where the team is instead of at the README. Graphiti has no equivalent — a new consumer of the graph must know what to query for.
@@ -85,68 +81,15 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
 - **Git-like history and review** — Diff, full version history and merge-base are in the OSS package; branching, pull requests, tags, fork and cherry-pick are Pro. Graphiti has bi-temporal versioning but no branching or review model.
 
-### Which one to buy
-
-The two products fail in different places, so the decision usually comes down to which failure you are already living with.
-
-**Choose SenseLab if any of these is true:**
-
-- **More than one person's agents work on the same subject.** A room gives Claude, ChatGPT, Cursor and Claude Code one shared body of knowledge, with roles enforced in the database and every write attributed. Graphiti's `group_id` partitions graphs so they do not mix; it does not make a team out of six people's agents.
-- **Someone will eventually ask why an agent did that.** A trace holds what was read, at what confidence, what external input arrived, and what followed. An edge in a graph cannot answer the question, because it never recorded who asserted it.
-- **Knowledge that turned out to be wrong should lose standing without anyone remembering to prune it.** Commit an outcome and every entry read on the way to it moves. Nothing in Graphiti flows backwards from what happened after retrieval.
-- **A change to what the team believes deserves review.** Branching and pull requests put shared knowledge behind the same gate as shared code.
-- **You will have to satisfy an auditor.** Author, reader, timestamp and full version history on every entry, enforced by Postgres policies rather than by the interface.
-
-**Choose Graphiti if any of these is true:**
-
-- **Nobody is going to curate.** You have a firehose of unstructured episodes and want a graph out of it without deciding in advance what matters. Graphiti extracts; a SenseLab entry exists because an agent judged it worth keeping.
-- **Multi-hop traversal is your main query pattern.** Richly connected entity graphs are what it was built for.
-- **You need point-in-time reconstruction.** Bi-temporal edges answer "what was true on 3 March" natively.
-
-Those three are real, and Graphiti is good at them. Notice what they have in common: each is a question about retrieval, and none of them is affected by who learned the thing, whether it later proved wrong, or whether the rest of the team can see it. That is the line between the two products, and it is why the lists are less mutually exclusive than they look.
-
-### Questions worth putting to both vendors
-
-| Ask | What a good answer sounds like |
-| :-- | :-- |
-| Two agents write contradictory things. What happens to the one that loses? | Both survive, with their authors attached, and the disagreement is visible. Automatic invalidation quietly picks a winner on your behalf. |
-| Who wrote this, and will I still be able to tell in six months? | An identity on every version, not on the store as a whole. |
-| This memory contributed to an incident. What changes on its own? | Something. "Find it and delete it" is not a feedback loop. |
-| My teammate's Claude and my Cursor — can they work on the same memory without either holding a copy? | One shared record with roles. An export is a copy, and copies drift. |
-| Can I review a change to shared knowledge before it takes effect? | A review step that exists. Most memory systems write straight through. |
-| What does a brand-new agent get in its first minute? | A briefing it did not have to know how to ask for. |
-
-### How to evaluate
-
-Zep publishes retrieval accuracy results and SenseLab does not; we will not quote a figure we have not measured. What matters more than the gap in published numbers is what those benchmarks cover. They measure recall for a single assistant reading conversation transcripts. They are silent on whether four people's agents converge on the same answer, whether a belief that caused an incident loses influence afterwards, and whether you can reconstruct months later why an agent acted. If recall over transcripts is genuinely the whole job, weigh Zep's numbers heavily — they are measuring the thing you are buying.
-
-If it is not the whole job, this is a better test than either vendor's benchmark, and it takes an afternoon:
-
-1. **Take a decision your agents got wrong about three months ago.** A real one, with a consequence.
-2. **Ask each system who believed what at the time, and on what basis.** You are testing whether the record survived, not whether search works.
-3. **Record the outcome, wait a week, and ask again.** Look for whether anything downstream moved on its own — confidence, ranking, what a new agent gets told.
-
-A system that answers all three is doing something no recall score measures. Answering only the first is the ordinary result, and it is worth discovering on a Tuesday afternoon rather than during the incident review.
-
-### Adopting it without a migration
-
-Nothing has to be torn out to find out. Graphiti is a library that builds a graph from episodes; SenseLab is a memory platform with an MCP server, provenance, outcomes and rooms, and the two sit at different layers. Leave Graphiti where it is, point one team at one room for one live topic, and let their existing agents reach it over MCP — a config entry rather than an SDK migration, with nothing to re-index and no data to move.
-
-You will know quickly whether it is working, because the room's activity shows what was written and by whom, and one agent reading another's memory is logged on both timelines. If nobody is reading the shared record within a fortnight, it is not earning its place, and you have spent an afternoon rather than a quarter finding out.
-
-### Where this is going
-
-The traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
+**Where this is going:** the traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
 
 ---
 
 ## SenseLab vs Hindsight
 
-[Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation). It reports 91.4% on LongMemEval, the strongest published accuracy in the space.
+[Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation), with the separation fixed in the architecture rather than derived from how the memory is used.
 
-**Where Hindsight excels:** Benchmark accuracy, clean separation of evidence vs inference (Opinion Network has confidence scores), multi-session temporal reasoning (21% -\> 80% on LongMemEval multi-session questions).
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. SenseLab's confidence changes when deploys succeed or incidents occur.
 - **Versioning** — Hindsight overwrites network state. SenseLab preserves full CoW history.
@@ -161,9 +104,7 @@ The traces behind the outcome loop are also training data. See [models tuned on 
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
 
-**Where Letta excels:** Transparent memory management (the LLM decides what to page in/out), inspectable memory blocks, elegant OS metaphor.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Data-driven tiering** — SenseLab's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
 - **Outcome feedback** — SenseLab confidence evolves from production events. Letta doesn't connect memory to outcomes.
@@ -174,11 +115,9 @@ The traces behind the outcome loop are also training data. See [models tuned on 
 
 ## SenseLab vs Cognee
 
-[Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction. Backed by OpenAI and FAIR founders.
+[Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction.
 
-**Where Cognee excels:** Document-to-graph construction, multi-hop reasoning (HotpotQA), ontology-based validation.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Agent-oriented vs document-oriented** — SenseLab is for agents that read, write, and act. Cognee processes documents into queryable graphs.
 - **Outcome feedback** — SenseLab connects knowledge to production reality. Cognee's graph doesn't learn from post-retrieval events.
@@ -190,9 +129,7 @@ The traces behind the outcome loop are also training data. See [models tuned on 
 
 [LangMem](https://langchain-ai.github.io/long-term-memory/) is LangChain's long-term memory library for the LangGraph ecosystem.
 
-**Where LangMem excels:** Native LangGraph integration, managed service via LangSmith, namespace scoping.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Framework-agnostic** — SenseLab works with CrewAI, LangGraph, AutoGen, or standalone. LangMem is tied to LangChain.
 - **Outcome feedback** — SenseLab's core differentiator. No LangMem equivalent.
@@ -205,16 +142,14 @@ The traces behind the outcome loop are also training data. See [models tuned on 
 
 [Memvid](https://github.com/memvid/memvid) packages memory into a single `.mv2` file — data, embeddings, index, metadata. No database, no server.
 
-**Where Memvid excels:** Zero infrastructure, 0.025ms P50 retrieval, portable single-file memory, ideal for offline/edge agents.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Different category** — Memvid is a read-mostly, append-only search tool. SenseLab is a multi-agent memory platform with versioning, outcomes, and enterprise features.
 - **Multi-agent** — Memvid has no concurrent writes and no provenance.
 - **Tiered memory** — SenseLab's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
 - **Production feedback** — Memvid stores and retrieves. SenseLab learns from outcomes.
 
-Memvid is the right choice for single-user, offline, or edge scenarios where infrastructure is a non-starter. SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration.
+SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration — the things a flat file cannot give you once more than one agent is writing.
 
 ---
 
