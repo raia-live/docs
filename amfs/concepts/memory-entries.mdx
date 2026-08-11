@@ -18,18 +18,21 @@ Every memory entry has these fields:
 | `key` | `str` | Unique identifier within the entity (e.g., `"retry-pattern"`) |
 | `value` | `Any` | The knowledge itself — any JSON-serializable data |
 | `version` | `int` | Version number, incremented on each write |
-| `confidence` | `float` | Trust score, modified by outcomes (default: `1.0`) |
-| `provenance` | `Provenance` | Who wrote it, when, and from which session |
+| `confidence` | `float` | Trust score in the range `0.0`–`1.0`, modified by outcomes (default: `1.0`) |
+| `provenance` | `Provenance` | Who wrote it, when, from which session, and any `pattern_refs` |
+| `shared` | `bool` | Whether other agents can see it (default: `True`). Private entries are visible only to the author |
 | `outcome_count` | `int` | Number of outcomes that have affected this entry |
 | `recall_count` | `int` | How many times this entry has been read (in-place update, no new version) |
 | `ttl_at` | `datetime?` | Optional expiration timestamp |
 | `memory_type` | `MemoryType` | Classification: `fact` (default), `belief`, or `experience` |
+| `is_artifact` | `bool` | Marks stored working files and code blobs rather than knowledge claims, so they rank below real findings |
+| `branch` | `str` | Branch this version lives on (default: `"main"`) |
 | `tier` | `int` | Memory tier: `1`=Hot, `2`=Warm, `3`=Archive (default) |
 | `priority_score` | `float?` | Composite priority used for tier assignment |
 | `importance_score` | `float?` | Multi-dimensional importance (0.0–1.0), set by `ImportanceEvaluator` |
 | `importance_dimensions` | `dict?` | Per-dimension breakdown (e.g. `{"behavioral_alignment": 0.8}`) |
 | `embedding` | `list[float]?` | Optional vector embedding for semantic search |
-| `amfs_version` | `str` | Protocol version (currently `"0.2.0"`) |
+| `amfs_version` | `str` | Protocol version (currently `"0.3.0"`) |
 
 ---
 
@@ -155,13 +158,22 @@ Entries are assigned to tiers based on a composite priority score (recency, conf
 | Warm | `2` | Mid-priority — included with `depth=2` |
 | Archive | `3` | Low-priority (default) — included with `depth=3` |
 
-Tiers are recomputed periodically by `TierAssigner` (OSS) or `TierWorker` (Pro, background). Use progressive retrieval to control search scope:
+Use progressive retrieval to control search scope:
 
 ```python
 results = mem.search(depth=1)  # hot-tier only — fast, high-signal
 results = mem.search(depth=2)  # hot + warm
 results = mem.search()         # all tiers (default depth=3)
 ```
+
+<Note>
+  Every entry is written at tier `3`. The scores that promote entries to hot or
+  warm are computed by a background worker, which runs on SenseLab Cloud and on
+  self-hosted SenseLab with a database backend. If you're running against local
+  file or S3 storage, nothing recomputes them and `depth` is ignored — a
+  `depth=1` search returns the same rows as a full one rather than a faster
+  subset.
+</Note>
 
 ---
 

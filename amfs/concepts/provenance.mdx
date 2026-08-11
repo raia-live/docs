@@ -61,10 +61,40 @@ In the MCP server, agent identity is auto-detected from the environment:
 | Claude Code | `claude-code/<username>` |
 | Other | `agent/<username>` |
 
-Override with the `AMFS_AGENT_ID` environment variable:
+In headless contexts — CI, scripts, servers — set the identity with an
+environment variable:
 
 ```bash
 export AMFS_AGENT_ID="deploy-bot"
+```
+
+<Note>
+  IDE signals are checked **before** `AMFS_AGENT_ID`, so the variable does not
+  rename an agent running inside Cursor or Claude Code. That is deliberate: it
+  stops a server-side value inherited by your shell from relabelling local
+  sessions. Inside an IDE, call `amfs_set_identity` instead.
+</Note>
+
+---
+
+## Session Metadata
+
+Provenance answers *who* wrote an entry. A parallel record answers *what was
+running* — the model, the client, and the tools it had available:
+
+| Field | Description |
+|:------|:------------|
+| `model` | The LLM that made the decision (e.g. `claude-4-opus`, `gpt-4o`) |
+| `client_name` / `platform` | The client the agent ran in |
+| `tools_available` | Tools the agent could call in that session |
+| `mcp_client_id` / `mcp_session_id` | MCP connection identifiers |
+
+Agents set this by passing `model=` to `amfs_set_identity`. It is stored on the
+agent's profile and on decision traces rather than on `Provenance` itself, so
+when you audit a decision later you can tell which model made it.
+
+```text
+amfs_set_identity("deploy-agent", "Rolling out v2.14", model="claude-4-opus")
 ```
 
 ---

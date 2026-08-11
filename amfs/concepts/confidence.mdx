@@ -18,21 +18,30 @@ print(entry.confidence)  # 0.85
 ```
 
 <Note>
-Confidence is not capped at 1.0. An entry involved in multiple incidents can have confidence > 1.0, representing a strong risk signal.
+Confidence is clamped to the range `0.0`–`1.0`. Successes can never push an entry past certainty, and repeated failures floor at zero rather than going negative.
 </Note>
 
 ---
 
 ## Outcome Types
 
-When something significant happens in the real world, you record it as an **outcome**:
+When something significant happens in the real world, you record it as an **outcome**. Knowledge that led somewhere good is trusted more; knowledge that led somewhere bad is trusted less:
 
 | Outcome | Multiplier | Effect |
 |:--------|:-----------|:-------|
-| `CRITICAL_FAILURE` | × 1.15 | Strong confidence increase — knowledge linked to severe failure |
-| `FAILURE` | × 1.10 | Moderate confidence increase |
-| `MINOR_FAILURE` | × 1.08 | Mild confidence increase — knowledge linked to minor setback |
-| `SUCCESS` | × 0.97 | Confidence decay — knowledge proving reliable over time |
+| `SUCCESS` | × 1.03 | Reinforced — the knowledge held up |
+| `MINOR_FAILURE` | × 0.92 | Mild erosion |
+| `FAILURE` | × 0.90 | Moderate erosion |
+| `CRITICAL_FAILURE` | × 0.85 | Strong erosion — the knowledge led into a severe failure |
+
+Erosion is deliberately steeper than reinforcement: it takes many successes to
+rebuild the trust one critical failure removes.
+
+<Note>
+  Four older names are still accepted as aliases and map onto the same
+  multipliers: `clean_deploy` (success), `regression` (minor failure),
+  `p2_incident` (failure), and `p1_incident` (critical failure).
+</Note>
 
 ---
 
@@ -57,7 +66,7 @@ for entry in updated:
 ### Confidence Formula
 
 ```
-new_confidence = old_confidence × outcome_multiplier
+new_confidence = clamp(old_confidence × outcome_multiplier, 0.0, 1.0)
 ```
 
 ### Confidence Over Time
@@ -66,15 +75,16 @@ Imagine an entry written with `confidence=0.85`:
 
 ```
 Write              → 0.85
-Critical failure   → 0.85 × 1.15 = 0.978
-Success            → 0.978 × 0.97 = 0.948
-Success            → 0.948 × 0.97 = 0.920
-Success            → 0.920 × 0.97 = 0.892
-Failure            → 0.892 × 1.10 = 0.981
-Success            → 0.981 × 0.97 = 0.951
+Critical failure   → 0.85  × 0.85 = 0.723
+Success            → 0.723 × 1.03 = 0.744
+Success            → 0.744 × 1.03 = 0.767
+Success            → 0.767 × 1.03 = 0.789
+Failure            → 0.789 × 0.90 = 0.711
+Success            → 0.711 × 1.03 = 0.732
 ```
 
-Over many successes, confidence trends toward zero — the risk signal fades. A single failure spikes it back up.
+Knowledge that keeps working climbs slowly back toward certainty. Knowledge that
+keeps misleading sinks, and agents filtering on `min_confidence` stop seeing it.
 
 ---
 
@@ -93,7 +103,19 @@ mem.read("svc", "pool-settings")
 mem.commit_outcome("DEP-300", OutcomeType.SUCCESS)
 ```
 
-This is powered by the **ReadTracker**, which logs every `read()` call during a session.
+This is powered by the **ReadTracker**, which logs reads as the session runs.
+
+Exactly what lands in that causal set is worth knowing, because it decides which
+entries an outcome moves:
+
+| Call | Enters the causal set? |
+|:--|:--|
+| `read()` and `read_from()` | Yes, every entry returned |
+| `retrieve()` | Only the top-ranked hit, so an outcome doesn't reinforce candidates the agent never used |
+| `search()` and `list()` | No — recorded on the trace as a query event, but not treated as causal |
+
+The tracker is cleared after each `commit_outcome()`, so the next task starts
+with a fresh causal window rather than re-linking the previous one's reads.
 
 ---
 
@@ -126,6 +148,14 @@ This means actively used, production-validated knowledge persists far longer tha
 mem = AgentMemory(agent_id="my-agent", decay_half_life_days=30.0)
 ```
 
+<Note>
+  Time decay is **opt-in**. With no `decay_half_life_days`, stored confidence
+  changes only when you commit an outcome. When you do set it, decay is applied
+  when an entry is read rather than written back to storage — the stored
+  confidence stays put, and the decayed value is what gets compared against
+  `min_confidence`.
+</Note>
+
 ---
 
 ## Filtering by Confidence
@@ -151,16 +181,24 @@ Agent observes pattern → writes entry (confidence: 0.85)
                    Incident occurs → commit_outcome("CRITICAL_FAILURE")
                               │
                               ▼
-                   Confidence increases → 0.978
+                   Confidence erodes → 0.723
                               │
                               ▼
-                   Next agent sees high-confidence risk signal
+                   Next agent sees the advice, now visibly less trusted
                               │
                               ▼
-                   Agent avoids the pattern → clean deploy
+                   Agent applies a better approach → clean deploy
                               │
                               ▼
-                   Confidence decays → 0.948
+                   That entry is reinforced → 1.03× on its own confidence
 ```
 
-This creates a self-correcting system: risky patterns get flagged, safe patterns fade, and agents inherit the accumulated wisdom of past sessions.
+This creates a self-correcting system: advice that keeps causing incidents sinks
+out of the results agents rely on, advice that keeps working rises, and every
+agent inherits the corrections rather than rediscovering them.
+
+<Warning>
+  If you are reading a much older version of this page, note that these
+  multipliers were once inverted — confidence was described as a risk signal that
+  failures increased. Confidence now means trustworthiness: failures erode it.
+</Warning>

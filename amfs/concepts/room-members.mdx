@@ -60,7 +60,7 @@ The two failure modes are deliberately different:
 - **Not a member** — you get a `404`, as if the room did not exist. Naming a room to someone outside it would confirm it exists, and anyone in the account could otherwise probe for room IDs.
 - **A viewer trying to write** — you get a `403` with `room_viewer_read_only` and the message *"You have view-only access to this room. Ask the room owner for write access to contribute."* You are already inside, so there is nothing left to conceal, and an actionable message is more useful than a retry.
 
-The read-only rule is enforced in three places: the API routes, the memory write middleware, and Postgres row-level security. A viewer cannot write to a room topic by going around the room API.
+The read-only rule is enforced in three places: the API routes, the memory write middleware, and SenseLab Security at the storage layer. A viewer cannot write to a room topic by going around the room API.
 
 ---
 

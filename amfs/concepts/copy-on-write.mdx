@@ -39,12 +39,21 @@ print(entry.value)    # {"pool_size": 20}
 
 ## Viewing History
 
-Use `list()` with `include_superseded=True` to see all versions:
+`history()` returns every version of one key, oldest first. Each version is a
+**full snapshot**, not a delta, so you can read any past state directly:
+
+```python
+for entry in mem.history("svc", "config"):
+    print(f"v{entry.version}: {entry.value} (confidence {entry.confidence})")
+```
+
+It also takes `since` and `until`, which is how you reconstruct what an agent
+knew at the moment it decided something.
+
+To see all versions across an entity rather than one key, use `list()`:
 
 ```python
 all_versions = mem.list("svc", include_superseded=True)
-for entry in all_versions:
-    print(f"v{entry.version}: {entry.value}")
 ```
 
 Or use the CLI:
@@ -52,6 +61,37 @@ Or use the CLI:
 ```bash
 amfs inspect diff svc config
 ```
+
+---
+
+## Comparing Versions
+
+Because every version is kept, SenseLab can show exactly which fields changed
+rather than just that something did. `diff()` returns structural, field-level
+changes addressed by [RFC 6901](https://datatracker.ietf.org/doc/html/rfc6901)
+JSON Pointer paths:
+
+```python
+# Diff a specific version against the current one.
+# Omit old_version to compare the two most recent versions.
+result = mem.diff("svc", "config", old_version=1)
+
+for change in result["field_changes"]:
+    print(f"{change['operation']} {change['path']}: "
+          f"{change['old_value']} → {change['new_value']}")
+```
+
+```text
+replace /pool_size: 5 → 20
+```
+
+Each change carries a `path`, an `operation` of `add`, `remove`, or `replace`,
+and the old and new values. The surrounding result also reports `diff_type`
+(`added`, `modified`, or `deleted`) and the two versions' confidence.
+
+This works on nested dicts, lists, and scalars, so a change buried deep in a
+config object is reported at its exact path instead of as a wholesale
+replacement of the value.
 
 ---
 

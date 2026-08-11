@@ -38,10 +38,13 @@ Every operation produces a typed event on the agent's timeline:
 | Event Type | Description | Triggered By |
 |:-----------|:------------|:-------------|
 | `write` | Memory entry created or updated | `mem.write()` |
+| `read` | An entry was read | `mem.read()` |
 | `outcome` | Outcome committed, confidence back-propagated | `mem.commit_outcome()` |
 | `cross_agent_read` | Another agent read this agent's shared memory | `mem.read()` / `mem.read_from()` |
 | `brief_compiled` | Brain brief / digest compiled by the Cortex | Cortex worker |
-| `webhook_ingested` | External context ingested via webhook | Webhook endpoint |
+| `webhook` | External context ingested via webhook | Webhook endpoint |
+| `snapshot_taken` / `snapshot_recovered` | Memory snapshot created or restored | Snapshot tooling |
+| `consolidation_proposed` / `consolidation_approved` / `consolidation_rejected` / `consolidation_auto_merged` | Memory consolidation activity | [Consolidation](/amfs/pro/consolidation) |
 | `branch_created` | New branch created from this agent's memory | Pro: `create_branch()` |
 | `branch_merged` | Branch merged back into main | Pro: `merge_branch()` |
 | `branch_closed` | Branch closed without merging | Pro: `close_branch()` |
@@ -267,4 +270,13 @@ print(f"Forked {count} entries to deploy-agent-v2")
 └─────────────────────────────────────────────────────┘
 ```
 
-The timeline is always available in OSS (main branch only). Branching, merging, tags, rollback, and access control require SenseLab Pro.
+The timeline is available in OSS on the `main` branch. Branching, merging, tags,
+rollback, cherry-pick, fork, and access control require SenseLab Pro.
+
+<Warning>
+  The timeline needs a backend that can store events. It works as described on
+  SenseLab Cloud and on self-hosted SenseLab with a database backend. Against
+  local file or S3 storage, event logging is a no-op — the SDK still emits
+  events, but nothing persists them and `mem.timeline()` comes back empty. If
+  your timeline is unexpectedly blank, this is almost always why.
+</Warning>

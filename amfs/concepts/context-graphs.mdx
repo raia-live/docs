@@ -30,7 +30,7 @@ Agent reads SenseLab entries:
   checkout-service/risk-race-condition (v1, confidence: 0.78)
 
 Agent consults external sources:
-  PagerDuty API → 3 SEV-1 incidents in last 24h
+  incident tracker → 3 SEV-1 incidents in last 24h
   git log → 15 commits since last deploy, 3 touching retry logic
 
 Agent writes decision:
@@ -64,9 +64,9 @@ entry = mem.read("checkout-service", "risk-race-condition")
 
 ```python
 mem.record_context(
-    "pagerduty-incidents",
+    "open-incidents",
     "3 SEV-1 incidents in last 24h for checkout-service",
-    source="PagerDuty API",
+    source="incident tracker",
 )
 
 mem.record_context(
@@ -120,7 +120,7 @@ Returns:
     {"entity_path": "checkout-service", "key": "risk-race-condition", "confidence": 0.78, "...": "..."}
   ],
   "external_contexts": [
-    {"label": "pagerduty-incidents", "summary": "3 SEV-1 incidents in last 24h", "source": "PagerDuty API", "recorded_at": "..."},
+    {"label": "open-incidents", "summary": "3 SEV-1 incidents in last 24h", "source": "incident tracker", "recorded_at": "..."},
     {"label": "git-log", "summary": "15 commits since last deploy, 3 touching retry logic", "source": "git", "recorded_at": "..."}
   ]
 }
@@ -135,14 +135,14 @@ Individual decision traces accumulate into a **context graph**: entities connect
 ```
 checkout-service/retry-pattern
     ├── read by deploy-agent (sess-a1b2)
-    │   ├── also consulted: PagerDuty API, git log
+    │   ├── also consulted: incident tracker, git log
     │   ├── wrote: decision-rollback-retry
-    │   └── outcome: DEP-500 (success) → confidence adjusted
+    │   └── outcome: DEP-500 (success) → confidence reinforced
     │
     ├── read by review-agent (sess-e5f6)
-    │   ├── also consulted: Sentry errors
+    │   ├── also consulted: error tracker
     │   ├── wrote: risk-timeout-regression
-    │   └── outcome: INC-1042 (critical_failure) → confidence boosted
+    │   └── outcome: INC-1042 (critical_failure) → confidence eroded
     │
     └── read by onboard-agent (sess-g7h8)
         └── wrote: task-summary-retry-review
@@ -151,8 +151,8 @@ checkout-service/retry-pattern
 Over time, this graph captures institutional knowledge that no single agent or person holds:
 
 - **Precedent** — "The last time we saw this pattern, we rolled back and it worked."
-- **Exception logic** — "We always check PagerDuty before deploying changes to retry logic."
-- **Cross-system synthesis** — "The decision combined SenseLab memory, PagerDuty incidents, and git history."
+- **Exception logic** — "We always check for open incidents before deploying changes to retry logic."
+- **Cross-system synthesis** — "The decision combined SenseLab memory, open incidents, and git history."
 
 ---
 
@@ -162,8 +162,16 @@ SenseLab now has a **persisted knowledge graph** that complements the session-sc
 
 | Layer | Scope | Storage | Purpose |
 |:------|:------|:--------|:--------|
-| Decision traces | Single session | In-memory (OSS), Postgres (Pro) | "What happened in this session and why?" |
-| Knowledge graph | Cross-session, cross-agent | `amfs_knowledge_graph` table (Postgres) | "How are entities, agents, and outcomes related globally?" |
+| Decision traces | Single session | Stored per session; Pro adds a cryptographically sealed copy | "What happened in this session and why?" |
+| Knowledge graph | Cross-session, cross-agent | A persistent edge store spanning every agent on the account | "How are entities, agents, and outcomes related globally?" |
+
+<Note>
+  Both layers need a database backend, which you get on SenseLab Cloud and on
+  self-hosted SenseLab configured with one. Against local file or S3 storage the
+  graph calls are no-ops that return no edges and traces are not written to
+  disk, so `graph_neighbors` comes back empty, multi-hop traversal with
+  `depth > 1` returns nothing, and `explain()` only sees the current session.
+</Note>
 
 ### How Edges Are Created
 
@@ -227,7 +235,7 @@ Agent makes decision → writes entry + records trace
                    Agent makes better decision → new trace
 ```
 
-Entries validated by positive outcomes decay slower. Entries correlated with incidents get boosted. The system learns which decisions lead to good outcomes without any explicit training.
+Entries that led to good outcomes are reinforced and decay slower; entries correlated with incidents lose confidence and sink out of results. The system learns which decisions lead to good outcomes without any explicit training.
 
 ---
 
@@ -238,7 +246,7 @@ When `commit_outcome()` is called, SenseLab automatically captures a rich snapsh
 ```python
 mem.read("checkout-service", "retry-pattern")
 mem.search(entity_path="checkout-service", min_confidence=0.5)
-mem.record_context("pagerduty", "No active incidents", source="PagerDuty API")
+mem.record_context("open-incidents", "No active incidents", source="incident tracker")
 mem.write("checkout-service", "deploy-v2.14", {"version": "2.14.0"})
 
 mem.commit_outcome("DEP-500", OutcomeType.SUCCESS,
@@ -302,7 +310,7 @@ Pro extends OSS traces with cryptographic guarantees and advanced telemetry:
 - **Write events, tool calls, agent interactions** — full audit trail of every action
 - **OpenTelemetry export** — export traces as OTel spans following GenAI semantic conventions, compatible with Jaeger, Grafana Tempo, Datadog, and Honeycomb
 - **Auto entity extraction** — LLM-powered extraction of entities (services, people, tools) and relationships (depends_on, uses, manages) from trace data
-- **Immutability enforcement** — Postgres RULEs block UPDATE and DELETE on the trace table
+- **Immutability enforcement** — updates and deletes are blocked at the storage layer, so a sealed trace cannot be edited or removed even by an administrator
 
 ---
 
