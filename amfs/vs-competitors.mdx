@@ -52,11 +52,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Mem0
 
-[Mem0](https://mem0.ai) is the most widely adopted memory library (41K\+ stars). It extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
+[Mem0](https://mem0.ai) extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
 
-**Where Mem0 excels:** Simple API, automatic fact extraction from chat, optional graph memory, wide framework integrations (CrewAI, LangGraph, Flowise).
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Git model for collaboration** — Branching, PRs, diff, merge, rollback, access control. Mem0 has no collaboration model — it's a single-writer store.
 - **Outcome feedback loop** — SenseLab confidence evolves from production events. Mem0 stores facts without trust signals.
@@ -71,11 +69,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). An LLM extracts entities and relationships from each episode — `text`, `json`, or `message` — and the resulting edges carry `valid_at` / `invalid_at` ranges, so a query can ask what was true at a point in time and get an answer that respects when a fact stopped being true.
 
-**Where Zep excels:** Automatic entity and relationship extraction from raw input, bi-temporal edges with invalidation, entity resolution across sessions, and multi-hop traversal over a connected entity graph.
-
 **The difference in one sentence:** Graphiti models *what was true, and when*. SenseLab models *who learned it, whether it turned out to be right, and how a team shares it.*
 
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, enforced by Postgres policies rather than by the interface, and every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
 - **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity, delivered automatically on join and re-runnable on demand. A new hire's agent starts where the team is instead of at the README. Graphiti has no equivalent — a new consumer of the graph must know what to query for.
@@ -91,11 +87,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Hindsight
 
-[Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation). It reports 91.4% on LongMemEval, the strongest published accuracy in the space.
+[Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation), with the separation fixed in the architecture rather than derived from how the memory is used.
 
-**Where Hindsight excels:** Benchmark accuracy, clean separation of evidence vs inference (Opinion Network has confidence scores), multi-session temporal reasoning (21% -\> 80% on LongMemEval multi-session questions).
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. SenseLab's confidence changes when deploys succeed or incidents occur.
 - **Versioning** — Hindsight overwrites network state. SenseLab preserves full CoW history.
@@ -110,9 +104,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
 
-**Where Letta excels:** Transparent memory management (the LLM decides what to page in/out), inspectable memory blocks, elegant OS metaphor.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Data-driven tiering** — SenseLab's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
 - **Outcome feedback** — SenseLab confidence evolves from production events. Letta doesn't connect memory to outcomes.
@@ -123,11 +115,9 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Cognee
 
-[Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction. Backed by OpenAI and FAIR founders.
+[Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction.
 
-**Where Cognee excels:** Document-to-graph construction, multi-hop reasoning (HotpotQA), ontology-based validation.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Agent-oriented vs document-oriented** — SenseLab is for agents that read, write, and act. Cognee processes documents into queryable graphs.
 - **Outcome feedback** — SenseLab connects knowledge to production reality. Cognee's graph doesn't learn from post-retrieval events.
@@ -139,9 +129,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [LangMem](https://langchain-ai.github.io/long-term-memory/) is LangChain's long-term memory library for the LangGraph ecosystem.
 
-**Where LangMem excels:** Native LangGraph integration, managed service via LangSmith, namespace scoping.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Framework-agnostic** — SenseLab works with CrewAI, LangGraph, AutoGen, or standalone. LangMem is tied to LangChain.
 - **Outcome feedback** — SenseLab's core differentiator. No LangMem equivalent.
@@ -154,16 +142,14 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Memvid](https://github.com/memvid/memvid) packages memory into a single `.mv2` file — data, embeddings, index, metadata. No database, no server.
 
-**Where Memvid excels:** Zero infrastructure, 0.025ms P50 retrieval, portable single-file memory, ideal for offline/edge agents.
-
-**Where SenseLab differs:**
+**Where SenseLab is stronger:**
 
 - **Different category** — Memvid is a read-mostly, append-only search tool. SenseLab is a multi-agent memory platform with versioning, outcomes, and enterprise features.
 - **Multi-agent** — Memvid has no concurrent writes and no provenance.
 - **Tiered memory** — SenseLab's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
 - **Production feedback** — Memvid stores and retrieves. SenseLab learns from outcomes.
 
-Memvid is the right choice for single-user, offline, or edge scenarios where infrastructure is a non-starter. SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration.
+SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration — the things a flat file cannot give you once more than one agent is writing.
 
 ---
 
