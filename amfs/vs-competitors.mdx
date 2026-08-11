@@ -85,13 +85,58 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
 - **Git-like history and review** — Diff, full version history and merge-base are in the OSS package; branching, pull requests, tags, fork and cherry-pick are Pro. Graphiti has bi-temporal versioning but no branching or review model.
 
-**Where Zep is the better choice:** Your input is unstructured and you want extraction done for you; multi-hop traversal over a richly connected entity graph is your main query pattern; or you need point-in-time reconstruction of a fact's validity. SenseLab asks the agent to decide what is worth remembering, which is less magic and more control — if you want the graph built for you, take Graphiti.
+### Which one to buy
 
-**On benchmarks:** Zep publishes retrieval accuracy results. SenseLab does not, and we would rather say so than quote a figure we have not measured. If accuracy on a public benchmark is your deciding criterion, test both on your own data — we would sooner lose a measured comparison than win an unmeasured one.
+The two products fail in different places, so the decision usually comes down to which failure you are already living with.
 
-**Running both:** They are not mutually exclusive. Graphiti is a library that builds a graph from episodes; SenseLab is a memory platform with an MCP server, provenance, outcomes and team rooms. Keeping Graphiti for entity-level retrieval and using SenseLab for the durable record of what agents decided and whether it worked is a coherent setup, not a migration.
+**Choose SenseLab if any of these is true:**
 
-**Where this is going:** the traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
+- **More than one person's agents work on the same subject.** A room gives Claude, ChatGPT, Cursor and Claude Code one shared body of knowledge, with roles enforced in the database and every write attributed. Graphiti's `group_id` partitions graphs so they do not mix; it does not make a team out of six people's agents.
+- **Someone will eventually ask why an agent did that.** A trace holds what was read, at what confidence, what external input arrived, and what followed. An edge in a graph cannot answer the question, because it never recorded who asserted it.
+- **Knowledge that turned out to be wrong should lose standing without anyone remembering to prune it.** Commit an outcome and every entry read on the way to it moves. Nothing in Graphiti flows backwards from what happened after retrieval.
+- **A change to what the team believes deserves review.** Branching and pull requests put shared knowledge behind the same gate as shared code.
+- **You will have to satisfy an auditor.** Author, reader, timestamp and full version history on every entry, enforced by Postgres policies rather than by the interface.
+
+**Choose Graphiti if any of these is true:**
+
+- **Nobody is going to curate.** You have a firehose of unstructured episodes and want a graph out of it without deciding in advance what matters. Graphiti extracts; a SenseLab entry exists because an agent judged it worth keeping.
+- **Multi-hop traversal is your main query pattern.** Richly connected entity graphs are what it was built for.
+- **You need point-in-time reconstruction.** Bi-temporal edges answer "what was true on 3 March" natively.
+
+Those three are real, and Graphiti is good at them. Notice what they have in common: each is a question about retrieval, and none of them is affected by who learned the thing, whether it later proved wrong, or whether the rest of the team can see it. That is the line between the two products, and it is why the lists are less mutually exclusive than they look.
+
+### Questions worth putting to both vendors
+
+| Ask | What a good answer sounds like |
+| :-- | :-- |
+| Two agents write contradictory things. What happens to the one that loses? | Both survive, with their authors attached, and the disagreement is visible. Automatic invalidation quietly picks a winner on your behalf. |
+| Who wrote this, and will I still be able to tell in six months? | An identity on every version, not on the store as a whole. |
+| This memory contributed to an incident. What changes on its own? | Something. "Find it and delete it" is not a feedback loop. |
+| My teammate's Claude and my Cursor — can they work on the same memory without either holding a copy? | One shared record with roles. An export is a copy, and copies drift. |
+| Can I review a change to shared knowledge before it takes effect? | A review step that exists. Most memory systems write straight through. |
+| What does a brand-new agent get in its first minute? | A briefing it did not have to know how to ask for. |
+
+### How to evaluate
+
+Zep publishes retrieval accuracy results and SenseLab does not; we will not quote a figure we have not measured. What matters more than the gap in published numbers is what those benchmarks cover. They measure recall for a single assistant reading conversation transcripts. They are silent on whether four people's agents converge on the same answer, whether a belief that caused an incident loses influence afterwards, and whether you can reconstruct months later why an agent acted. If recall over transcripts is genuinely the whole job, weigh Zep's numbers heavily — they are measuring the thing you are buying.
+
+If it is not the whole job, this is a better test than either vendor's benchmark, and it takes an afternoon:
+
+1. **Take a decision your agents got wrong about three months ago.** A real one, with a consequence.
+2. **Ask each system who believed what at the time, and on what basis.** You are testing whether the record survived, not whether search works.
+3. **Record the outcome, wait a week, and ask again.** Look for whether anything downstream moved on its own — confidence, ranking, what a new agent gets told.
+
+A system that answers all three is doing something no recall score measures. Answering only the first is the ordinary result, and it is worth discovering on a Tuesday afternoon rather than during the incident review.
+
+### Adopting it without a migration
+
+Nothing has to be torn out to find out. Graphiti is a library that builds a graph from episodes; SenseLab is a memory platform with an MCP server, provenance, outcomes and rooms, and the two sit at different layers. Leave Graphiti where it is, point one team at one room for one live topic, and let their existing agents reach it over MCP — a config entry rather than an SDK migration, with nothing to re-index and no data to move.
+
+You will know quickly whether it is working, because the room's activity shows what was written and by whom, and one agent reading another's memory is logged on both timelines. If nobody is reading the shared record within a fortnight, it is not earning its place, and you have spent an afternoon rather than a quarter finding out.
+
+### Where this is going
+
+The traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
 
 ---
 
