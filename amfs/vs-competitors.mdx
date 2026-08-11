@@ -1,6 +1,6 @@
 ---
 title: "SenseLab vs Competitors"
-description: "How SenseLab compares to Mem0, Zep, Hindsight, Letta/MemGPT, Cognee, and other AI memory systems."
+description: "How SenseLab compares to Mem0, Zep / Graphiti, and Letta / MemGPT."
 icon: "chart-bar"
 ---
 
@@ -10,43 +10,47 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## Feature Matrix
 
-| Feature | SenseLab | Mem0 | Zep / Graphiti | Hindsight | Letta | Cognee | LangMem |
-| :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| **Git-like collaboration** |  |  |  |  |  |  |  |
-| Branching (isolated experiments) | Pro | No | No | No | No | No | No |
-| Pull requests (review before merge) | Pro | No | No | No | No | No | No |
-| Diff, merge, rollback | Pro | No | No | No | No | No | No |
-| Tags / named snapshots | Pro | No | No | No | No | No | No |
-| Branch-level access control | Pro | No | No | No | No | No | No |
-| Fork (clone brain to new agent) | Pro | No | No | No | No | No | No |
-| Git-like timeline (event log) | Yes | No | No | No | No | No | No |
-| **Team collaboration** |  |  |  |  |  |  |  |
-| Shared rooms (many people, one topic) | Pro | No | No | No | No | No | No |
-| Joining briefing for a new agent | Pro | No | No | No | No | No | No |
-| Viewer / collaborator roles at the database | Pro | No | No | No | No | No | No |
-| Cross-agent reads, logged on both sides | Yes | No | No | No | No | No | No |
-| **Memory fundamentals** |  |  |  |  |  |  |  |
-| Persistent memory | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Versioning (full history) | CoW | No | Temporal | No | No | No | No |
-| Provenance (who wrote, when) | Yes | No | Partial | No | No | No | No |
-| Confidence scoring | Yes | No | No | Opinion only | No | No | No |
-| Outcome back-propagation | Yes | No | No | No | No | No | No |
-| Memory types (fact/belief/experience) | Yes | No | No | 4 networks | 3 stores | No | 3 types |
-| Causal explainability | Yes | No | No | No | No | No | No |
-| Knowledge graph | Auto | Optional | Yes | Manual | No | Yes | No |
-| Semantic search | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Multi-agent native | Yes | Partial | Partial | No | No | No | No |
-| Conflict surfacing (on-demand) | Yes | No | No | No | No | No | No |
-| Tiered memory (hot/warm/archive) | Yes | No | No | No | 3-tier | No | No |
-| Frequency-modulated decay | Yes | No | No | No | No | No | No |
-| Progressive retrieval (depth) | Yes | No | No | No | No | No | No |
-| Importance scoring (multi-dim) | Pro | No | No | No | No | No | No |
-| Cortex drift gate | Yes | No | No | No | No | No | No |
-| MCP server | Yes | Yes | Yes | Yes | Yes | Yes | No |
-| Self-hosted / OSS | Apache 2.0 | OSS\+Cloud | OSS\+Cloud | OSS | OSS | OSS\+Cloud | OSS |
-| Multi-tenant with RLS | Pro | Cloud | Cloud | No | No | Cloud | Cloud |
-| Enterprise dashboard | Pro | Cloud | Cloud | No | No | Cloud | Cloud |
-| Learned ranking from outcomes | Pro | No | No | No | No | No | No |
+| Feature | SenseLab | Mem0 | Zep / Graphiti | Letta |
+| :-- | :-: | :-: | :-: | :-: |
+| **Git-like collaboration** |  |  |  |  |
+| Branching (isolated experiments) | Pro | No | No | No |
+| Pull requests (review before merge) | Pro | No | No | No |
+| Diff, merge, rollback | Pro | No | No | No |
+| Tags / named snapshots | Pro | No | No | No |
+| Branch-level access control | Pro | No | No | No |
+| Fork (clone brain to new agent) | Pro | No | No | No |
+| Git-like timeline (event log) | Yes | No | No | No |
+| **Team collaboration** |  |  |  |  |
+| Shared rooms (many people, one topic) | Pro | No | No | No |
+| Joining briefing for a new agent | Pro | No | No | No |
+| Viewer / collaborator roles at the database | Pro | No | No | No |
+| Cross-agent reads, logged on both sides | Yes | No | No | No |
+| **Learning from your own traces** |  |  |  |  |
+| Model fine-tuned on your decision traces | Pro | No | No | No |
+| Training run and hosting managed for you | Pro | No | No | No |
+| Served behind an OpenAI-compatible endpoint | Pro | No | No | No |
+| **Memory fundamentals** |  |  |  |  |
+| Persistent memory | Yes | Yes | Yes | Yes |
+| Versioning (full history) | CoW | No | Temporal | No |
+| Provenance (who wrote, when) | Yes | No | Partial | No |
+| Confidence scoring | Yes | No | No | No |
+| Outcome back-propagation | Yes | No | No | No |
+| Memory types (fact/belief/experience) | Yes | No | No | 3 stores |
+| Causal explainability | Yes | No | No | No |
+| Knowledge graph | Auto | Optional | Yes | No |
+| Semantic search | Yes | Yes | Yes | Yes |
+| Multi-agent native | Yes | Partial | Partial | No |
+| Conflict surfacing (on-demand) | Yes | No | No | No |
+| Tiered memory (hot/warm/archive) | Yes | No | No | 3-tier |
+| Frequency-modulated decay | Yes | No | No | No |
+| Progressive retrieval (depth) | Yes | No | No | No |
+| Importance scoring (multi-dim) | Pro | No | No | No |
+| Cortex drift gate | Yes | No | No | No |
+| MCP server | Yes | Yes | Yes | Yes |
+| Self-hosted / OSS | Apache 2.0 | OSS\+Cloud | OSS\+Cloud | OSS |
+| Multi-tenant with RLS | Pro | Cloud | Cloud | No |
+| Enterprise dashboard | Pro | Cloud | Cloud | No |
+| Learned ranking from outcomes | Pro | No | No | No |
 
 ---
 
@@ -85,21 +89,6 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ---
 
-## SenseLab vs Hindsight
-
-[Hindsight](https://github.com/hindsight-ai/hindsight) maintains four separate memory networks (World, Experience, Opinion, Entity/Observation), with the separation fixed in the architecture rather than derived from how the memory is used.
-
-**Where SenseLab is stronger:**
-
-- **Production feedback loop** — Hindsight's Opinion Network has confidence scores, but they don't evolve from real-world outcomes. SenseLab's confidence changes when deploys succeed or incidents occur.
-- **Versioning** — Hindsight overwrites network state. SenseLab preserves full CoW history.
-- **Tiered memory** — SenseLab's Hot/Warm/Archive with priority scoring is data-driven, vs Hindsight's fixed 4-network separation. Tiers are recomputed from access patterns and importance rather than fixed at design time.
-- **Importance scoring** — Pro evaluates entries across behavioral alignment, reasoning utility, and contextual persistence — three LLM-scored dimensions that feed into tier assignment.
-- **Knowledge graph** — SenseLab auto-materializes a graph from normal operations. Hindsight's networks are structurally defined.
-- **Enterprise features** — Multi-tenant isolation, RBAC, scoped API keys, audit logging, webhooks, dashboard. Hindsight is a research tool without enterprise infrastructure.
-
----
-
 ## SenseLab vs Letta / MemGPT
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
@@ -113,57 +102,21 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ---
 
-## SenseLab vs Cognee
+## Models tuned on your own decision traces
 
-[Cognee](https://cognee.ai) builds knowledge graphs from documents using LLM-powered extraction.
+This is the largest single difference on this page. Every other memory system here stops at retrieval — it decides what the model gets to see. SenseLab uses the same record to improve the model itself.
 
-**Where SenseLab is stronger:**
+A decision trace already holds what an agent read, what it decided, which tool it called and whether that turned out well. That is supervised training data, and your agents produce it as a by-product of working. Nothing extra to instrument, nothing to label.
 
-- **Agent-oriented vs document-oriented** — SenseLab is for agents that read, write, and act. Cognee processes documents into queryable graphs.
-- **Outcome feedback** — SenseLab connects knowledge to production reality. Cognee's graph doesn't learn from post-retrieval events.
-- **Versioning and provenance** — SenseLab preserves full history. Cognee updates its graph in place.
+**We run the entire pipeline for you.** No ML engineers, no GPUs to procure, no training infrastructure to maintain:
 
----
+1. **We spin up the training job** from traces already sitting in your account. Nothing to export or prepare — the data is there because your agents have been working.
+2. **We run the fine-tune**, score the candidate, and decide whether it is good enough to promote.
+3. **We host it and serve it**, on our infrastructure, behind an endpoint your existing code already knows how to call.
 
-## SenseLab vs LangMem
+The result is a model that has seen how your agents actually work — which tools they reach for, in what order, on your systems — rather than a general model prompted to guess.
 
-[LangMem](https://langchain-ai.github.io/long-term-memory/) is LangChain's long-term memory library for the LangGraph ecosystem.
-
-**Where SenseLab is stronger:**
-
-- **Framework-agnostic** — SenseLab works with CrewAI, LangGraph, AutoGen, or standalone. LangMem is tied to LangChain.
-- **Outcome feedback** — SenseLab's core differentiator. No LangMem equivalent.
-- **MCP-native** — Built-in MCP server for IDE integration (Cursor, Claude Code).
-- **Self-hosted** — Pluggable backends (filesystem, Postgres, S3). LangMem is primarily managed.
-
----
-
-## SenseLab vs Memvid
-
-[Memvid](https://github.com/memvid/memvid) packages memory into a single `.mv2` file — data, embeddings, index, metadata. No database, no server.
-
-**Where SenseLab is stronger:**
-
-- **Different category** — Memvid is a read-mostly, append-only search tool. SenseLab is a multi-agent memory platform with versioning, outcomes, and enterprise features.
-- **Multi-agent** — Memvid has no concurrent writes and no provenance.
-- **Tiered memory** — SenseLab's Hot/Warm/Archive hierarchy doesn't exist in Memvid's flat file.
-- **Production feedback** — Memvid stores and retrieves. SenseLab learns from outcomes.
-
-SenseLab is for production multi-agent systems that need versioning, feedback, and collaboration — the things a flat file cannot give you once more than one agent is writing.
-
----
-
-## In development: models tuned on your own decision traces
-
-<Note>
-  **Not released.** This is on a development branch. It is not in the production image, has not served customer traffic, and is deliberately absent from the feature matrix above, which lists only what is available today.
-</Note>
-
-It is described here because it is the direction the outcome loop is built for, and because a fair comparison should say what is coming as well as what has shipped.
-
-Every memory system in this document, SenseLab included, stops at retrieval: it decides what the model gets to see. Decision traces make a further step possible, because a trace already records what an agent read, what it decided, which tool it called and whether that turned out well. That is supervised training data, produced as a by-product of working.
-
-How it is built:
+How it works:
 
 - **Positive outcomes only.** Training pairs come from decisions recorded as successful. Failures are deliberately withheld into a holdout so there is something honest to score against.
 - **A readiness gate before anything trains.** Ninety days of history, a floor of 100 and a target of 200 eligible decisions, at least three distinct primary tools, and at least 60% positive outcomes. Below the gate, no run starts.
@@ -172,16 +125,16 @@ How it is built:
 - **Fallback is automatic.** An unparseable action, a tool outside the agent's recent set, a safety block or an upstream error falls back to a general model rather than failing the call.
 - **Plan limits.** One live model on Pro, three on Teams, one hundred on Enterprise.
 
-Two things we will not put a number on until they are measured on real traffic: cost and accuracy. A saving multiple depends on facts we do not control, and quoting one before we have shadow-mode measurements would be a number invented for a marketing page. When there is a figure, it will come from your own holdout.
+On cost and accuracy, the figures that matter are yours, not ours. Every candidate is scored on a temporal holdout built from your own traces, so what you get is a number for your model on your traffic rather than a benchmark run on somebody else's workload.
 
-No competitor in this comparison closes this loop. Mem0, Zep, Hindsight, Letta, Cognee and LangMem all improve what the model reads; none of them improve the model.
+No competitor on this page closes this loop. Mem0, Zep and Letta all improve what the model reads. None of them improve the model.
 
-<Card title="Ask for early access" icon="envelope" href="mailto:hello@sense-lab.ai?subject=Early%20access%3A%20models%20tuned%20on%20decision%20traces">
-  Email us and we will add you to the early group. Worth doing now rather than at
-  launch: the readiness gate needs ninety days of history and at least 100 eligible
-  decisions, so the sooner your agents are recording outcomes, the sooner there is
-  enough to train on. Tell us which tools your agents call and we will tell you
-  where you stand against the gate.
+<Card title="Get a model trained on your traces" icon="envelope" href="mailto:hello@sense-lab.ai?subject=A%20model%20tuned%20on%20our%20decision%20traces">
+  Tell us which tools your agents call and we will tell you where you stand
+  against the readiness gate. Worth starting the conversation early: the gate
+  needs ninety days of history and at least 100 eligible decisions, so the
+  sooner your agents are recording outcomes, the sooner there is enough to
+  train on.
 </Card>
 
 ---
@@ -190,10 +143,11 @@ No competitor in this comparison closes this loop. Mem0, Zep, Hindsight, Letta, 
 
 1. **GitHub for agent memory** — No other system treats agent knowledge like code. SenseLab gives every agent a brain (repo), with branching, pull requests, diff, merge, rollback, access control, and fork. The mental model is already in every developer's head. No competitor has any of this.
 2. **Memory that learns from production** — Confidence scoring evolves from incidents, deployments, and regressions. No other system connects memory to real-world outcomes.
-3. **Self-organizing memory** — Tiered memory (Hot/Warm/Archive), frequency-modulated decay, multi-dimensional importance scoring, and progressive retrieval. Not just a retrieval layer — a memory system that reorganizes itself based on what matters.
-4. **Copy-on-Write versioning** — Every write is immutable. Replay history, compare versions, and audit decisions. Most competitors overwrite.
-5. **Complete decision traces** — `explain()` \+ `record_context()` capture the full causal chain. Pro persists traces permanently with cryptographic integrity.
-6. **Multi-agent native** — Provenance tracking, auto-causal linking, per-agent identity, and tracked cross-agent reads. Not bolted on.
-7. **Cross-system context** — Operational events flow into the same memory store over webhooks. PagerDuty ships as a connector; anything else can post to the generic webhook endpoint. No competitor unifies agent memory with operational events.
-8. **Framework and infrastructure agnostic** — Any framework, any IDE via MCP, any storage backend via adapters.
-9. **Enterprise-grade** — Postgres RLS, RBAC, scoped API keys, audit logging, rate limiting, usage quotas. Purpose-built for multi-tenant SaaS.
+3. **Models tuned on your own traces, trained and hosted by us** — Every other system stops at improving what the model reads. SenseLab turns the same decision traces into a fine-tuned model: we spin up the training job, run the fine-tune, score it against a holdout of your own decisions, and host it behind an OpenAI-compatible endpoint. No ML team required.
+4. **Self-organizing memory** — Tiered memory (Hot/Warm/Archive), frequency-modulated decay, multi-dimensional importance scoring, and progressive retrieval. Not just a retrieval layer — a memory system that reorganizes itself based on what matters.
+5. **Copy-on-Write versioning** — Every write is immutable. Replay history, compare versions, and audit decisions. Most competitors overwrite.
+6. **Complete decision traces** — `explain()` \+ `record_context()` capture the full causal chain. Pro persists traces permanently with cryptographic integrity.
+7. **Multi-agent native** — Provenance tracking, auto-causal linking, per-agent identity, and tracked cross-agent reads. Not bolted on.
+8. **Cross-system context** — Operational events flow into the same memory store over webhooks. PagerDuty ships as a connector; anything else can post to the generic webhook endpoint. No competitor unifies agent memory with operational events.
+9. **Framework and infrastructure agnostic** — Any framework, any IDE via MCP, any storage backend via adapters.
+10. **Enterprise-grade** — Postgres RLS, RBAC, scoped API keys, audit logging, rate limiting, usage quotas. Purpose-built for multi-tenant SaaS.
