@@ -4,22 +4,48 @@ description: "Configure SenseLab — environment variables, SDK options, and age
 icon: "gear"
 ---
 
-Configuration is minimal. Two environment variables connect you; everything else has sensible defaults.
+Configuration is minimal. Two environment variables connect the MCP server;
+everything else has sensible defaults.
 
 ## Environment Variables
 
 | Variable | Description | Required |
 |:---------|:------------|:---------|
-| `AMFS_HTTP_URL` | Your SenseLab API URL (e.g. `https://amfs-login.sense-lab.ai`) | Yes |
+| `AMFS_HTTP_URL` | Your SenseLab API URL — `https://amfs-login.sense-lab.ai` for SenseLab Cloud | Yes |
 | `AMFS_API_KEY` | Your API key (from Dashboard → Settings → API Keys) | Yes |
-| `AMFS_AGENT_ID` | Override auto-detected agent identity (for CI, scripts, servers) | No |
-
-When `AMFS_HTTP_URL` is set, the SDK and MCP server route all operations through the authenticated HTTP API. No config files, no adapter setup, no database connection strings.
+| `AMFS_AGENT_ID` | Agent identity for headless contexts — CI, scripts, and servers | No |
 
 ```bash
 export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
 export AMFS_API_KEY="<your-api-key>"
 ```
+
+<Note>
+  `AMFS_HTTP_URL` is the **API** host, not the dashboard. Cloud accounts point at
+  `https://amfs-login.sense-lab.ai`; the dashboard you log into at
+  `amfs.sense-lab.ai` will not serve API requests. Self-hosted deployments point
+  at their own API host.
+</Note>
+
+### Who reads these
+
+This is the part worth getting right, because the two surfaces behave
+differently:
+
+| Surface | Behaviour |
+|:--|:--|
+| **MCP server** | Reads both variables and builds the HTTP connection for you. Nothing else to configure |
+| **Python and TypeScript SDKs** | Ignore them. You must pass an `HttpAdapter` explicitly, as shown below |
+
+<Warning>
+  Setting the environment variables alone will not connect the SDKs. Without an
+  adapter, Python writes to `.amfs/` in your working directory and TypeScript
+  writes to memory — the calls succeed, and nothing reaches your account.
+</Warning>
+
+If `AMFS_HTTP_URL` is set but `amfs-adapter-http` isn't installed, the MCP
+server logs a warning and quietly falls back to local storage, so install it
+alongside the server when you're wiring things up by hand.
 
 ---
 
@@ -28,10 +54,17 @@ export AMFS_API_KEY="<your-api-key>"
 When using the Python SDK directly, pass options to the constructor:
 
 ```python
+import os
+
 from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
 
 mem = AgentMemory(
     agent_id="checkout-agent",
+    adapter=HttpAdapter(
+        base_url=os.environ["AMFS_HTTP_URL"],
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
     decay_half_life_days=30.0,
 )
 ```
@@ -39,12 +72,16 @@ mem = AgentMemory(
 | Parameter | Type | Description |
 |:----------|:-----|:------------|
 | `agent_id` | `str` | Identity for this agent (required) |
+| `adapter` | `AdapterABC` | Where memory is stored. Pass an `HttpAdapter` to reach your account; defaults to a filesystem adapter at `.amfs/` |
 | `session_id` | `str` | Session identifier; auto-generated if omitted |
+| `config_path` | `Path` | Load adapter settings from a config file instead of passing one |
 | `ttl_sweep_interval` | `float` | Seconds between TTL sweep runs |
 | `decay_half_life_days` | `float` | Confidence decay half-life in days |
 | `conflict_policy` | `ConflictPolicy` | How to handle concurrent write conflicts |
 
-The SDK auto-detects the HTTP adapter when `AMFS_HTTP_URL` is set — no adapter configuration needed.
+Install the adapter with `pip install amfs-adapter-http`. The
+[Python](/amfs/guides/python) and [TypeScript](/amfs/guides/typescript) guides
+cover the rest of the surface.
 
 ---
 
@@ -55,14 +92,21 @@ Agents are identified by their `agent_id`. This determines:
 - What shows up in the Dashboard
 - How `recall()` and `my_entries()` scope results
 
-**MCP agents** should call `amfs_set_identity` at the start of each session. Without it, identity is auto-detected from the IDE environment:
+**MCP agents** should call `amfs_set_identity` at the start of each session. Without it, identity is auto-detected from the environment, in this order:
 
-| Environment | Detected ID |
+| Checked in order | Detected ID |
 |:------------|:------------|
-| Cursor | `cursor/<username>` |
-| Claude Code | `claude-code/<username>` |
+| `CURSOR_SESSION_ID` or `VSCODE_PID` present | `cursor/<username>` |
+| `CLAUDE_CODE_SESSION` present | `claude-code/<username>` |
 | `AMFS_AGENT_ID` set | value of `AMFS_AGENT_ID` |
-| Fallback | `agent/<username>` |
+| Nothing matched | `agent/<username>` |
+
+<Note>
+  An IDE signal beats `AMFS_AGENT_ID`, so the variable does not rename an agent
+  running inside Cursor or Claude Code. That is deliberate: it stops a
+  server-side `AMFS_AGENT_ID` inherited by your shell from relabelling your local
+  sessions. To name an agent in an IDE, call `amfs_set_identity`.
+</Note>
 
 **SDK and REST clients** pass `agent_id` in the constructor or header.
 
