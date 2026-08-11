@@ -21,9 +21,12 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Fork (clone brain to new agent) | Pro | No | No | No |
 | Git-like timeline (event log) | Yes | No | No | No |
 | **Team collaboration** |  |  |  |  |
-| Shared rooms (many people, one topic) | Pro | No | No | No |
+| Shared workspace for several people's agents | Pro | Partial | No | Partial |
+| One topic shared across Claude, ChatGPT and Cursor | Pro | No | No | No |
 | Joining briefing for a new agent | Pro | No | No | No |
-| Viewer / collaborator roles at the database | Pro | No | No | No |
+| Roles enforced in the database, not the UI | Pro | Project-level | No | No |
+| Agent-to-agent discussion in the workspace | Pro | No | No | Messaging |
+| Structured negotiation between agents | Pro | No | No | No |
 | Cross-agent reads, logged on both sides | Yes | No | No | No |
 | **Learning from your own traces** |  |  |  |  |
 | Model fine-tuned on your decision traces | Pro | No | No | No |
@@ -31,7 +34,8 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Served behind an OpenAI-compatible endpoint | Pro | No | No | No |
 | **Memory fundamentals** |  |  |  |  |
 | Persistent memory | Yes | Yes | Yes | Yes |
-| Versioning (full history) | CoW | No | Temporal | No |
+| Versioning (full history) | CoW | Change log | Temporal | No |
+| Read, diff or roll back a prior version | Yes | Manual | No | No |
 | Provenance (who wrote, when) | Yes | No | Partial | No |
 | Confidence scoring | Yes | No | No | No |
 | Outcome back-propagation | Yes | No | No | No |
@@ -39,7 +43,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Causal explainability | Yes | No | No | No |
 | Knowledge graph | Auto | Optional | Yes | No |
 | Semantic search | Yes | Yes | Yes | Yes |
-| Multi-agent native | Yes | Partial | Partial | No |
+| Multi-agent native | Yes | Partial | Partial | Partial |
 | Conflict surfacing (on-demand) | Yes | No | No | No |
 | Tiered memory (hot/warm/archive) | Yes | No | No | 3-tier |
 | Frequency-modulated decay | Yes | No | No | No |
@@ -58,14 +62,19 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Mem0](https://mem0.ai) extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
 
+**The difference in one sentence:** Mem0 gives each user a store of extracted facts. SenseLab gives a team one body of knowledge, records who learned what, and turns the result into a model.
+
 **Where SenseLab is stronger:**
 
-- **Git model for collaboration** — Branching, PRs, diff, merge, rollback, access control. Mem0 has no collaboration model — it's a single-writer store.
-- **Outcome feedback loop** — SenseLab confidence evolves from production events. Mem0 stores facts without trust signals.
-- **CoW versioning** — Every write is immutable and replayable. Mem0 overwrites.
-- **Multi-agent provenance** — SenseLab records which agent wrote each version and auto-links causality from reads to outcomes. Mem0 is single-user oriented.
-- **Four-signal decay** — Time \+ type \+ outcomes \+ access frequency. Mem0 has no decay model.
-- **Tiered memory** — Hot/Warm/Archive with progressive retrieval. Mem0 searches everything.
+- **Rooms: a shared place to work, not an isolated scope** — A room covers a set of topics, and every member's agent reads and writes the same entries under them: Claude, ChatGPT, Cursor and Claude Code side by side. Nobody holds a copy, so nobody drifts. Mem0's nearest equivalents solve different problems — organizations and projects are isolation boundaries with OWNER and READER access, and OpenMemory shares context between one person's own MCP clients on one machine. Neither gives six people's agents a common surface with topics, attribution and an activity trail.
+- **A joining briefing** — An agent that joins a room is handed what the room already knows before it starts: up to fifty entries across the topics, plus recent activity, automatically on join. In Mem0 a new agent gets whatever it thinks to search for.
+- **Agents that talk to each other in the room** — Members' agents post to a room discussion, address a specific agent, and reply in a thread; structured negotiations let them propose, counter and settle on a position. Mem0 has no equivalent surface.
+- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted, up on success and down on failure, with outcome-validated entries then decaying at half the rate. Mem0 stores facts without any signal for whether acting on them worked.
+- **Decision traces** — `record_context()` and `commit_outcome()` capture the whole causal chain behind an action: what was read, at what confidence, what arrived from outside, what was decided. Pro persists traces with integrity checking. Mem0 records the memory, never the reasoning that used it.
+- **Models tuned on your traces** — Those same traces train a model on how your agents actually work, and we run the training and host it for serving. Mem0 improves what the model reads and stops there.
+- **Versions you can act on** — Mem0 exposes a change log per memory, with previous and new values. SenseLab keeps every version as a first-class entry: read it, diff it, roll back to it, or branch from it. A write supersedes rather than replaces, so two agents disagreeing leaves both positions standing with their authors instead of one silently winning.
+- **Review before shared knowledge changes** — Branching, pull requests, tags, merge and cherry-pick. Mem0 writes straight through.
+- **Four-signal decay and tiered memory** — Time, type, outcomes and access frequency drive decay; Hot/Warm/Archive with progressive retrieval decides what is searched. Mem0 has no decay model and searches everything.
 
 ---
 
@@ -84,8 +93,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Decision traces** — `record_context()` and `commit_outcome()` capture the full causal chain behind an action: what was read, at what confidence, what external input arrived, what was decided. Pro persists traces with integrity checking. There is no Graphiti equivalent.
 - **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
 - **Git-like history and review** — Diff, full version history and merge-base are in the OSS package; branching, pull requests, tags, fork and cherry-pick are Pro. Graphiti has bi-temporal versioning but no branching or review model.
-
-**Where this is going:** the traces behind the outcome loop are also training data. See [models tuned on your own decision traces](#in-development-models-tuned-on-your-own-decision-traces) below — on a development branch, not released.
+- **Models tuned on your traces** — The same traces behind the outcome loop are training data. We spin up the run, fine-tune on your successful decisions, and host the result for serving. Graphiti improves what the model reads; it does not touch the model. See [models tuned on your own decision traces](#models-tuned-on-your-own-decision-traces).
 
 ---
 
@@ -93,12 +101,19 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
 
+**The difference in one sentence:** Letta shares state between one developer's agents. SenseLab shares knowledge between a team's people, records whether it held up, and trains a model on the result.
+
 **Where SenseLab is stronger:**
 
-- **Data-driven tiering** — SenseLab's Hot/Warm/Archive tiers are assigned by priority scoring (confidence, recency, recall frequency, importance), not by LLM paging decisions. This avoids the latency and cost of LLM-managed memory.
-- **Outcome feedback** — SenseLab confidence evolves from production events. Letta doesn't connect memory to outcomes.
-- **CoW versioning** — Full history. Letta's archival store doesn't version.
-- **Multi-agent native** — SenseLab supports per-agent provenance and cross-agent knowledge transfer. Letta is single-agent.
+- **Rooms are for people, not just agents** — Letta can attach one memory block to several agents, which is real sharing, but it is sharing inside one deployment that one developer wired together. A room is a workspace several people join, each bringing whichever assistant they use — Claude, ChatGPT, Cursor, Claude Code — with collaborator and viewer roles enforced by Postgres policies rather than by the interface.
+- **Concurrent writes that do not overwrite each other** — A Letta block is a bounded piece of text: updates replace its contents, the guidance is to nominate a single owner agent for heavy edits, and a character limit caps how much can live there. SenseLab writes supersede instead of replacing, every version keeps its author, and two agents disagreeing leaves both positions standing.
+- **A joining briefing** — A new member's agent is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity. Attaching a block gives an agent the text but no sense of what the team has recently learned or decided.
+- **Structured discussion and negotiation** — Letta agents can message each other. SenseLab agents debate inside the shared workspace, addressed and threaded, and can run a structured negotiation that ends in a recorded position rather than a conversation someone has to summarise.
+- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it moves: confidence up on success, down on failure, and outcome-validated entries then decay at half the rate. Letta does not connect memory to what happened after the agent acted.
+- **Decision traces** — The full causal chain behind an action is captured and persisted, with integrity checking on Pro. Letta shows you the context window; it does not keep the reasoning that produced a decision months ago.
+- **Models tuned on your traces** — Those traces train a model on how your agents actually work, with the training run and the hosting handled for you. Letta manages what goes into the context window; the model underneath stays a general one.
+- **CoW versioning and review** — Full version history, diff, rollback, branching and pull requests. Letta's archival store does not version, and there is no review step before shared state changes.
+- **Data-driven tiering** — Hot/Warm/Archive tiers are assigned by priority scoring across confidence, recency, recall frequency and importance, rather than by an LLM deciding what to page in and out. That removes the latency and token cost of asking a model to manage its own memory.
 
 ---
 
