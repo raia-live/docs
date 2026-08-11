@@ -1,50 +1,83 @@
 ---
 title: "Billing & Metering"
-description: "Ops-based metering, usage quotas, and the control-plane API."
+description: "What counts as an operation, what each plan includes, and what happens when you run out."
 icon: "credit-card"
 ---
 
-# Hosted Billing & Metering
+# Billing & Metering
 
-This page describes the **contract** between the open-source **SenseLab HTTP API / MCP server** and the proprietary **control plane** (`amfs-internal`) that records usage and enforces quotas on SenseLab Cloud.
+SenseLab Cloud bills on **operations** — the reads and writes your agents make —
+rather than on stored megabytes or seats alone. This page explains what counts,
+what each plan includes, and what happens at the limit.
 
-## Ops Model
+## What Counts as an Operation
 
-| Operation class | Ops charged | Examples |
-|:----------------|:-----------:|:---------|
-| Read-like | **1** | `GET` entry, `search`, `list`, `explain` (read path), MCP `amfs_read`, `amfs_search`, … |
-| Write-like | **2** | `POST` write entry, `record_context`, MCP `amfs_write`, … |
-| Outcome commit | **0** | `commit_outcome` / MCP `amfs_commit_outcome` (product choice; still logged) |
+| Operation | Ops | Examples |
+|:----------|:---:|:---------|
+| Read | **1** | `amfs_read`, `amfs_recall`, `amfs_search`, `amfs_retrieve`, `amfs_list`, fetching an entry over REST |
+| Write | **2** | `amfs_write`, `amfs_record_context`, creating an entry over REST |
+| Outcome | **0** | `amfs_commit_outcome` |
 
-## HTTP Route → Ops
+Committing an outcome is deliberately free. It is the step that teaches your
+memory which entries were actually worth reading, and charging for it would
+discourage exactly the behaviour that makes the rest of your memory better.
 
-The authoritative matrix for the hosted gateway is maintained in **`amfs-internal`** (`amfs_control_plane.metering` — `op_cost_for_request(method, path)`). It mirrors [amfs-http-server](https://github.com/raia-live/amfs/tree/main/packages/http-server) routes, for example:
+Room and negotiation tools, health checks, and account administration are also
+free. Only data-plane reads and writes are metered, so anything not in the table
+above costs nothing.
 
-- `GET /api/v1/entries/...` → 1
-- `POST /api/v1/entries/...` → 2
-- `POST /api/v1/outcomes` → 0
-- `GET /health` → 0
+## Plans
 
-Default for unmatched API paths: **1 op** (conservative).
+| | Free | Starter | Pro | Teams |
+|:---|:---:|:---:|:---:|:---:|
+| **Price** | $0 | $29/mo | $149/mo | $449/mo |
+| **Operations** | 1,000/mo | 25,000/mo | 50,000/mo | 300,000/mo |
+| **Seats** | 2 | 3 | 5 | 10 |
+| **API keys** | 1 | 10 | 50 | 200 |
+| **Open rooms** | 1 | Unlimited | Unlimited | Unlimited |
+| **Room guests** | 10 | Unlimited | Unlimited | Unlimited |
 
-## MCP Tool → Ops
+Enterprise is priced per agreement and lifts every limit above. Room guests join
+a room through a share link from their own account, so they never consume one of
+your seats.
 
-Use `classify_mcp_tool(tool_name)` in the same module. Tools such as `amfs_read`, `amfs_search`, `amfs_list` → **1**; `amfs_write`, `amfs_record_context` → **2**; `amfs_commit_outcome` → **0**.
+## Going Over
 
-## Control Plane API
+If you need more operations than your plan includes, buy an overage pack of
+10,000 operations. The pack price falls as the plan grows:
 
-The hosted edge should call (server-side only, with `X-AMFS-Internal-Key`):
+| Plan | 10,000 extra ops |
+|:-----|:----------------:|
+| Starter | $25 |
+| Pro | $20 |
+| Teams | $15 |
 
-`POST /api/v1/internal/usage/record` with JSON `{ "account_id": "<uuid>", "ops": <n> }`
+## Knowing Before You Hit the Limit
 
-Responses:
+Every metered response carries your current position, so an agent can see it
+coming without a separate call:
 
-- **200** — updated counts (`ops_consumed`, `ops_remaining`, …)
-- **402** — `plan_required`, `quota_exceeded`, or over limit; body includes `upgrade_url` / `plan_comparison_url` where applicable
+| Header | Meaning |
+|:-------|:--------|
+| `X-AMFS-Ops-Limit` | Operations included this period |
+| `X-AMFS-Ops-Remaining` | Operations left |
+| `X-AMFS-Usage-Warning` | Set once you cross 80%, then 95%, then 100% |
 
-Dashboard users receive usage hints via `GET /api/v1/me` plus response headers `X-AMFS-Ops-Remaining`, `X-AMFS-Ops-Limit`, and `X-AMFS-Usage-Warning` (80 / 95 / 100).
+The dashboard shows the same thing under **Settings → Usage**, and
+`GET /api/v1/me` returns your remaining ops and warning level.
+
+When an account is out of operations, requests are refused with **402** and a
+body explaining why — `quota_exceeded` — along with a link to upgrade. Room and
+seat ceilings refuse the same way, with `room_limit_reached` and
+`seat_limit_reached`, so a failure always names the limit you actually hit.
+
+## Managing Your Subscription
+
+Billing runs on Stripe. Upgrade, downgrade, change a payment method, or download
+invoices from the customer portal, reachable from **Settings** in the dashboard.
 
 ## Related
 
-- [Connect to SenseLab](/amfs/getting-started/saas-connection) — API keys and `AMFS_HTTP_URL`
-- [OSS vs Pro](/amfs/editions) — feature comparison and hosted tiers summary
+- [Connect to SenseLab](/amfs/getting-started/saas-connection) — API keys and setup
+- [Editions](/amfs/editions) — feature comparison across plans
+- [Multi-Tenant Foundation](/amfs/pro/multi-tenant) — roles, scopes, and rate limits

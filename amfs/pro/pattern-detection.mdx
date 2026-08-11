@@ -1,44 +1,76 @@
 ---
 title: "Pattern Detection"
-description: "Automatically detect recurring failures, hot entities, stale clusters, and confidence drift."
+description: "Surface knowledge conflicts, stale entries, single points of knowledge, and recurring failures across your agents."
 icon: "magnifying-glass-chart"
 ---
 
 # Automated Pattern Detection
 
-Continuously analyze your memory store to surface recurring patterns, anomalies, and risks — before they become incidents.
+Continuously analyse your memory store to surface how well your agents are
+actually working together — where they contradict each other, where knowledge is
+going stale, and where one agent has become a single point of failure.
+
+Run a scan from **Patterns** in the dashboard, or through the API. A scan reads
+your entries, branches, pull requests, and outcome history, and returns a report
+grouped by category and severity.
 
 ## Pattern Types
 
-The Pattern Detector scans memory entries and decision trace data for four pattern types:
+The detector looks for eight patterns across three categories.
 
-| Pattern | What it finds | Severity |
-|:--------|:-------------|:---------|
-| **Recurring failures** | Entries that repeatedly appear in incident causal chains | Warning / Critical |
-| **Hot entities** | Entities with disproportionate write/outcome activity vs. average | Info |
-| **Stale clusters** | Groups of old entries with no outcome links that may need pruning | Warning |
-| **Confidence drift** | Entries whose confidence diverges significantly from their entity average | Info |
+### Collaboration Health
 
-## Alert Manager
+Problems in how agents share knowledge.
 
-Configurable rules that fire when matching patterns are detected:
+| Pattern | What it finds |
+|:--------|:--------------|
+| **Knowledge Conflict** | Agents holding conflicting values for the same key |
+| **Stale Knowledge** | Old entries that other agents are still reading |
+| **Orphaned Branch** | Branches left inactive, neither merged nor closed |
+| **Redundant Writes** | Near-duplicate entries that should be one authoritative record |
 
-```python
-from amfs_patterns import PatternDetector, AlertManager, AlertRule
+### Collaboration Insights
 
-detector = PatternDetector(incident_threshold=2, stale_days=30)
-report = detector.analyze(entries, outcome_data=outcomes)
+Opportunities rather than faults.
 
-manager = AlertManager()
-manager.add_rule(AlertRule(
-    name="Critical recurring failures",
-    pattern_type="recurring_failure",
-    min_severity="critical",
-    cooldown_minutes=60,
-))
-manager.on_alert(lambda eval: send_slack_notification(eval))
+| Pattern | What it finds |
+|:--------|:--------------|
+| **Single Point of Knowledge** | Knowledge only one agent holds, with no replication |
+| **Passive Consumer** | An agent that reads shared knowledge but never contributes back |
+| **Unreviewed Changes** | Pull requests sitting open long enough to block others |
 
-evaluations = manager.evaluate(report)
-```
+### Reliability
 
-Features: severity filtering, entity-path scoping, cooldown-based suppression (prevent alert fatigue), and callback registration so you can route alerts wherever you already handle them.
+| Pattern | What it finds |
+|:--------|:--------------|
+| **Recurring Failure** | Entries that keep reappearing in the causal chains of failed outcomes |
+
+Every detected pattern carries a severity of `info`, `warning`, or `critical`,
+the entity path it was found on, and a hint describing the suggested fix.
+
+## Tuning a Scan
+
+The thresholds that decide when something counts as a pattern are configurable:
+
+| Threshold | Default | Controls |
+|:----------|:-------:|:---------|
+| `stale_days` | 14 | Age at which an entry with active readers is flagged stale |
+| `orphan_days` | 7 | Branch inactivity before it is flagged orphaned |
+| `pr_stale_days` | 3 | How long a PR can stay open before it is flagged unreviewed |
+| `similarity_threshold` | 0.75 | String similarity above which two entries count as redundant |
+| `incident_threshold` | 2 | Failures an entry must appear in to count as a recurring failure |
+
+## Alerting
+
+Alert rules fire when a scan turns up something matching. Each rule filters by
+pattern type, minimum severity, and entity path, and has a cooldown so a
+persistent problem does not alert every scan.
+
+Alerts are delivered to a callback you register, which means routing is up to
+you — send them wherever your team already handles alerts.
+
+<Note>
+Rules match on the pattern type strings above, such as `knowledge_conflict` or
+`recurring_failure`, and severities are lowercase: `info`, `warning`,
+`critical`.
+</Note>

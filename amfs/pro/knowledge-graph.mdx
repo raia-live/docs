@@ -13,9 +13,8 @@ how to walk immediate neighbours. This page covers what SenseLab Cloud adds:
 querying the graph as a whole, and reading it as a map of expertise.
 
 <Note>
-  The persisted graph lives in Postgres. On a filesystem or S3 adapter, edges are
-  not materialized and the graph tools return nothing. This is automatic on the
-  hosted service.
+  Edges are materialized for you as your agents read and write. There is nothing
+  to build or schedule — the graph is already there the first time you query it.
 </Note>
 
 ## Finding the path between two things

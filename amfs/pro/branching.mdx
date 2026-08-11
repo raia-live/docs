@@ -1,74 +1,81 @@
 ---
 title: "Memory Branching"
-description: "Git-like branching for agent memory — branches, merge, PRs, tags, rollback, and fork."
+description: "Git-like branching for agent memory — branches, merge, pull requests, tags, rollback, and fork."
 icon: "code-branch"
 ---
 
 # Memory Branching — Git for Agent Memory
 
-The defining Pro feature. While OSS provides the git-like timeline engine (event logging on `main`), Pro adds the full branching model — branches, merge, pull requests, access control, tags, rollback, cherry-pick, and fork. Install with `pip install amfs-branching`.
+Every plan records an agent's memory as a [timeline](/amfs/concepts/git-timeline)
+of events on `main`. Branching adds the rest of the model on top: work an agent
+does on a branch, review it before it lands, tag a known-good state, and roll
+back to it when something goes wrong.
+
+<Note>
+Branching is available on Pro, Teams, and Enterprise. You will find it under the
+**Git Repository** section of any agent's detail page in the dashboard.
+</Note>
 
 ## Branches
 
-Create branches from an agent's main memory. Write to a branch without affecting main. Diff changes, then merge or discard.
+Create a branch from an agent's `main` memory and let the agent write to it
+without touching what everyone else reads. Diff the branch against `main` to see
+exactly what changed, then merge it or throw it away.
 
-```python
-from amfs import AgentMemory
-from amfs_branching.sdk import extend_with_branching
+This is what makes risky work safe. An agent trying a new approach can build up
+a whole set of beliefs on a branch, and if the approach turns out to be wrong,
+none of it ever reaches the memory other agents rely on.
 
-mem = AgentMemory(agent_id="deploy-agent")
-extend_with_branching(mem)
-
-mem.create_branch("experiment/retry-v3")
-mem.switch_branch("experiment/retry-v3")
-mem.write("checkout-service", "retry-pattern", {"max_retries": 5})
-
-diffs = mem.diff_branch("experiment/retry-v3")
-result = mem.merge_branch("experiment/retry-v3")
-```
-
-## Access Control
-
-Grant read or read/write access to specific users, teams, or API keys per branch. Access is enforced at the HTTP layer — requests targeting a non-main branch are automatically checked against the branch's access grants.
-
-```python
-mem.grant_branch_access("experiment/retry-v3", "api_key", "amfs_sk_bob", "read")
-```
+Merges default to fast-forward. Where the same key changed on both sides, the
+merge reports the conflict and you choose which value wins.
 
 ## Pull Requests
 
-Create PRs for team review before merging branch changes into main. Includes a review workflow with approve/reject/comment.
+A branch can be opened as a pull request so a human or another agent reviews the
+change before it lands on `main`. Reviews come in three kinds:
+
+| Review | Meaning |
+|:-------|:--------|
+| **Approved** | The reviewer is happy for this to merge |
+| **Changes requested** | Something needs fixing first |
+| **Commented** | Feedback without a verdict either way |
+
+<Note>
+The dashboard lists pull requests and their reviews, and lets you create, merge,
+and close them. Submitting a review is currently API-only.
+</Note>
+
+## Branch Access Control
+
+Grant read or read/write access to a branch, so a branch of sensitive or
+in-progress memory is not readable by every agent on the account. Grants are
+made to an API key or a team, and each grant is either `read` or `read_write`.
+
+Access is enforced by the server on API-key traffic to the entry and search
+endpoints: a request targeting a non-`main` branch is checked against that
+branch's grants and refused with a 403 if it does not have them. Writes require
+`read_write` — a `read` grant can see the branch but not change it.
 
 ## Tags & Rollback
 
-Create named snapshots and roll back memory to any point in time or tagged state.
+Tag a point on the timeline with a name, then roll the agent's memory back to
+either a tag or a specific timestamp. This is the recovery path when an agent
+learns something wrong and acts on it repeatedly: instead of hunting down each
+bad entry, return the brain to a state you know was good.
 
 ## Cherry-pick & Fork
 
-Selectively move entries between branches, or clone an entire agent's memory to a new agent.
+**Cherry-pick** moves selected entries between branches when you want one useful
+thing from a branch you are otherwise discarding. It is available through the
+API.
+
+**Fork** clones an entire agent's memory to a new agent — the fast way to stand
+up a second agent that should start out knowing everything the first one does.
 
 ## Sacred Timeline
 
-Interactive 3D visualization (React Three Fiber) showing how an agent's memory evolved over time, with branch forks, event nodes, and contextual detail panels.
-
-## Full Example
-
-```python
-from amfs import AgentMemory
-from amfs_branching.sdk import extend_with_branching
-
-mem = AgentMemory(agent_id="deploy-agent")
-extend_with_branching(mem)
-
-# Create and switch to a branch
-mem.create_branch("experiment/retry-v3")
-mem.switch_branch("experiment/retry-v3")
-mem.write("checkout-service", "retry-pattern", {"max_retries": 5})
-
-# Grant access to a specific API key
-mem.grant_branch_access("experiment/retry-v3", "api_key", "amfs_sk_bob", "read")
-
-# Diff and merge
-diffs = mem.diff_branch("experiment/retry-v3")
-result = mem.merge_branch("experiment/retry-v3")
-```
+The default view in the Git Repository section is an interactive 3D
+visualisation of how the agent's memory evolved: event nodes along the timeline,
+forks where branches split off, and a detail panel for any event you click.
+Next to it, **Event Log** shows the same history as a chronological list, which
+is usually the faster way to find a specific write.

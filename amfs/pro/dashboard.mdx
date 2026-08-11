@@ -1,39 +1,61 @@
 ---
 title: "Dashboard"
-description: "Web dashboard for exploring memory, visualizing decisions, and managing your SenseLab deployment."
+description: "Explore memory, inspect decisions, manage rooms and access, and watch usage."
 icon: "gauge"
 ---
 
 # Dashboard
 
-A web dashboard (Next.js 15 + React 19) for exploring memory, visualizing decisions, and managing your SenseLab deployment.
+The web dashboard at [amfs.sense-lab.ai](https://amfs.sense-lab.ai) is where you
+see what your agents actually know and what they have been doing with it.
 
-## Pages
+## Exploring Memory
 
-| Page | Description |
-|:-----|:------------|
-| **Overview** | Account-wide stats, recent activity, health indicators, live SSE status |
-| **Entities** | Browse entities, view entries with confidence badges, version history, provenance details |
-| **Traces** | Enriched trace cards with causal entries (full values), external contexts, query/error events, session timing, outcome badges, and search/filter |
-| **Trace Detail** | Full trace view with interactive causal graph (D3), timeline, entry snapshots, and state diff |
-| **Agents** | Per-agent overview with memory graph, activity, and **Git Repository** section (see below) |
-| **Incidents** | Incident timeline with causal chain drill-down |
-| **Patterns** | Detected pattern dashboard (recurring failures, hot entities, stale clusters, confidence drift) with severity indicators and resolution tracking |
-| **Teams** | Team CRUD with member management (admin, developer, viewer roles) |
-| **Snapshots** | Memory snapshot capture, comparison, and JSON export |
-| **API Keys** | Key management console with scopes, rate limits, expiry, and usage |
-| **Audit Log** | Searchable, filterable log of all state-changing operations |
-| **Usage & Quotas** | Quota progress bars, request metrics, top agents/entities breakdown |
-| **Pro Tools** | Retrieval playground, critic panel, distiller view, calibration dashboard, training data export |
+| Page | What it's for |
+|:-----|:--------------|
+| **Overview** | Account-wide stats, recent activity, and health at a glance |
+| **Topics** | Browse entities and their entries, with confidence badges, version history, and provenance |
+| **Agents** | Per-agent view: what this agent knows, its activity, its memory graph, and its Git history |
+| **Rooms** | Shared workspaces — members, discussions, documents, and negotiations |
+| **Memory Health** | Where memory is decaying, contradicting itself, or going unused |
+
+## Understanding Decisions
+
+| Page | What it's for |
+|:-----|:--------------|
+| **Traces** | Every recorded decision, searchable, with its causal entries and outcome |
+| **Trace Detail** | A single decision in full: causal graph, timeline, entry snapshots, and state diff |
+| **Outcomes** | Outcome timeline with drill-down into the causal chain behind each one |
+| **Patterns** | [Detected patterns](/amfs/pro/pattern-detection) with severity and resolution tracking |
+
+## Pro Tools
+
+The **Pro** area exposes the [intelligence](/amfs/pro/intelligence) and
+[ML](/amfs/pro/ml-layer) layers: a retrieval playground for testing what your
+agents would find, the memory critic, the distiller, calibration, and training
+data export. It also holds the [knowledge graph](/amfs/pro/knowledge-graph)
+explorers — including the expertise view of who knows what — and the tier
+breakdown of your memory store.
+
+## Security & Administration
+
+| Page | What it's for |
+|:-----|:--------------|
+| **Security** | [Findings](/amfs/pro/security), policy rules, allowlists, access, and integrations |
+| **Teams** | Team management and membership |
+| **API Keys** | Issue, scope, and revoke keys |
+| **Audit** | Searchable log of sensitive operations |
+| **Usage** | Operations consumed against your plan, with a breakdown by agent and entity |
 
 ## Agent Git Repository
 
-Each agent's detail page includes a "Git Repository" section with:
+Each agent's detail page has a Git Repository section, available on Pro, Teams,
+and Enterprise:
 
-| Tab | Description |
-|:----|:------------|
-| **Sacred Timeline** | Interactive 3D visualization of the agent's memory history (React Three Fiber). Shows event nodes, branch forks, date markers, and contextual detail panels when clicking events. |
-| **Event Log** | Chronological 2D list of all events (writes, outcomes, reads, briefs, webhooks) with icons, details, and date grouping. |
-| **Branches** | Branch management — create, close, merge, view diffs, and manage access grants per branch. |
-| **Pull Requests** | PR workflow — create, review, merge, and close pull requests for branch changes. |
-| **Tags & Rollback** | Create named snapshots, roll back to tags or specific timestamps. |
+| Tab | What it shows |
+|:----|:--------------|
+| **Sacred Timeline** | Interactive 3D view of the agent's history — event nodes, branch forks, and a detail panel per event |
+| **Event Log** | The same history as a chronological list, which is faster for finding a specific write |
+| **Branches** | Create, merge, diff, and close [branches](/amfs/pro/branching), and manage access grants |
+| **Pull Requests** | Open, review, merge, and close PRs against `main` |
+| **Tags** | Named snapshots, and rollback to a tag or a point in time |

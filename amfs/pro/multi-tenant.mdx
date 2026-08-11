@@ -1,50 +1,84 @@
 ---
 title: "Multi-Tenant SaaS"
-description: "Run SenseLab as a hosted service with account isolation, RBAC, scoped API keys, and audit logging."
+description: "Account isolation, roles, scoped API keys, rate limits, and audit logging on SenseLab Cloud."
 icon: "building"
 ---
 
-# Multi-Tenant SaaS Foundation
+# Multi-Tenant Foundation
 
-The foundation for running SenseLab as a hosted service. Every API request is authenticated, authorized, scoped, and audited.
+Every request to SenseLab is authenticated, authorised, scoped, and metered.
+This page describes how that works on SenseLab Cloud.
 
 ## Account Isolation
 
-SenseLab Security enforces hard isolation between tenants at the storage layer, below the application. Company A cannot see Company B's data, even if there's a bug in application code.
+SenseLab Security enforces hard isolation between accounts at the storage layer,
+below the application. One account cannot see another's data, even in the event
+of a bug in application code — the isolation does not depend on the application
+remembering to filter.
 
-## RBAC
+## Roles
 
-Three roles with graduated permissions:
+A member of an account holds one role, which decides what they can do:
 
 | Role | Can do |
 |:-----|:-------|
-| **Admin** | Full account management, user invites, key management, all memory ops |
-| **Developer** | Create/revoke API keys, read/write memory, view audit logs |
-| **User** | Read memory within scoped paths |
+| **Admin** | Everything: account and member management, API keys, all memory operations, and the Security area |
+| **Developer** | Read and write memory, manage API keys, view audit logs |
+| **User** | Read memory within the paths they are scoped to |
+| **Security** | The Security area only — findings, rules, and policy |
+
+Rooms and teams have their own lighter-weight roles for collaborators and
+viewers, covered in [Room Members and Permissions](/amfs/concepts/room-members).
 
 ## Scoped API Keys
 
-Each agent/tool gets its own key with entity-path permissions:
+Each agent or tool gets its own key, and a key can be restricted to part of your
+memory rather than all of it:
 
 ```
-amfs_sk_live_...  →  checkout-service/**  [READ_WRITE]
-                     shared/patterns/*     [READ]
+checkout-service/**   read_write
+shared/patterns/*     read
 ```
 
-Agents can only access memory within their permitted scope — this is **permissioned inference** enforced at both the application and database level.
+Patterns support `*` for a single level and `**` to match everything beneath a
+path. Permissions are `read`, `write`, or `read_write`. An agent can only reach
+memory inside its scope — this is **permissioned inference**, enforced by the
+server on every request rather than by convention.
 
-## HTTP API-Based Tenant Isolation
+Keys are issued from **Settings → API Keys** in the dashboard and are shown once
+at creation. Store the key when you create it; only its prefix is retained
+afterwards, so a lost key must be revoked and reissued.
 
-All external agent access (MCP clients, SDKs, REST calls) is routed through the SenseLab HTTP API using `AMFS_HTTP_URL` + `AMFS_API_KEY`. The API resolves the tenant, enforces entity-path scopes, sets the Postgres RLS context, and logs the operation — agents never touch the database directly. MCP clients connect transparently via the `HttpAdapter`, which converts memory operations into authenticated HTTP requests.
+## How Agents Connect
 
-## Audit Logging
-
-Every state-changing operation is recorded in an append-only audit log with actor, action, resource, and IP address.
+All external access — MCP clients, SDKs, and direct REST calls — goes through
+the SenseLab HTTP API with an API key. The API resolves which account the key
+belongs to, enforces the key's entity-path scopes, applies the account's rate
+limit, meters the operation, and logs it. Agents never talk to the database.
 
 ## Rate Limiting
 
-Per-key sliding-window rate limiting (RPM) with admin bypass. Response headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`) let clients adapt.
+Requests are limited per key using a sliding 60-second window. Every response
+carries the current state so a client can back off before it is refused:
 
-## Usage Quotas
+| Header | Meaning |
+|:-------|:--------|
+| `X-RateLimit-Limit` | Requests allowed in the window |
+| `X-RateLimit-Remaining` | Requests still available |
+| `X-RateLimit-Window` | Window length in seconds |
 
-Tiered limits on entries, API keys, users, and decision traces. Hard-capped at the database level, with external billing integration (Stripe, etc.) for metering. Three tiers: Starter, Team, Enterprise (unlimited).
+A refused request returns 429 with `Retry-After`. Admin keys bypass the limit.
+
+## Audit Logging
+
+Sensitive operations — memory writes, API key creation and revocation, and
+account administration — are recorded to an append-only audit log with the
+actor, the action, the resource, and a timestamp. Browse it under
+**Settings → Audit**.
+
+## Usage & Quotas
+
+Each plan includes a monthly allowance of operations plus limits on seats, API
+keys, open rooms, and room guests. Usage is metered as it happens and visible
+under **Settings → Usage**. See [Billing & Metering](/amfs/pro/billing) for what
+counts as an operation and what each plan includes.

@@ -9,12 +9,14 @@ icon: "chart-line"
 SenseLab Pro's ML layer learns from your outcome data to make retrieval smarter, confidence scoring more accurate, and your agents' decision traces exportable as fine-tuning datasets.
 
 <Note>
-The ML layer is a Pro-only feature. The OSS layer captures all the data — reads, writes, outcomes, causal chains — and the ML layer learns from it.
+The models run inside SenseLab, so there is nothing to install and no training
+infrastructure to stand up. You drive the ML layer through the Pro MCP tools
+below, or from **Pro Tools** in the dashboard.
 </Note>
 
 ## Prerequisites
 
-- SenseLab Pro MCP server running (see [MCP Setup](/amfs/guides/mcp))
+- A plan that includes Pro tools, connected via the Pro MCP server (see [MCP Setup](/amfs/guides/mcp))
 - Outcome data in your memory store — the ML layer trains on `commit_outcome` history
 - At least 20 outcome-linked entries for learned ranking, 5 per outcome type for calibration
 
@@ -30,10 +32,14 @@ SenseLab's multi-strategy retrieval uses fixed weights (semantic: 0.4, keyword: 
 
 The learned ranker trains a gradient-boosted model on your outcome history:
 
-- **Positive labels**: entries that were read before clean deploys
+- **Positive labels**: entries that were read before successful outcomes
 - **Negative labels**: entries read before incidents, or entries never linked to any outcome
 
-The model learns which `MemoryEntry` features predict usefulness and integrates as an additional strategy in the retrieval pipeline. When trained, it automatically gets 30% weight in RRF fusion.
+The model learns which `MemoryEntry` features predict usefulness and integrates
+as an additional strategy in the retrieval pipeline. Once trained it takes 30%
+of the weight in RRF fusion, and the pipeline rebalances to make room for it:
+semantic drops from 0.4 to 0.35 and confidence from 0.2 to 0.15, while keyword
+and temporal stay at 0.2.
 
 ### Via MCP
 
@@ -66,23 +72,9 @@ Train for a specific entity:
 amfs_retrain(entity_path="checkout-service")
 ```
 
-### Via Python SDK
-
-```python
-from amfs_ml import LearnedRanker
-
-ranker = LearnedRanker(adapter, model_path=Path(".amfs/ml/ranker.pkl"))
-
-# Train
-metrics = ranker.train()
-print(f"Accuracy: {metrics.accuracy:.1%}")
-print(f"Top feature: {max(metrics.feature_importances, key=metrics.feature_importances.get)}")
-
-# Score entries
-scored = ranker.score(entries)
-for entry, probability in scored[:5]:
-    print(f"{entry.entry_key}: {probability:.3f}")
-```
+Under the hood this is a gradient-boosted classifier (scikit-learn's
+`GradientBoostingClassifier`) trained on features of each `MemoryEntry` —
+confidence, outcome count, age, tier, and version.
 
 ### Graceful Degradation
 
@@ -94,23 +86,24 @@ With fewer than 20 training samples, the ranker falls back to confidence-based s
 
 ### The Problem
 
-SenseLab uses fixed outcome multipliers:
+SenseLab uses fixed outcome multipliers — successes reinforce confidence,
+failures erode it:
 
 | Outcome | Default Multiplier |
 |:--------|:-------------------|
-| Critical Failure | × 1.15 |
-| Failure | × 1.10 |
-| Minor Failure | × 1.08 |
-| Success | × 0.97 |
+| Success | × 1.03 |
+| Minor Failure | × 0.92 |
+| Failure | × 0.90 |
+| Critical Failure | × 0.85 |
 
-These are reasonable defaults, but the actual signal strength of each outcome type varies by domain. A P1 incident in a payment service carries different weight than a P1 in a logging service.
+These are reasonable defaults, but the actual signal strength of each outcome type varies by domain. A critical failure in a payment service carries different weight than one in a logging service.
 
 ### How It Works
 
 The calibrator analyzes your outcome history to learn domain-specific multipliers:
 
 1. Groups outcomes by type
-2. For each type, measures how often causally-linked entries later appear in incidents vs clean deploys
+2. For each type, measures how often causally-linked entries later appear in failures vs successes
 3. Adjusts multipliers based on observed signal strength
 4. Estimates optimal decay half-life from the age distribution of actively-used entries
 
@@ -127,10 +120,10 @@ Returns calibrated multipliers and analysis:
   "global_multipliers": {
     "entity_path": null,
     "multipliers": {
-      "critical_failure": 1.1845,
-      "failure": 1.123,
-      "minor_failure": 1.1016,
-      "success": 0.9797
+      "critical_failure": 0.8123,
+      "failure": 0.8845,
+      "minor_failure": 0.9312,
+      "success": 1.0416
     },
     "decay_half_life_days": 21.5,
     "num_outcomes_analyzed": 89
@@ -147,26 +140,13 @@ With per-entity overrides:
 amfs_calibrate(per_entity=true)
 ```
 
-Returns global multipliers plus entity-specific overrides for any entity with enough data (5+ outcomes per type).
+Returns global multipliers plus entity-specific overrides for any entity with
+enough data. Global calibration needs 5 outcomes of a given type before it will
+recalibrate that type; per-entity overrides need 5 outcomes on the entity in
+total, not 5 of each type.
 
-### Via Python SDK
-
-```python
-from amfs_ml import ConfidenceCalibrator
-
-calibrator = ConfidenceCalibrator(adapter)
-
-# Global calibration
-report = calibrator.calibrate()
-print(report.global_multipliers.multipliers)
-
-# Per-entity calibration
-report = calibrator.calibrate(per_entity=True)
-for em in report.entity_multipliers:
-    print(f"{em.entity_path}: {em.multipliers}")
-    if em.decay_half_life_days:
-        print(f"  Estimated decay: {em.decay_half_life_days} days")
-```
+Calibration also estimates a decay half-life from the age distribution of
+entries your agents actually still read, reported as `decay_half_life_days`.
 
 ---
 
@@ -180,11 +160,11 @@ SenseLab captures structured decision traces: what the agent read, what it decid
 
 The exporter queries historical outcomes and their causally-linked entries, then formats them as training datasets in three formats:
 
-**SFT (Supervised Fine-Tuning)** — Each successful decision trace becomes a training example. Context entries (what was read) pair with the decision entry (what was written). Only clean deploys produce SFT examples.
+**SFT (Supervised Fine-Tuning)** — Each successful decision trace becomes a training example. Context entries (what was read) pair with the decision entry (what was written). Only successful outcomes produce SFT examples.
 
 **DPO (Direct Preference Optimization)** — Pairs a successful decision trace (chosen) with a failed one (rejected) for the same entity. The outcome replaces human preference annotation.
 
-**Reward Model** — Each entry is labeled with a score based on its outcome history: clean deploys score +1.0, P1 incidents score -1.0, with intermediate values for P2 and regressions.
+**Reward Model** — Each entry is labeled with a score based on its outcome history: successes score +1.0, critical failures score -1.0, with intermediate values for the failure levels in between.
 
 ### Via MCP
 
@@ -224,24 +204,6 @@ Returns:
 }
 ```
 
-### Via Python SDK
-
-```python
-from amfs_ml import TrainingDataExporter
-from amfs_ml.export.exporter import ExportFormat
-
-exporter = TrainingDataExporter(adapter)
-
-# Export as structured result
-result = exporter.export(format=ExportFormat.DPO, entity_path="checkout-service")
-print(f"Generated {result.num_examples} DPO pairs")
-
-# Export as JSONL (ready for fine-tuning pipelines)
-jsonl = exporter.export_jsonl(format=ExportFormat.SFT, limit=1000)
-with open("training_data.jsonl", "w") as f:
-    f.write(jsonl)
-```
-
 ### Integration with Fine-Tuning Pipelines
 
 SenseLab generates the data; you bring the training infrastructure. The exported formats are compatible with common fine-tuning workflows:
@@ -262,17 +224,22 @@ The ML layer needs outcome data to learn from. Here's the minimum for each featu
 |:--------|:-------------|:------------|
 | Learned Ranking | 20 outcome-linked entries | 100+ entries with mixed outcomes |
 | Confidence Calibration | 5 outcomes per type | 20+ per type for reliable calibration |
-| Training Data Export (SFT) | 1 clean deploy with 2+ causal entries | Dozens of successful traces |
+| Training Data Export (SFT) | 1 success with 2+ causal entries | Dozens of successful traces |
 | Training Data Export (DPO) | 1 positive + 1 negative outcome per entity | Multiple of each per entity |
 | Training Data Export (Reward) | 1 outcome-linked entry | Hundreds of entries for a useful dataset |
 
 <Tip>
-The ML layer works best with Postgres, which persists outcome records. The filesystem adapter tracks outcome effects on entries but doesn't persist the outcome records themselves, limiting the data available for training.
+What the ML layer learns from is `commit_outcome` history, so the value you get
+out of it is set by how consistently your agents commit outcomes. Agents that
+read and write but never commit produce no training signal at all.
 </Tip>
 
 ---
 
 ## Environment Variables
+
+Set on the server that runs the models, so this only applies if you host the Pro
+server yourself. On SenseLab Cloud it is managed for you.
 
 | Variable | Default | Description |
 |:---------|:--------|:------------|

@@ -6,61 +6,58 @@ icon: "shield-check"
 
 # Immutable Decision Trace Store
 
-The OSS `explain()` only works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). Pro builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever.
+A [decision trace](/amfs/concepts/context-graphs) records how an agent turned
+what it knew into what it did. `amfs_explain` reconstructs that for the session
+you are in. Pro persists the same thing permanently, signed and tamper-evident,
+so you can answer "why did the agent do that?" months after the agent has
+stopped running.
 
-## OSS Trace Enrichment
+## What Every Trace Captures
 
-Every `commit_outcome` automatically captures:
+Committing an outcome snapshots the whole session:
 
 - **Session timing** — `session_started_at`, `session_ended_at`, `session_duration_ms`
-- **Query events** — every `search()` and `list()` call with parameters, result counts, and per-operation latency
-- **Error events** — any errors during reads, writes, or tool calls
-- **State diff** — entries created, updated, and confidence changes during the session
-- **Full entry snapshots** — `value`, `memory_type`, and `written_by` captured at read time
+- **Query events** — each `search()` and `list()` call with its parameters, result count, and latency
+- **Error events** — anything that failed during a read, write, or tool call
+- **State diff** — entries created and updated, and how confidence moved
+- **Entry snapshots** — the `value`, `memory_type`, and `written_by` of everything read, captured as it was at read time
 
-## Pro Immutable Traces
+That last point is what makes a trace worth keeping. It records what the agent
+actually saw, not what the entry says today, so a later edit cannot rewrite the
+explanation of a past decision.
 
-Pro adds:
+## What Pro Adds
 
-- **Cryptographic integrity** — HMAC-SHA256 content hashing with Merkle chain linking across sessions
-- **LLM call spans** — model, provider, prompt/completion token counts, cost, latency, temperature, finish reason
-- **Write events, tool calls, agent interactions** — full record of every action
-- **Token and cost aggregates** — `total_llm_calls`, `total_tokens`, `total_cost_usd` per trace
+**Tamper-evident storage.** Each trace is hashed with SHA-256 over its contents
+and signed with HMAC-SHA256. Traces are chained within a session — each one
+carries the hash of the one before it and its position in the sequence — so
+altering or removing a trace after the fact breaks the chain and is detectable.
 
-```python
-from amfs_traces import TraceRecorder, InMemoryTraceStore
+**LLM call spans.** Record the model, provider, token counts, cost, latency,
+temperature, and finish reason for each call an agent makes, and every trace
+carries `total_llm_calls`, `total_tokens`, and `total_cost_usd`. This is what
+turns a trace from "what the agent decided" into "what that decision cost."
 
-recorder = TraceRecorder(memory, store, account_id=acct.id)
+**A full record of actions** — writes, tool calls, and interactions between
+agents, not just reads.
 
-# Reads and external contexts are tracked automatically
-recorder.memory.read("svc", "retry-pattern")
-recorder.memory.record_context("pagerduty", "3 SEV-1", source="PagerDuty API")
+**Search across history.** Query stored traces by entity path, agent, outcome
+type, or time range, which is how you find every decision that preceded a
+particular kind of failure.
 
-# Record LLM calls for token/cost tracking
-recorder.record_llm_call(
-    model="gpt-4o", provider="openai",
-    prompt_tokens=1200, completion_tokens=450,
-    latency_ms=2340, cost_usd=0.0285,
-)
-
-# Outcome commits automatically persist the trace
-updated, trace = recorder.commit_outcome("DEP-500", OutcomeType.SUCCESS)
-
-# Months later, explain still works
-result = recorder.explain("DEP-500")
-
-# Search across all decisions
-traces = recorder.search_traces(entity_path="checkout-service", outcome_type="critical_failure")
-```
+<Note>
+Recording is automatic once you are on a plan that includes it. Use
+`amfs_record_llm_call` to attach model and cost data to the current session, and
+`amfs_list_traces` and `amfs_get_trace` to read history back.
+</Note>
 
 ## OpenTelemetry Export
 
-Export SenseLab decision traces as OpenTelemetry spans for integration with existing observability stacks (Jaeger, Grafana Tempo, Datadog, Honeycomb). Traces are mapped to hierarchical spans following GenAI semantic conventions — each LLM call becomes a `gen_ai` span, and memory operations become `amfs` spans.
+Traces export as OpenTelemetry spans, so agent decisions show up alongside the
+rest of your system in whatever you already use — Jaeger, Grafana Tempo,
+Datadog, or Honeycomb.
 
-```python
-from amfs_otel import TraceExporter, configure_otel
-
-configure_otel(endpoint="http://localhost:4317", service_name="my-agent")
-exporter = TraceExporter()
-exporter.export_trace(trace)  # sends spans to your OTel collector
-```
+The mapping follows GenAI semantic conventions: each LLM call becomes a
+`gen_ai.completion` span, and memory operations become `amfs.*` spans —
+`amfs.session` for the session as a whole, then `amfs.read`, `amfs.write`, and
+`amfs.query` beneath it.
