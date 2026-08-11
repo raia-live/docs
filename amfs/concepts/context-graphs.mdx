@@ -165,13 +165,9 @@ SenseLab now has a **persisted knowledge graph** that complements the session-sc
 | Decision traces | Single session | Stored per session; Pro adds a cryptographically sealed copy | "What happened in this session and why?" |
 | Knowledge graph | Cross-session, cross-agent | A persistent edge store spanning every agent on the account | "How are entities, agents, and outcomes related globally?" |
 
-<Note>
-  Both layers need a database backend, which you get on SenseLab Cloud and on
-  self-hosted SenseLab configured with one. Against local file or S3 storage the
-  graph calls are no-ops that return no edges and traces are not written to
-  disk, so `graph_neighbors` comes back empty, multi-hop traversal with
-  `depth > 1` returns nothing, and `explain()` only sees the current session.
-</Note>
+Both layers are always on — the graph materializes from normal reads and writes,
+and traces are recorded as agents work. Neither needs to be enabled or
+configured.
 
 ### How Edges Are Created
 

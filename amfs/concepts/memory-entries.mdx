@@ -167,12 +167,8 @@ results = mem.search()         # all tiers (default depth=3)
 ```
 
 <Note>
-  Every entry is written at tier `3`. The scores that promote entries to hot or
-  warm are computed by a background worker, which runs on SenseLab Cloud and on
-  self-hosted SenseLab with a database backend. If you're running against local
-  file or S3 storage, nothing recomputes them and `depth` is ignored — a
-  `depth=1` search returns the same rows as a full one rather than a faster
-  subset.
+  Entries are written at tier `3` and promoted from there. Scoring runs
+  continuously in the background — there is nothing to schedule or tune.
 </Note>
 
 ---

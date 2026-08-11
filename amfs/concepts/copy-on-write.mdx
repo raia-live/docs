@@ -95,21 +95,17 @@ replacement of the value.
 
 ---
 
-## On-Disk Layout (Filesystem Adapter)
+## Version Retention
 
-The filesystem adapter stores each version as a separate JSON file:
+Every version is kept. Superseding a key never overwrites the previous value —
+it marks it as no longer current and stores the new one alongside it, so the
+full chain stays queryable through `history()` for as long as the entry exists.
 
-```
-.amfs/default/checkout-service/retry-pattern/
-├── v001_superseded.json
-├── v002_superseded.json
-└── v003_current.json
-```
-
-- `_current.json` — the active version
-- `_superseded.json` — previous versions, kept for history
-
-Writes use atomic rename (`os.rename()`) with advisory file locking (`flock()`) to prevent corruption from concurrent writes.
+<Note>
+  Running SenseLab yourself? How versions are laid out on disk depends on the
+  storage backend you pick — see the [adapter
+  reference](/amfs/adapters/overview).
+</Note>
 
 ---
 

@@ -74,7 +74,8 @@ for event in events:
 ### HTTP API
 
 ```bash
-curl "http://localhost:8080/api/v1/agents/deploy-agent/timeline?limit=50"
+curl "https://amfs-login.sense-lab.ai/api/v1/agents/deploy-agent/timeline?limit=50" \
+  -H "X-AMFS-API-Key: <your-api-key>"
 ```
 
 Response:
@@ -145,8 +146,9 @@ mem.write(
 Or via the HTTP API:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/entries \
+curl -X POST https://amfs-login.sense-lab.ai/api/v1/entries \
   -H "Content-Type: application/json" \
+  -H "X-AMFS-API-Key: <your-api-key>" \
   -d '{
     "entity_path": "checkout-service",
     "key": "retry-pattern",
@@ -159,7 +161,8 @@ curl -X POST http://localhost:8080/api/v1/entries \
 ### Reading from a Branch
 
 ```bash
-curl "http://localhost:8080/api/v1/entries/checkout-service/retry-pattern?branch=experiment/retry-v3"
+curl "https://amfs-login.sense-lab.ai/api/v1/entries/checkout-service/retry-pattern?branch=experiment/retry-v3" \
+  -H "X-AMFS-API-Key: <your-api-key>"
 ```
 
 ### Access Control
@@ -270,13 +273,6 @@ print(f"Forked {count} entries to deploy-agent-v2")
 └─────────────────────────────────────────────────────┘
 ```
 
-The timeline is available in OSS on the `main` branch. Branching, merging, tags,
-rollback, cherry-pick, fork, and access control require SenseLab Pro.
-
-<Warning>
-  The timeline needs a backend that can store events. It works as described on
-  SenseLab Cloud and on self-hosted SenseLab with a database backend. Against
-  local file or S3 storage, event logging is a no-op — the SDK still emits
-  events, but nothing persists them and `mem.timeline()` comes back empty. If
-  your timeline is unexpectedly blank, this is almost always why.
-</Warning>
+The timeline records everything on `main` from your first write, with nothing to
+turn on. Branching, merging, tags, rollback, cherry-pick, fork, and branch
+access control are [SenseLab Pro](/amfs/editions) features.
