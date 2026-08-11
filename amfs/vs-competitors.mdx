@@ -24,7 +24,8 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 | Shared workspace for several people's agents | Pro | Partial | No | Partial |
 | One topic shared across Claude, ChatGPT and Cursor | Pro | No | No | No |
 | Joining briefing for a new agent | Pro | No | No | No |
-| Roles enforced in the database, not the UI | Pro | Project-level | No | No |
+| Collaborator and viewer roles | Pro | Project-level | No | No |
+| Viewer writes blocked by a database policy | Pro | No | No | No |
 | Agent-to-agent discussion in the workspace | Pro | No | No | Messaging |
 | Structured negotiation between agents | Pro | No | No | No |
 | Cross-agent reads, logged on both sides | Yes | No | No | No |
@@ -62,7 +63,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Mem0](https://mem0.ai) extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
 
-**The difference in one sentence:** Mem0 gives each user a store of extracted facts. SenseLab gives a team one body of knowledge, records who learned what, and turns the result into a model.
+**The difference in one sentence:** SenseLab gives a team one body of knowledge, records who learned what and whether it held up, and turns the result into a model. Mem0 stops at a per-user store of extracted facts.
 
 **Where SenseLab is stronger:**
 
@@ -72,7 +73,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted, up on success and down on failure, with outcome-validated entries then decaying at half the rate. Mem0 stores facts without any signal for whether acting on them worked.
 - **Decision traces** — `record_context()` and `commit_outcome()` capture the whole causal chain behind an action: what was read, at what confidence, what arrived from outside, what was decided. Pro persists traces with integrity checking. Mem0 records the memory, never the reasoning that used it.
 - **Models tuned on your traces** — Those same traces train a model on how your agents actually work, and we run the training and host it for serving. Mem0 improves what the model reads and stops there.
-- **Versions you can act on** — Mem0 exposes a change log per memory, with previous and new values. SenseLab keeps every version as a first-class entry: read it, diff it, roll back to it, or branch from it. A write supersedes rather than replaces, so two agents disagreeing leaves both positions standing with their authors instead of one silently winning.
+- **Versions you can act on** — SenseLab keeps every version as a first-class entry: read it, diff it, roll back to it, or branch from it. A write supersedes rather than replaces, so two agents disagreeing leaves both positions standing with their authors instead of one silently winning. Mem0 gives you a change log to read, and nothing to do with it.
 - **Review before shared knowledge changes** — Branching, pull requests, tags, merge and cherry-pick. Mem0 writes straight through.
 - **Four-signal decay and tiered memory** — Time, type, outcomes and access frequency drive decay; Hot/Warm/Archive with progressive retrieval decides what is searched. Mem0 has no decay model and searches everything.
 
@@ -80,13 +81,13 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 ## SenseLab vs Zep / Graphiti
 
-[Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti). An LLM extracts entities and relationships from each episode — `text`, `json`, or `message` — and the resulting edges carry `valid_at` / `invalid_at` ranges, so a query can ask what was true at a point in time and get an answer that respects when a fact stopped being true.
+[Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti): an LLM extracts entities and relationships from each episode, and the resulting edges carry validity ranges.
 
-**The difference in one sentence:** Graphiti models *what was true, and when*. SenseLab models *who learned it, whether it turned out to be right, and how a team shares it.*
+**The difference in one sentence:** SenseLab records *who learned it, whether it turned out to be right, and how a team shares it.* Graphiti stops at what the graph says.
 
 **Where SenseLab is stronger:**
 
-- **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, enforced by Postgres policies rather than by the interface, and every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
+- **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, and a viewer's writes are refused by a Postgres policy on the memory tables rather than only by the interface, so a stray API call cannot get around it. Every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
 - **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity, delivered automatically on join and re-runnable on demand. A new hire's agent starts where the team is instead of at the README. Graphiti has no equivalent — a new consumer of the graph must know what to query for.
 - **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted: successes multiply it up, failures down, and outcome-validated entries then decay at half the rate. Graphiti tracks when a fact was valid, but nothing flows back from what happened after an agent acted on it.
 - **Per-agent provenance** — Every version records the agent, session and timestamp that produced it, and one agent reading another's memory is logged on both timelines. A Graphiti edge does not record which agent asserted it.
@@ -101,14 +102,14 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 
 [Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
 
-**The difference in one sentence:** Letta shares state between one developer's agents. SenseLab shares knowledge between a team's people, records whether it held up, and trains a model on the result.
+**The difference in one sentence:** SenseLab shares knowledge between a team's people, records whether it held up, and trains a model on the result. Letta stops at shared state between one developer's agents.
 
 **Where SenseLab is stronger:**
 
-- **Rooms are for people, not just agents** — Letta can attach one memory block to several agents, which is real sharing, but it is sharing inside one deployment that one developer wired together. A room is a workspace several people join, each bringing whichever assistant they use — Claude, ChatGPT, Cursor, Claude Code — with collaborator and viewer roles enforced by Postgres policies rather than by the interface.
-- **Concurrent writes that do not overwrite each other** — A Letta block is a bounded piece of text: updates replace its contents, the guidance is to nominate a single owner agent for heavy edits, and a character limit caps how much can live there. SenseLab writes supersede instead of replacing, every version keeps its author, and two agents disagreeing leaves both positions standing.
+- **Rooms are for people, not just agents** — A room is a workspace several people join, each bringing whichever assistant they use — Claude, ChatGPT, Cursor, Claude Code — with collaborator and viewer roles, where a viewer's writes are refused by a Postgres policy on the memory tables rather than only by the interface. Letta's shared blocks stay inside one deployment that one developer wired together; there is no colleague in the model.
+- **Concurrent writes that do not overwrite each other** — SenseLab writes supersede rather than replace, every version keeps its author, and two agents disagreeing leaves both positions standing. A Letta block is a bounded piece of text with a character cap: updates replace its contents, and the guidance is to nominate a single owner agent for heavy edits to avoid races.
 - **A joining briefing** — A new member's agent is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity. Attaching a block gives an agent the text but no sense of what the team has recently learned or decided.
-- **Structured discussion and negotiation** — Letta agents can message each other. SenseLab agents debate inside the shared workspace, addressed and threaded, and can run a structured negotiation that ends in a recorded position rather than a conversation someone has to summarise.
+- **Structured discussion and negotiation** — SenseLab agents debate inside the shared workspace, addressed and threaded, and can run a structured negotiation that ends in a recorded position rather than a conversation someone has to summarise. Letta agents can pass messages; nothing settles into the shared record.
 - **Outcome back-propagation** — Commit an outcome and every entry read on the way to it moves: confidence up on success, down on failure, and outcome-validated entries then decay at half the rate. Letta does not connect memory to what happened after the agent acted.
 - **Decision traces** — The full causal chain behind an action is captured and persisted, with integrity checking on Pro. Letta shows you the context window; it does not keep the reasoning that produced a decision months ago.
 - **Models tuned on your traces** — Those traces train a model on how your agents actually work, with the training run and the hosting handled for you. Letta manages what goes into the context window; the model underneath stays a general one.
