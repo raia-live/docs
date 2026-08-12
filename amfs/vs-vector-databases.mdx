@@ -1,20 +1,20 @@
 ---
 title: "SenseLab vs Vector Databases"
-description: "When to use SenseLab, when to use a vector database, and how they work together."
+description: "Why a vector database is not agent memory, and what it costs to build the difference yourself."
 icon: "database"
 ---
 
-Vector databases and SenseLab solve different problems. Understanding the distinction helps you pick the right tool — or use both.
+If you are considering building a memory layer on top of a vector database, this page is about what that project turns into.
 
 ---
 
 ## The Short Version
 
-**Vector databases** store embeddings and retrieve them by similarity. They answer: *"what is most relevant to this query?"*
+**A vector database answers one question:** *what is most similar to this query?* It returns the nearest embeddings and stops there.
 
-**SenseLab** is version control for what agents know. It answers: *"what does this agent know, who wrote it, how confident are we, what happened when we acted on it, and how do we collaborate on changing it?"*
+**SenseLab answers the questions that actually decide whether an agent should act:** who learned this, how confident should we be, what happened the last time someone acted on it, who else on the team knows it, and can I see the reasoning six months later.
 
-A vector database is a **search index**. SenseLab is **GitHub for agent memory** — versioning, branching, pull requests, rollback, and a collaboration model developers already understand.
+Those are not two flavours of the same product. A similarity index has no notion of an author, a version, an outcome or a teammate, and no amount of metadata columns adds one. Everything on this page that a vector database does not do is something you would be signing up to build and then maintain.
 
 ---
 
@@ -31,23 +31,14 @@ A vector database is a **search index**. SenseLab is **GitHub for agent memory**
 | **Feedback loop** | None | Outcome back-propagation — incidents boost confidence, clean deploys decay it |
 | **Query style** | "Find similar to X" | "Read key Y", "Search by entity/agent/confidence", "What happened over time?" |
 | **Temporal queries** | Snapshot at query time | Full version history with time-range filtering |
-| **Explainability** | None | Causal chain: which entries + external contexts informed a decision |
-| **Multi-agent** | Shared index | Shared memory with per-agent provenance, conflict detection, auto-causal linking |
-| **Typical size** | Millions–billions of vectors | Thousands–millions of knowledge entries |
+| **Explainability** | None | Causal chain: which entries \+ external contexts informed a decision |
+| **Multi-agent** | Shared index | Per-agent provenance, auto-causal linking, cross-agent reads logged on both sides |
+| **Disagreement** | Last write wins, silently | Both versions survive with their authors; disagreement is visible |
+| **Teams of people** | None — an index has no members | Rooms: many people's agents on one topic, with collaborator and viewer roles |
+| **Onboarding a new agent** | It must know what to query for | A joining briefing hands it what the team already knows |
+| **Document retrieval** | The core job | Built in — documents are chunked, embedded and searched inside SenseLab |
+| **Improving the model itself** | Out of scope | Models fine-tuned on your decision traces, trained and hosted for you |
 | **Update pattern** | Re-embed and upsert | CoW write with automatic version increment |
-
----
-
-## What Vector Databases Do Well
-
-Vector databases excel at **large-scale semantic retrieval**:
-
-- **RAG (Retrieval-Augmented Generation)** — Finding relevant document chunks to inject into an LLM prompt. When you have 10M documents and need the top-10 most relevant passages, a vector database is the right tool.
-- **Similarity search** — "Find products similar to this one", "Find code snippets that match this pattern."
-- **Multimodal retrieval** — Searching across text, images, and audio using shared embedding spaces.
-- **Real-time recommendation** — High-throughput, low-latency nearest-neighbor queries.
-
-Popular options include Pinecone, Weaviate, Qdrant, Milvus, and Chroma.
 
 ---
 
@@ -115,30 +106,35 @@ chain = mem.explain("DEP-500")
 
 ---
 
-## Using Both Together
+## What it costs to build this yourself
 
-SenseLab and vector databases are complementary. A common architecture:
+Teams rarely set out to build a memory platform. They add a versions table to a vector store, and eighteen months later they own one. Here is what sits between a similarity index and something an agent can safely act on:
 
-```
-                     Agent
-                    /     \
-                   /       \
-         ┌────────▼──┐  ┌──▼──────────┐
-         │ SenseLab  │  │  Vector DB  │
-         │  Memory   │  │ (RAG index) │
-         └───────────┘  └─────────────┘
-         What we know    What's relevant
-         + trust         to this query
-         + history
-         + outcomes
-```
+| You would have to build | What it turns into |
+| :-- | :-- |
+| Versioning | Copy-on-Write storage, a supersede rule instead of an overwrite, and history queries that stay fast as versions accumulate. Then diff, and rollback, because a history you cannot act on is a log. |
+| Provenance | An identity on every version, not every row. Then the migration when you realise reads need attributing too, and the schema change when one agent reads another's work. |
+| An outcome loop | Recording which entries were read on the way to a decision, propagating success and failure back to each one, and a decay model that distinguishes a fact from a belief and slows down for anything an outcome has validated. |
+| Decision traces | Capturing the causal chain as it happens rather than reconstructing it from logs, then storing it so it is still answerable in a year, with integrity checks if anyone will rely on it. |
+| Team access | Membership, roles, and a write path that refuses a viewer below the interface rather than in the UI. Then the audit trail, because the reason you needed roles is the reason you will be asked for one. |
+| Onboarding | Deciding what a new agent should be handed on day one, and keeping that current as the team's knowledge moves. |
+| Conflict handling | Deciding what happens when two agents write the same key — and resisting the easy answer, last-write-wins, which is how the knowledge silently gets worse. |
 
-1. **Vector DB for retrieval** — Agent queries the vector database to find relevant documents or code snippets for the current task.
-2. **SenseLab for memory** — Agent reads SenseLab for known patterns, risks, and past decisions about the entity it's working on.
-3. **SenseLab for recording** — After completing its task, the agent writes findings, decisions, and risks to SenseLab with provenance and confidence.
-4. **SenseLab for learning** — Outcomes (deploys, incidents) back-propagate through SenseLab, adjusting confidence scores so future agents see which patterns are trustworthy.
+Each row is a system, not a sprint. Each one grows edge cases the first production incident finds for you. And none of it is your product — it is the substrate your product needs in order to stop repeating itself.
 
-SenseLab supports hybrid search — combining full-text (Postgres tsvector), semantic (cosine similarity via pluggable embedders), recency, and confidence into a single ranked result set. For small-to-medium memory stores, this eliminates the need for a separate vector database. SenseLab also auto-materializes a knowledge graph from normal operations, capturing entity relationships and causal links that pure similarity search cannot surface. For large-scale RAG over millions of documents, a dedicated vector database is the right choice.
+SenseLab is that substrate, already built, already carrying other teams' traffic.
+
+---
+
+## You probably do not need a second database
+
+The usual reason to keep a vector store alongside a memory layer is search. SenseLab does that itself:
+
+- **Hybrid search** — full-text, semantic similarity through pluggable embedders, recency and confidence, combined into one ranked result rather than a similarity score you then have to re-rank by hand.
+- **Documents, chunked and embedded in place** — upload a document to a room and SenseLab splits it on sentence boundaries with overlap, sizes each chunk to the embedding model's real token budget, and makes it searchable alongside everything the team has learned. No second pipeline, no second copy, no sync job between them.
+- **A knowledge graph you did not have to build** — entity relationships and causal links materialize from normal reads and writes, surfacing connections similarity search cannot.
+
+If you already run a vector database for product search or retrieval over millions of documents, keep it. That is a different job from remembering what your agents decided and whether it worked, and nothing here asks you to migrate it. What is not worth doing is standing up a second system to hold your agents' memory, and then building the seven rows above on top of it.
 
 ---
 
@@ -147,16 +143,17 @@ SenseLab supports hybrid search — combining full-text (Postgres tsvector), sem
 The fundamental difference becomes clear over time. A vector database stores static embeddings that you retrieve. SenseLab builds a **compounding knowledge asset** that gets more valuable the longer you use it:
 
 ```
-Week 1:   Agent writes patterns → basic memory
-Week 4:   Outcomes validate patterns → confidence evolves
-Week 12:  Decision traces show what worked → precedent search
-Week 24:  Pattern detection surfaces recurring failures → proactive alerting
-Week 52:  Learned ranking personalizes retrieval → domain-calibrated intelligence
+Week 1:   Agents write what they learn      → memory with an author
+Week 4:   Outcomes validate it              → confidence reflects reality
+Week 8:   A room shares it across the team  → nobody solves it twice
+Week 12:  Decision traces accumulate        → precedent, not folklore
+Week 24:  Patterns surface                  → recurring failures found early
+Week 52:  Enough traces to train on         → a model tuned on your own work
 ```
 
-With Pro, this loop extends to cross-system context (incidents, deploys, and reviews ingested from your own tooling by webhook), persistent decision traces queryable months later, and automated pattern detection that surfaces recurring failures before they become incidents.
+Week 52 is the part no retrieval layer reaches. By then the record of what your agents decided is large enough to fine-tune on, and we run that for you: we spin up the training job, score the candidate against a holdout of your own decisions, and host the result for serving. Pro also adds cross-system context over webhooks, decision traces that are still answerable months later, and pattern detection that finds recurring failures before they become incidents.
 
-No vector database provides this lifecycle. They are a retrieval layer. SenseLab is a **memory system that compounds**.
+A vector database is the same on week 52 as it was on week 1. SenseLab is a **memory system that compounds**, and the compounding is the product.
 
 ---
 
@@ -165,10 +162,14 @@ No vector database provides this lifecycle. They are a retrieval layer. SenseLab
 | | Vector Database | SenseLab |
 |:--|:----------------|:-----|
 | **Think of it as** | A search index for embeddings | GitHub for agent memory |
-| **Best for** | Finding relevant data | Collaborating on knowledge the way developers collaborate on code |
+| **Best for** | Finding relevant data | Knowing what your agents learned, and whether it held up |
 | **Collaboration** | None — shared index, last write wins | Branch, diff, PR, review, merge, rollback, access control |
+| **Teams** | None | Rooms: several people's agents on one topic, with roles and an activity trail |
 | **Data lifecycle** | Write once, query many | Write, version, track outcomes, decay, explain |
-| **Multi-agent** | Shared index | Shared memory with provenance, conflicts, and causal chains |
-| **Cross-system context** | Manual ingestion | Pro: webhook ingestion from your own systems |
+| **Multi-agent** | Shared index | Provenance, causal chains, and disagreement that stays visible |
+| **Document search** | The core job | Included — chunked, embedded and searchable in place |
+| **Cross-system context** | Manual ingestion | Pro: webhook ingestion, with PagerDuty shipping as a connector |
 | **Pattern intelligence** | None | Pro: recurring failures, stale clusters, confidence drift |
+| **Improves the model** | No | Pro: fine-tuned on your traces, trained and hosted for you |
 | **Enterprise readiness** | Auth varies by vendor | Pro: RLS isolation, RBAC, scoped API keys, audit logging |
+| **Build effort to match it** | — | Seven systems, per the table above |
