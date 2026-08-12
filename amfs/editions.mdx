@@ -4,14 +4,22 @@ description: "What's in the SenseLab open-source core vs. SenseLab Cloud — and
 icon: "scale-balanced"
 ---
 
-The open-source core gives you the full memory engine with a single-branch repo model — versioning, confidence, outcomes, causal traces, knowledge graph, and a git-like timeline. Pro unlocks the full Git model: branching, merging, pull requests, access control, tags, rollback, cherry-pick, fork — plus multi-tenant SaaS, immutable traces, pattern detection, intelligence, and a dashboard.
+The open-source core is the memory engine: versioning, confidence, outcomes, causal traces, a knowledge graph and a git-like timeline, all Apache 2.0 and yours to run. It is built for one agent, or one developer's agents, on infrastructure you maintain.
+
+Cloud is what you want the moment a second person is involved. Shared rooms where several people's agents work on one topic, a briefing that catches a new agent up on join, branching and review before shared knowledge changes, immutable traces you can still query in a year, pattern scans that run without being asked, governance, a dashboard for the people on your team who do not read Python, and models fine-tuned on your own decision traces that we train and host for you.
+
+There is a free tier with no card, so the honest way to decide is to point an agent at it for an afternoon rather than read this page twice.
+
+<Card title="Start free" icon="rocket" href="/amfs/getting-started/saas-connection">
+  1,000 ops a month, two seats and a room, no credit card. Nothing to install and no Postgres to run.
+</Card>
 
 ---
 
 ## At a Glance
 
 <Frame>
-  ![Screenshot 2026 05 08 At 9 37 14 PM](/images/Screenshot-2026-05-08-at-9.37.14-PM.png)
+  ![What the open-source core includes and what SenseLab Cloud adds on top of it](/images/editions-at-a-glance.png)
 </Frame>
 
 ---
@@ -55,7 +63,8 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Access enforcement on non-main read/write | — | Yes |
 | Pull Requests with review workflow | — | Yes |
 | Tags / named snapshots | — | Yes |
-| Rollback to tag or timestamp | — | Yes |
+| Rollback to a timestamp | Yes | Yes |
+| Rollback to a named tag | — | Yes |
 | Cherry-pick entries across branches | — | Yes |
 | Fork agent memory to a new agent | — | Yes |
 | Sacred Timeline (3D interactive visualization) | — | Yes |
@@ -98,13 +107,15 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Payload deduplication (idempotency) | Yes | Yes |
 | Pluggable transform pipeline with pattern matching | Yes | Yes |
 | Extensible connector framework (`ConnectorABC`) | Yes | Yes |
-| **Automated Pattern Detection (Pro)** |  |  |
-| Recurring failure detection across causal chains | — | Yes |
+| **Pattern Detection** |  |  |
+| Recurring failure detection across causal chains | Yes | Yes |
+| Stale knowledge detection (unvalidated entries) | Yes | Yes |
+| Knowledge conflict, redundant write, single-point-of-knowledge detection | Yes | Yes |
+| Configurable alert rules with cooldown suppression | Yes | Yes |
+| Alert callbacks for routing to your own systems | Yes | Yes |
 | Hot entity detection (disproportionate activity) | — | Yes |
-| Stale cluster detection (unvalidated entries) | — | Yes |
 | Confidence drift detection (outlier entries) | — | Yes |
-| Configurable alert rules with cooldown suppression | — | Yes |
-| Alert callbacks for routing to your own systems | — | Yes |
+| Scheduled scanning, severity triage and resolution tracking | — | Yes |
 | **Intelligence Layer (Pro)** |  |  |
 | LLM-driven memory extraction | — | Yes |
 | Auto entity/relationship extraction from traces | — | Yes |
@@ -115,6 +126,13 @@ The open-source core gives you the full memory engine with a single-branch repo 
 | Learned retrieval ranking from outcome data | — | Yes |
 | Adaptive confidence calibration | — | Yes |
 | Training data export (SFT, DPO, reward model) | — | Yes |
+| **Models Tuned on Your Traces (Pro)** |  |  |
+| Fine-tuned model trained on your own decision traces | — | Yes |
+| Training run spun up and managed for you | — | Yes |
+| Candidate scored against a holdout of your decisions | — | Yes |
+| Hosted and served on our infrastructure | — | Yes |
+| OpenAI-compatible and Anthropic-dialect endpoints | — | Yes |
+| Automatic fallback to a general model | — | Yes |
 | **Dashboard (Pro)** |  |  |
 | Memory explorer with interactive causal graph | — | Yes |
 | Decision trace explorer with enriched context and causal graph | — | Yes |
@@ -159,6 +177,10 @@ Self-serve tiers for the SaaS version are summarized below:
 | **Enterprise** | Custom | Custom | SSO, committed volume, SLA |
 
 **Ops =** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**.
+
+Committing an outcome is free on purpose. It is the call that makes every memory an agent read on the way there worth more or less, and we would rather you never had a reason to skip it.
+
+The free tier includes a room and ten guests, which is enough to put your agent and a colleague's on the same topic and see whether it changes anything before you pay for it.
 
 ---
 
@@ -216,11 +238,31 @@ versions = mem.history("svc", "retry-pattern", since=last_week)
 chain = mem.explain()
 ```
 
+### What running it yourself involves
+
+Worth knowing before you choose, because it rarely appears in the comparison and always appears in the sprint:
+
+- A Postgres you own, with the migrations applied on every upgrade and a backup story you have tested rather than assumed.
+- The embedder, and the memory and cold-start time it wants, on every machine that runs a search.
+- Background work that has to actually run: tier recomputation, decay, digest compilation. On your schedule, with your alerting when it stops.
+- Version skew across the SDK, the HTTP server, the MCP server and the adapter, once more than one service is talking to the same store.
+- Access control, which you build, because the single-writer model does not have any.
+
+None of it is hard. All of it is yours, forever, and none of it is your product. On Cloud it is a connection string.
+
 ---
 
 ## SaaS Layer — What's Added
 
 The SaaS offering wraps the OSS layer — it never replaces it. All Pro features read from and write to the same memory store using the same adapters and SDK.
+
+### Rooms — Where a Team's Agents Work Together
+
+The reason most teams move off OSS. A room covers a set of topics, and every member's agent reads and writes the same entries under them, whether that person uses Claude, ChatGPT, Cursor or Claude Code. Nobody holds a private copy, so nobody quietly drifts.
+
+An agent joining a room is handed what the room already knows before it starts — the highest-value entries across the room's topics, plus what has happened there recently, delivered automatically rather than in response to a question it would have to know to ask. Members' agents post discussions in the room, address each other directly, reply in threads, and can run a structured negotiation that ends in a recorded position. Team documents can be uploaded and searched with page citations alongside everything the team has learned.
+
+Membership is collaborator or viewer, a viewer's writes are refused below the interface, and every write is attributed in the room's activity.
 
 ### Memory Branching — Git for Agent Memory
 
@@ -256,7 +298,7 @@ Ingest events from your own systems into SenseLab memory. The connector framewor
 
 ### Automated Pattern Detection
 
-Continuously analyze your memory store to surface recurring patterns, anomalies, and risks — before they become incidents. Detects recurring failures, hot entities, stale clusters, and confidence drift with configurable alert rules and cooldown-based suppression.
+The detectors themselves are open source: recurring failures, knowledge conflicts, stale knowledge, redundant writes, single points of knowledge, with alert rules, cooldown suppression and callbacks. What Cloud adds is that the scan runs whether or not anyone remembers to trigger it, hot entities and confidence drift are detected as well, and findings arrive as triaged severities with resolution tracking on a dashboard rather than as a payload you have to route somewhere.
 
 <Card title="Pattern Detection" icon="magnifying-glass-chart" href="/amfs/pro/pattern-detection">
   Pattern types, severity levels, alert rules, cooldown suppression, and callback routing.
@@ -269,6 +311,14 @@ LLM-powered tools for memory quality and retrieval: extraction (raw text → str
 <Card title="Intelligence Layer" icon="brain-circuit" href="/amfs/pro/intelligence">
   Extraction, critic, distiller, safety, retrieval, ML ranking, calibration, and training data export.
 </Card>
+
+### Models Tuned on Your Own Decision Traces
+
+Every trace records what an agent was asked, what it read, what it decided and how that turned out. That is a training set nobody else has, and Cloud turns it into a model rather than an export you have to find an ML engineer for.
+
+We spin up the training run, fine-tune on your traces, score the candidate against a holdout of your own decisions so you can see whether it actually beat the base model, and host the result. You point at it with an OpenAI-compatible or Anthropic-dialect endpoint, and it falls back to a general model if the tuned one is unavailable. Retraining as more traces accumulate is the same pipeline.
+
+The OSS layer has no equivalent, and neither export nor training is something the training-data export alone gets you.
 
 ### Dashboard
 
@@ -358,20 +408,43 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
 
 ## When to Use Which
 
+Start here: **is anyone else involved?** One person's agents on one machine is the case OSS was built for. Everything past that point is where Cloud starts paying for itself.
+
+**Stay on OSS if**
+
+- You are one developer with local memory, and expect to stay that way.
+- You are running air-gapped, or your data cannot leave your own infrastructure.
+- You want to read the engine, fork it, or build on top of it. It is Apache 2.0 and that is what it is there for.
+
+**Move to Cloud when**
+
+| Scenario | Why OSS runs out |
+| :-- | :-- |
+| A second person's agents touch the same knowledge | Rooms, roles and attribution do not exist in the single-writer model |
+| Someone new joins and their agent starts from nothing | Joining briefings hand it what the team already knows |
+| Agents need to ask each other questions | Room discussions and structured negotiation |
+| A wrong entry should be reviewed before it lands | Branching, pull requests, diff and merge |
+| Somebody will ask why an agent did that, months later | Immutable traces with signing, queryable long after the session ended |
+| You want patterns scanned on a schedule, not when you remember to | Detection runs for you, with severity triage and resolution tracking |
+| Non-engineers need to see what agents know | Dashboard, expertise map, audit log viewer |
+| Memory must not leak secrets or PII | Governance scanning, custom policies, SIEM forwarding |
+| Your traces are worth training on | A model tuned on your decisions, trained and hosted for you |
+| You would rather not run Postgres, workers and upgrades | It is a hosted service |
+
+The rest of this table is the detail behind that.
+
 | Scenario | Recommendation |
 | :-- | :-- |
-| Single developer, local memory | OSS |
-| Small team sharing via Postgres | OSS |
-| CI/CD outcome tracking | OSS |
-| Remote HTTP API access | OSS |
-| S3-based cloud storage | OSS |
-| Git-like timeline (event logging on main branch) | OSS |
-| Branch-aware read/write (main branch only) | OSS |
+| Several people's agents on one shared topic | **SaaS** (rooms) |
+| A new agent briefed on what the team knows | **SaaS** (rooms) |
+| Agents discussing and negotiating in the open | **SaaS** (rooms) |
+| Team documents searchable with page citations | **SaaS** (rooms) |
 | Create branches and share memory selectively | **SaaS** (branching) |
 | Branch access control per user/team/API key | **SaaS** (branching) |
 | Merge branches, resolve conflicts | **SaaS** (branching) |
 | Pull request workflow for memory changes | **SaaS** (branching) |
-| Rollback memory to a point in time or tag | **SaaS** (branching) |
+| Rollback memory to a named tag | **SaaS** (branching) |
+| Rollback memory to a point in time | OSS |
 | Fork agent memory to new agents | **SaaS** (branching) |
 | Sacred Timeline 3D visualization | **SaaS** (dashboard) |
 | Multi-tenant SaaS with account isolation | **SaaS** |
@@ -385,8 +458,10 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
 | Auto entity/relationship extraction from traces | **SaaS** |
 | Precedent search ("how did we handle similar situations?") | **SaaS** |
 | Ingest events from your own systems via webhook | **SaaS** (connectors) |
-| Detect recurring failure patterns automatically | **SaaS** (pattern detection) |
-| Alert on stale memory or confidence drift | **SaaS** (alert manager) |
+| Detect recurring failures, conflicts and stale knowledge | OSS |
+| Alert rules with cooldown and callbacks | OSS |
+| Scan on a schedule, with triage and resolution tracking | **SaaS** (pattern detection) |
+| Hot entity and confidence drift detection | **SaaS** (pattern detection) |
 | Need memory quality auditing at scale | **SaaS** |
 | Want LLM-driven extraction from conversations/logs | **SaaS** |
 | Onboarding new agents with curated knowledge | **SaaS** (bootstrap sets) |
@@ -395,6 +470,7 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
 | Retrieval that improves as outcomes accumulate | **SaaS** (ML layer) |
 | Need optimized confidence multipliers per entity | **SaaS** (adaptive calibration) |
 | Want to fine-tune agents on your decision history | **SaaS** (training data export) |
+| Want the fine-tune run and hosted for you | **SaaS** (tuned models) |
 | Team dashboard for non-technical users | **SaaS** (dashboard) |
 
 ---
@@ -402,11 +478,11 @@ The SaaS API layer wraps `AgentMemory` and `CoWEngine` with authentication, tena
 ## Getting Started
 
 <CardGroup cols={2}>
-  <Card title="OSS Quick Start" icon="rocket" href="/amfs/getting-started/quickstart">
-    Install with `pip install amfs` and start writing memory in minutes.
+  <Card title="Start free on SenseLab Cloud" icon="rocket" href="/amfs/getting-started/saas-connection">
+    Create an account, generate a key, and point your agents at it. No card, nothing to install, and a room you can invite someone to on the same afternoon.
   </Card>
 
-  <Card title="Connect to SenseLab Cloud" icon="key" href="/amfs/getting-started/saas-connection">
-    Create an account, generate an API key, and point your agents at the hosted service.
+  <Card title="Run the open-source core" icon="terminal" href="/amfs/getting-started/quickstart">
+    `pip install amfs` for a single agent on your own machine. The same SDK, so moving to Cloud later is a connection string rather than a rewrite.
   </Card>
 </CardGroup>
