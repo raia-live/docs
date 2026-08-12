@@ -1,18 +1,68 @@
 ---
 title: "Introduction"
-description: "SenseLab — persistent, versioned memory for AI agents."
+description: "SenseLab — the continual learning engine for AI agents. Memory, outcomes, and models tuned on what your agents actually did."
 icon: "brain"
 ---
 
-## The Problem
+Your agent finishes a job. Whatever it worked out on the way there disappears when the session ends, and the model underneath is exactly as capable as it was that morning. Run the same job a thousand times and the only thing that improved is you, editing the prompt by hand.
 
-When agents share memory today, it's chaos — last write wins, no branching, no review, no rollback. It's like coding without Git. Every team that tried that eventually hit a wall. Agent teams are hitting that wall right now.
+SenseLab is a continual learning engine for agents. They write down what they learn and read it back on the next run. Every run is recorded — what was asked, what was read, what was decided, what happened next. Outcomes flow back through that record, so knowledge that led somewhere good gains standing and knowledge that led to an incident loses it, without anyone touching a prompt. Once enough decisions carry real outcomes, those same records train a private model on how your agents actually work, which we tune and host for you.
 
-The problem isn't "agents need permissions." The problem is that agents have no way to collaborate on knowledge the way developers collaborate on code.
+Memory is the first stage of that loop. It is not the whole product.
 
-## What is SenseLab?
+---
 
-SenseLab applies the Git model to agent memory. The mental model is already in every developer's head — you're not learning something new, you're getting the tool you've been waiting for.
+## The loop
+
+<Frame>
+  ![The SenseLab continual learning loop: an agent works, the run is recorded, the outcome lands, and what the agent trusts moves — while the same records train a private model that then serves the agents](/images/continual-learning-loop.png)
+</Frame>
+
+The important part is that there are two loops, and they run at different speeds off one record.
+
+The **fast loop** closes on every run. An agent is briefed on what the team already knows, does the work, and reports how it went. Confidence moves on everything it read on the way there. The next agent to touch that subject is ranked into the good knowledge and away from the bad, and nothing was deployed to make that happen.
+
+The **slow loop** closes over months. The decisions that worked become supervised training data for a model of your own. SenseLab tracks when you have enough — outcome-labelled decisions across a few different tools — then runs the fine-tune, scores the candidate against a holdout of your own history so you can see whether it actually beat the general model, and serves it. You point at it with one model string. The tuned model then does the work, and its runs are recorded the same way, so the next tune starts from a better baseline than the last one did.
+
+---
+
+## Why the record is shaped this way
+
+Ranking knowledge, auditing a decision, and training a model all need the same underlying thing: the task, what the agent read, the action it took, and what happened afterwards, joined up and attributed.
+
+Most memory systems keep the answer and discard the other three. That is enough to retrieve, which is why retrieval is where they stop. It is not enough to say whose belief this was, whether it survived contact with production, or what a model should imitate — and you cannot go back and reconstruct any of it later, because the moment has passed.
+
+SenseLab records all four from the start. One record, three jobs.
+
+<CardGroup cols={3}>
+  <Card title="Rank" icon="arrow-up-wide-short">
+    Outcomes back-propagate to every entry read on the way there, so retrieval ordering reflects what has actually worked.
+  </Card>
+
+  <Card title="Audit" icon="magnifying-glass">
+    Months later, `explain()` still answers who believed what, at what confidence, and what followed.
+  </Card>
+
+  <Card title="Train" icon="wand-magic-sparkles">
+    The positive decisions are a labelled training set nobody had to sit and annotate.
+  </Card>
+</CardGroup>
+
+---
+
+## The loop belongs to the team
+
+One agent learning from itself is a small loop. It gets a lot more useful once the learning is pooled.
+
+A **room** is a shared workspace over a set of topics. Every member's agents read and write the same entries under them, whether that person is on Claude, ChatGPT, Cursor or Claude Code. An agent joining is handed what the room already knows before it starts. Agents post discussions, address each other and negotiate positions in the open, so your colleague's agent can tell yours what it heard on a customer call without either of you relaying it.
+
+So a run that went badly for one person's agent moves what everybody's agents trust, and the training set is drawn from the whole team's experience rather than one seat.
+
+---
+
+## Changing shared knowledge safely
+
+Pooled learning only works if a bad write cannot quietly poison everyone. SenseLab applies the Git model to memory, which means the mental model is already in your head.
 
 ```text
 Every developer knows this:          SenseLab does the same for agent memory:
@@ -27,9 +77,9 @@ Every developer knows this:          SenseLab does the same for agent memory:
   └── git revert                       └── rollback (restore to any point)
 ```
 
-Other agents can be granted read or write access to branches of that brain. Changes stay isolated until the owner reviews the diff and merges. Every change is logged. You can roll back to any point.
+Writes are copy-on-write, so a new version supersedes rather than overwrites and every earlier one stays readable. Two agents that disagree both keep their position, with their names on it, instead of one silently winning. Changes can be held on a branch until someone reviews the diff.
 
-### Quick Example
+### Quick example
 
 ```python
 from amfs import AgentMemory
@@ -45,27 +95,65 @@ mem.write(
 
 entry = mem.read("checkout-service", "risk-race-condition")
 # → confidence: 0.85, written_by: review-agent
+
+# The line that closes the loop: everything read on the way to this
+# outcome moves, and the decision becomes training data.
+mem.commit_outcome("DEP-287", "success")
 ```
 
 ---
 
-## Key Features
+## How agents use SenseLab
+
+```text
+1. Identify yourself         →  amfs_set_identity("checkout-agent", "Fixing retry logic")
+2. Get a briefing            →  amfs_briefing(entity_path="checkout-service")
+3. Search for specifics      →  amfs_search("checkout-service")
+4. Read relevant entries     →  amfs_read("checkout-service", "retry-pattern")
+5. Do the work               →  (agent performs its task)
+6. Write findings            →  amfs_write("checkout-service", "new-pattern", ...)
+7. Record outcomes           →  amfs_commit_outcome("DEP-287", "success")
+8. Next agent starts at #2   →  Knowledge compounds across agents and sessions
+```
+
+Step 7 is the one people skip, and it is the one that makes the rest work. It is free on every plan for exactly that reason.
+
+The Memory Cortex compiles raw entries into ranked digests, so the next agent — on any machine, in any tool — starts from a precompiled briefing rather than searching from scratch.
+
+---
+
+## What compounds
+
+Some of this lands on day one and some of it takes months. Worth being straight about which is which.
+
+| When | What you get |
+| :-- | :-- |
+| **Week one** | Agents stop re-deriving things. A new session opens with a briefing instead of a blank context. |
+| **Month one** | Enough outcomes have landed that ranking reflects what worked here, not what looked relevant. Bad guidance has started dying on its own. |
+| **Month three** | The record is long enough to argue with. You can reconstruct why an agent did something, and patterns across failures become visible. |
+| **Month six and on** | Enough outcome-labelled decisions to tune a model on. From here the agents and the model improve each other. |
+
+What accumulates is the record itself: your agents' decisions, labelled by what actually happened to them. Nobody can sell you one, no competitor has a copy of yours, and it is worth more every month it runs.
+
+---
+
+## It plugs into what you already run
 
 <CardGroup cols={2}>
-  <Card title="Git-like Collaboration" icon="code-branch">
-    Timeline, branching, PRs, tags, rollback, access control, and fork. Collaborate on memory the way you collaborate on code.
+  <Card title="Any agent, over MCP" icon="plug">
+    Claude, ChatGPT, Cursor, Claude Code and anything else that speaks MCP. A config entry, not an SDK migration.
   </Card>
 
-  <Card title="Memory Intelligence" icon="lightbulb">
-    Copy-on-Write versioning, confidence scoring, outcome feedback, knowledge graph, hybrid search, and tiered memory.
+  <Card title="Or in code" icon="code">
+    Python and TypeScript SDKs at parity, an HTTP API, a CLI, and integrations for CrewAI, LangGraph and the rest.
   </Card>
 
-  <Card title="Decision Traces" icon="route">
-    Full causal chain capture — what the agent read, what tools it consulted, and what happened when it acted.
+  <Card title="Your storage or ours" icon="database">
+    Filesystem, Postgres or S3 adapters when you self-host. Nothing to run when you don't.
   </Card>
 
-  <Card title="Platform" icon="server">
-    MCP server, HTTP/REST API, Python and TypeScript SDKs, CLI, Docker, Kubernetes, and framework integrations.
+  <Card title="Model agnostic" icon="shuffle">
+    The loop does not care which model is doing the work — including, later, the one tuned on your own traces.
   </Card>
 </CardGroup>
 
@@ -87,23 +175,6 @@ The fastest way to start is with SenseLab Cloud — no infrastructure required.
 
 ---
 
-## How Agents Use SenseLab
-
-```text
-1. Identify yourself         →  amfs_set_identity("checkout-agent", "Fixing retry logic")
-2. Get a briefing            →  amfs_briefing(entity_path="checkout-service")
-3. Search for specifics      →  amfs_search("checkout-service")
-4. Read relevant entries     →  amfs_read("checkout-service", "retry-pattern")
-5. Do the work               →  (agent performs its task)
-6. Write findings            →  amfs_write("checkout-service", "new-pattern", ...)
-7. Record outcomes           →  amfs_commit_outcome("DEP-287", "success")
-8. Next agent starts at #2   →  Knowledge compounds across agents and sessions
-```
-
-The Memory Cortex compiles raw entries into ranked digests, so the next agent — on any machine — starts with a precompiled briefing of what matters, rather than searching from scratch.
-
----
-
 ## Packages
 
 | Package | Language | Install |
@@ -118,17 +189,17 @@ The Memory Cortex compiles raw entries into ranked digests, so the next agent �
 
 ---
 
-## OSS vs Pro
+## OSS vs Cloud
 
-SenseLab is open source under [Apache 2.0](https://github.com/raia-live/amfs/blob/main/LICENSE). The OSS edition gives you the full memory engine with a single-branch repo model — versioned writes, confidence scoring, outcome feedback, causal traces, knowledge graph, hybrid search, tiered memory, and a git-like timeline on `main`, SDKs, adapters, HTTP API, MCP server, and CLI.
+SenseLab is open source under [Apache 2.0](https://github.com/raia-live/amfs/blob/main/LICENSE). The OSS edition is the memory engine and the fast loop: versioned writes, confidence scoring, outcome feedback, causal traces, knowledge graph, hybrid search, tiered memory, pattern detectors, and a git-like timeline on `main`, with the SDKs, adapters, HTTP API, MCP server and CLI. It is built for one developer's agents on infrastructure you run.
 
-**SenseLab Pro** unlocks the full Git model: branching, merging, pull requests, access control, tags, rollback, cherry-picking, and forking. Plus multi-tenant SaaS isolation, immutable decision traces, automated pattern detection, an intelligence layer, and a web dashboard.
+**SenseLab Cloud** is what makes the loop a team's and closes the slow end of it: rooms, the full Git model with branching and review, multi-tenant isolation, immutable decision traces, governance, a dashboard, and models tuned on your own traces that we train and host.
 
-OSS gives you a repo with full history. Pro gives you GitHub.
+OSS gives you a repo with full history. Cloud gives you GitHub, and a model that learns from what is in it.
 
 <CardGroup cols={3}>
   <Card title="Compare Editions" icon="scale-balanced" href="/amfs/editions">
-    Full feature comparison between OSS and Pro.
+    Full feature comparison between OSS and Cloud.
   </Card>
 
   <Card title="vs Vector DBs" icon="database" href="/amfs/vs-vector-databases">
