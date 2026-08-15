@@ -1,82 +1,78 @@
 ---
-title: "Multi-Tenant Foundation"
+title: "Accounts and Access"
 description: "Account isolation, roles, scoped API keys, rate limits, and audit logging in SenseLab."
 icon: "building"
 ---
 
-Every request to SenseLab is authenticated, authorised, scoped, and metered.
-This page describes how that works in SenseLab.
+Your account is yours. Every request that reaches SenseLab is checked — who is
+asking, whether they are allowed, and what it counts against — and every route
+in, whether an MCP client, an SDK or a direct API call, goes through the same
+checks. There is no side door that skips them.
 
-## Account Isolation
+## Your data is isolated from every other account
 
-SenseLab Security enforces hard isolation between accounts at the storage layer,
-below the application. One account cannot see another's data, even in the event
-of a bug in application code — the isolation does not depend on the application
-remembering to filter.
+Isolation between accounts is enforced at the storage layer, underneath the
+application. One account cannot see another's memory even if there is a bug in
+application code, because the separation does not depend on the application
+remembering to filter — it holds whether or not the code above it behaves.
 
-## Roles
+## What each member can do
 
-A member of an account holds one role, which decides what they can do:
+Everyone you invite holds one role, and the role decides what they can reach:
 
 | Role | Can do |
-|:-----|:-------|
+| :-- | :-- |
 | **Admin** | Everything: account and member management, API keys, all memory operations, and the Security area |
 | **Developer** | Read and write memory, manage API keys, view audit logs |
 | **User** | Read memory within the paths they are scoped to |
 | **Security** | The Security area only — findings, rules, and policy |
 
-Rooms and teams have their own lighter-weight roles for collaborators and
-viewers, covered in [Room Members and Permissions](/amfs/concepts/room-members).
+Rooms have their own lighter roles for collaborators and viewers, covered in
+[Room Members and Permissions](/amfs/concepts/room-members).
 
-## Scoped API Keys
+## Every agent gets its own key
 
-Each agent or tool gets its own key, and a key can be restricted to part of your
-memory rather than all of it:
+Each agent or tool connects with its own API key, and a key can be limited to
+part of your memory rather than all of it — one agent scoped to your checkout
+service, another allowed to read shared patterns and nothing else.
 
-```
-checkout-service/**   read_write
-shared/patterns/*     read
-```
+That limit is enforced on every request, not left to the agent to respect. An
+agent cannot reach outside its scope even by searching for something: memory it
+was not given access to simply is not there as far as it is concerned. This is
+what **permissioned inference** means, and it is why giving an agent a key is
+safer than giving it your whole store and hoping.
 
-Patterns support `*` for a single level and `**` to match everything beneath a
-path. Permissions are `read`, `write`, or `read_write`. An agent can only reach
-memory inside its scope — this is **permissioned inference**, enforced by the
-server on every request rather than by convention.
+Keys are created under **Settings → API Keys**, where you also set the paths and
+whether the key can read, write, or both. A key is shown once when you create
+it and only its prefix is kept afterwards, so a lost key is revoked and reissued
+rather than recovered.
 
-Keys are issued from **Settings → API Keys** in the dashboard and are shown once
-at creation. Store the key when you create it; only its prefix is retained
-afterwards, so a lost key must be revoked and reissued.
+## What happens when you hit a limit
 
-## How Agents Connect
+Requests are limited per key over a rolling one-minute window. Past that,
+further requests from the same key are refused until the window moves on. The
+SDKs and the MCP server handle this for you by backing off and retrying, so in
+normal use a busy agent slows down rather than fails. Admin keys are not
+limited.
 
-All external access — MCP clients, SDKs, and direct REST calls — goes through
-the SenseLab HTTP API with an API key. The API resolves which account the key
-belongs to, enforces the key's entity-path scopes, applies the account's rate
-limit, meters the operation, and logs it. Agents never talk to the database.
+If your agents are hitting the limit constantly, that is usually a sign to look
+at how often they are re-reading the same memories rather than a reason to ask
+for a higher ceiling.
 
-## Rate Limiting
+## Sensitive actions are recorded
 
-Requests are limited per key using a sliding 60-second window. Every response
-carries the current state so a client can back off before it is refused:
+Memory writes, API key creation and revocation, and changes to your account are
+written to an append-only audit log — who did it, what they did, what they
+touched, and when. Nothing removes an entry once it is there.
 
-| Header | Meaning |
-|:-------|:--------|
-| `X-RateLimit-Limit` | Requests allowed in the window |
-| `X-RateLimit-Remaining` | Requests still available |
-| `X-RateLimit-Window` | Window length in seconds |
+Browse it under **Settings → Audit**.
 
-A refused request returns 429 with `Retry-After`. Admin keys bypass the limit.
+## Seats, operations and quotas
 
-## Audit Logging
-
-Sensitive operations — memory writes, API key creation and revocation, and
-account administration — are recorded to an append-only audit log with the
-actor, the action, the resource, and a timestamp. Browse it under
-**Settings → Audit**.
-
-## Usage & Quotas
-
-Each plan includes a monthly allowance of operations plus limits on seats, API
+Every plan includes a monthly allowance of operations plus limits on seats, API
 keys, open rooms, and room guests. Usage is metered as it happens and visible
-under **Settings → Usage**. See [Billing & Metering](/amfs/pro/billing) for what
-counts as an operation and what each plan includes.
+under **Settings → Usage**, so you can see where you stand before you run out
+rather than after.
+
+[Billing & Metering](/amfs/pro/billing) covers what counts as an operation and
+what each plan includes.
