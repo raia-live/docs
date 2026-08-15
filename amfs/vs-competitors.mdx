@@ -93,7 +93,7 @@ Every other memory system is a smarter store. SenseLab is the only one that trea
 - **Per-agent provenance** — Every version records the agent, session and timestamp that produced it, and one agent reading another's memory is logged on both timelines. A Graphiti edge does not record which agent asserted it.
 - **Decision traces** — `record_context()` and `commit_outcome()` capture the full causal chain behind an action: what was read, at what confidence, what external input arrived, what was decided. Pro persists traces with integrity checking. There is no Graphiti equivalent.
 - **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
-- **Git-like history and review** — Diff, full version history and merge-base are in the OSS package; branching, pull requests, tags, fork and cherry-pick are Pro. Graphiti has bi-temporal versioning but no branching or review model.
+- **Git-like history and review** — Diff, full version history and merge-base are in SenseLab Open Source; branching, pull requests, tags, fork and cherry-pick are in SenseLab. Graphiti has bi-temporal versioning but no branching or review model.
 - **Models tuned on your traces** — The same traces behind the outcome loop are training data. We spin up the run, fine-tune on your successful decisions, and host the result for serving. Graphiti improves what the model reads; it does not touch the model. See [models tuned on your own decision traces](#models-tuned-on-your-own-decision-traces).
 
 ---

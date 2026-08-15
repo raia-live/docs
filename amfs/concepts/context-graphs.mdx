@@ -297,9 +297,9 @@ state_at_decision = versions[-1] if versions else None
 
 This is the difference between a system of record (stores the current state) and a context graph (stores the decision lineage). SenseLab preserves both.
 
-### Pro: Immutable Decision Trace Store
+### Immutable Decision Trace Store
 
-Pro extends OSS traces with cryptographic guarantees and advanced telemetry:
+SenseLab extends the traces in SenseLab Open Source with cryptographic guarantees and advanced telemetry:
 
 - **HMAC-SHA256 signing** — every trace is signed with `content_hash` and chained to the previous trace via `parent_hash`, forming a Merkle chain that detects tampering
 - **LLM call spans** — record model, provider, prompt/completion tokens, cost, latency, temperature, and finish reason for every LLM call during a session

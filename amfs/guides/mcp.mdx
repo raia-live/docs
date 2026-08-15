@@ -37,7 +37,7 @@ The server is registered as **`senselab`** in each config, so it is easy to spot
 
 | Flag | What it does |
 | :-- | :-- |
-| `--api-key <key>` | Connect to SenseLab Cloud. Without it you get a local, filesystem-backed store |
+| `--api-key <key>` | Connect to SenseLab. Without it you get a local, filesystem-backed store |
 | `--client <name>` | Configure one client instead of auto-detecting. Accepts `cursor`, `claude-desktop`, `claude-code`, `codex`, `windsurf`, `vscode`, or `all` |
 | `--api-url <url>` | Point at a self-hosted API instead of `https://amfs-login.sense-lab.ai` |
 | `-y`, `--yes` | Skip the confirmation prompts |
@@ -46,8 +46,8 @@ The server is registered as **`senselab`** in each config, so it is easy to spot
 Re-running the script is safe: it replaces its own entry and leaves the rest of your config alone.
 
 <Note>
-  Passing `--api-key` installs `amfs-mcp-server-pro`. Without a key you get the
-  open-source `amfs-mcp-server`, which exposes only the open-source tools — no
+  Passing `--api-key` installs `amfs-mcp-server-pro`. Without a key you get
+  `amfs-mcp-server`, which exposes only the SenseLab Open Source tools — no
   rooms, negotiations, documents, or intelligence tools.
 </Note>
 
@@ -100,7 +100,7 @@ Restart your IDE after saving the config. Ask the agent to run `amfs_stats()` �
 ## What Your Agents Get
 
 Once connected, agents have around 78 tools across five categories. The
-open-source `amfs-mcp-server` exposes 36 of them; `amfs-mcp-server-pro` adds the
+`amfs-mcp-server` package exposes 36 of them; `amfs-mcp-server-pro` adds the
 rest. The most important ones:
 
 **Identity & Context**

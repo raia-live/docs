@@ -11,7 +11,7 @@ everything else has sensible defaults.
 
 | Variable | Description | Required |
 |:---------|:------------|:---------|
-| `AMFS_HTTP_URL` | Your SenseLab API URL — `https://amfs-login.sense-lab.ai` for SenseLab Cloud | Yes |
+| `AMFS_HTTP_URL` | Your SenseLab API URL — `https://amfs-login.sense-lab.ai` for SenseLab | Yes |
 | `AMFS_API_KEY` | Your API key (from Dashboard → Settings → API Keys) | Yes |
 | `AMFS_AGENT_ID` | Agent identity for headless contexts — CI, scripts, and servers | No |
 
@@ -21,7 +21,7 @@ export AMFS_API_KEY="<your-api-key>"
 ```
 
 <Note>
-  `AMFS_HTTP_URL` is the **API** host, not the dashboard. Cloud accounts point at
+  `AMFS_HTTP_URL` is the **API** host, not the dashboard. SenseLab accounts point at
   `https://amfs-login.sense-lab.ai`; the dashboard you log into at
   `amfs.sense-lab.ai` will not serve API requests. Self-hosted deployments point
   at their own API host.
