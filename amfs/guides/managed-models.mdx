@@ -117,6 +117,9 @@ Every run ends with the same question: is this version good enough to put in
 front of your traffic? SenseLab answers it, on the server. Going live is not a
 button you press against a model that agrees with your agent 40% of the time.
 
+The bars are ours by default, and you can move them or add cases of your own —
+both covered below.
+
 ### What it's scored on
 
 The most recent slice of your decisions — about 15% — is held back and never
@@ -140,6 +143,8 @@ excludes them. That's deliberate, and it's what makes the last row of the table
 below answerable at all.
 
 ### The bars a version has to clear
+
+These are the defaults every model starts with:
 
 | Measure | What it asks | Bar |
 | :-- | :-- | :-- |
@@ -172,6 +177,81 @@ system, and they are already spent choosing which decisions are worth imitating.
 The failure half of the holdout is the one place this flips, and there agreement
 is the bad result.
 </Note>
+
+### Setting your own bars
+
+Our defaults are a starting point, not a judgement about your domain. Each bar
+in the table above can be set per model, under **Evaluation** on the model page.
+
+Raising a bar is unrestricted. If you want 95% tool agreement before anything
+serves your traffic, you can have it — you'll simply promote less often, which
+is the trade you're choosing. Lowering stops where the number stops meaning
+anything: agreement can't go below 50%, because under half a model is closer to
+guessing than agreeing; valid actions can't go below 80%, because prose instead
+of an action is broken rather than lenient; and the sample-size floors stay at
+20, because smaller samples swing several points on a single decision. We serve
+these models under our own name, so the floor under the floor is ours to keep.
+Anything outside the range is rejected rather than quietly clamped, so the
+number you set is always the number that decides.
+
+Exact agreement is the one bar with no floor at all. It's the weakest measure in
+the report — a one-hour window scored against a six-hour one counts as total
+disagreement — so if you read the graded argument score beside it and conclude
+it's noise for your tools, you're probably right.
+
+<Note>
+Bars you don't set keep following the platform default. That's deliberate: if we
+revise a default later, the change reaches every model whose owner never had an
+opinion about that bar, instead of freezing today's number into every model ever
+created. Every report says which numbers are yours and which are ours.
+</Note>
+
+### Adding your own cases
+
+Agreement across a holdout tells you how a version behaves on average. It can't
+tell you whether it still handles *the* incident — the one you never want
+repeated. For that, you can give a model an eval set of your own, in two ways:
+
+- **Pin a past decision.** Choose a real decision from the model's agent, and
+  the expected action is taken from the decision itself rather than retyped, so
+  a case can't drift from what actually happened.
+- **Write a case.** Describe a situation your traces don't contain yet, and name
+  the tool and arguments you expect. This is how you test for something before
+  it happens to you.
+
+A model can hold up to 500 cases. Every case is answered by the model on every
+run and every rescore, so the set is meant to be the ones that matter.
+
+Pinned decisions are withheld from every training split, and that exclusion is
+re-checked before scoring, since a leaked case would score better rather than
+worse. Cases are scored on exactly the same harness as the holdout — so when you
+compare "94% on their set, 71% on mine", the two numbers were computed the same
+way.
+
+The report lists your cases one by one rather than only in aggregate, because a
+customer who wrote six cases is asking about those six. Each says what the model
+chose and how that reads: it **agreed** or **disagreed** on a case that went
+well, **avoided** or **repeated** on one you pinned because it went wrong, and
+separately whether the answer wasn't a valid action at all.
+
+<Warning>
+By default your cases report without deciding anything. Turn on **require eval
+cases** and a set of at least five can add a reason to withhold a promotion — but
+it can never satisfy one. The holdout still has to pass on its own; your cases can
+only stop a version, never wave it through.
+</Warning>
+
+Each bar on your set has its own floor of five, applied to the half it belongs
+to: valid actions across the whole set, agreement over the cases that went well,
+and repetition over the ones that went wrong. A set of three successes and two
+failures enforces nothing about either, and the report says so bar by bar — "these
+stopped the promotion" and "these were scored and decided nothing" are different
+sentences, and reading the second as the first is how you end up trusting a gate
+that isn't protecting you.
+
+One boundary worth knowing: a case pinned while a run is already training may
+already be inside that run's training data, so it's reported as pinned after
+training and starts counting from the next run.
 
 ### What happens next
 
