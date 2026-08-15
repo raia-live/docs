@@ -4,42 +4,109 @@ description: "Learned retrieval ranking, confidence calibration, and training da
 icon: "chart-line"
 ---
 
-# ML Layer
+The ML layer learns from the outcomes your agents commit. It has three parts, and
+they are independent — each is useful without the other two:
 
-SenseLab Pro's ML layer learns from your outcome data to make retrieval smarter, confidence scoring more accurate, and your agents' decision traces exportable as fine-tuning datasets.
+- A **learned ranker** that reorders retrieval results using a model trained on
+  which memories preceded successful work.
+- A **confidence calibrator** that measures how strong a signal each outcome type
+  actually carries in your data, and reports the multipliers that reflect it.
+- A **training data exporter** that turns decision traces into SFT, DPO, and
+  reward-model datasets.
+
+All three train on `commit_outcome` history and nothing else. Agents that read and
+write but never commit an outcome produce no signal for any of them.
 
 <Note>
-The models run inside SenseLab, so there is nothing to install and no training
-infrastructure to stand up. You drive the ML layer through the Pro MCP tools
-below, or from **Pro Tools** in the dashboard.
+The models run inside SenseLab and train on data you already have, so there is no
+training infrastructure to stand up and no data to ship anywhere.
 </Note>
 
 ## Prerequisites
 
-- A plan that includes Pro tools, connected via the Pro MCP server (see [MCP Setup](/amfs/guides/mcp))
-- Outcome data in your memory store — the ML layer trains on `commit_outcome` history
-- At least 20 outcome-linked entries for learned ranking, 5 per outcome type for calibration
+You reach the ML layer by one of two paths.
+
+**Pro MCP server** — install with the `intelligence` extra:
+
+```bash
+pip install "amfs-mcp-server-pro[intelligence]"
+```
+
+Without the extra, the three tools return an error telling you to install it. See
+[MCP Setup](/amfs/guides/mcp).
+
+**Dashboard and REST API** — the `/pro` page hosts the Calibration, Retrieval
+Playground, and Training Data Export panels, which call
+`POST /api/v1/pro/retrain`, `POST /api/v1/pro/calibrate`, and
+`GET /api/v1/pro/export`. These three endpoints read across the whole account, so
+they are **admin only** — a member restricted to a subset of the account gets a
+`403`.
+
+<Warning>
+The hosted MCP endpoint does not register `amfs_retrain`, `amfs_calibrate`, or
+`amfs_export_training_data`. If those tools are missing from your client, you are
+connected to the hosted gateway rather than the Pro MCP server — use the dashboard
+or the REST endpoints instead.
+</Warning>
 
 ---
 
-## Learned Retrieval Ranking
+## Learned retrieval ranking
 
-### The Problem
+### The problem
 
-SenseLab's multi-strategy retrieval uses fixed weights (semantic: 0.4, keyword: 0.2, temporal: 0.2, confidence: 0.2) merged via Reciprocal Rank Fusion. These work well as defaults, but they can't capture domain-specific patterns like "for this entity, recency matters more than confidence" or "entries from production agents are more reliable for deployment decisions."
+Multi-strategy retrieval uses fixed weights — semantic 0.4, keyword 0.2, temporal
+0.2, confidence 0.2 — merged via Reciprocal Rank Fusion. They are good defaults,
+but they cannot express domain-specific patterns like "on this entity, recency
+beats confidence" or "entries promoted to the production-validated tier are the
+ones worth trusting for deploy decisions."
 
-### How It Works
+### How the training set is built
 
-The learned ranker trains a gradient-boosted model on your outcome history:
+Labels come from the `causal_entry_keys` of each outcome — the entries that
+outcome was linked to.
 
-- **Positive labels**: entries that were read before successful outcomes
-- **Negative labels**: entries read before incidents, or entries never linked to any outcome
+| Label | Which entries |
+| :-- | :-- |
+| Positive | Linked to a `success` outcome |
+| Negative | Linked to a `minor_failure`, `failure`, or `critical_failure` outcome, **or** never linked to any outcome at all (`outcome_count` of 0) |
+| Left out | Has outcomes, but none of them are those four types — for example an entry touched only by the deprecated `clean_deploy` alias |
 
-The model learns which `MemoryEntry` features predict usefulness and integrates
-as an additional strategy in the retrieval pipeline. Once trained it takes 30%
-of the weight in RRF fusion, and the pipeline rebalances to make room for it:
-semantic drops from 0.4 to 0.35 and confidence from 0.2 to 0.15, while keyword
-and temporal stay at 0.2.
+An entry linked to both a success and a failure is labeled **positive**; the
+positive set wins ties.
+
+Note the second half of the negative rule: entries nobody has ever committed an
+outcome against are treated as negatives. This is what lets the model learn to
+push never-validated memories down, but it also means a store full of unlinked
+entries can clear the training threshold while carrying almost no positive signal.
+
+### What the model sees
+
+Fifteen features per entry, all derived from the `MemoryEntry` itself — no query
+text is involved:
+
+| Feature | What it is |
+| :-- | :-- |
+| `confidence` | Current confidence, after decay and outcome updates |
+| `outcome_count` | How many outcomes have touched the entry |
+| `version` | How many times the entry has been rewritten |
+| `age_days` | Age in days since `written_at` |
+| `log_age_hours` | Recency score, `1 / log2(1 + age_hours)` |
+| `is_fact`, `is_belief`, `is_experience` | One-hot encoding of `memory_type` |
+| `tier_production_validated`, `tier_production_observed`, `tier_development`, `tier_manual` | One-hot encoding of the provenance tier |
+| `has_pattern_refs` | Whether the entry cross-references other entries |
+| `pattern_ref_count` | How many it references |
+| `is_artifact` | Whether the entry is a stored working file rather than a fact |
+
+<Tip>
+Despite its name, `log_age_hours` gets **smaller** as an entry ages — it is a
+recency score, not a log of the age. `age_days` is the raw age, so the model sees
+both a linear and a compressed view of time.
+</Tip>
+
+The model is a scikit-learn `GradientBoostingClassifier` with `n_estimators=100`,
+`max_depth=4`, `learning_rate=0.1`, `subsample=0.8`, and a fixed
+`random_state=42`, so retraining on unchanged data reproduces the same model.
 
 ### Via MCP
 
@@ -47,7 +114,7 @@ and temporal stay at 0.2.
 amfs_retrain()
 ```
 
-Train from all available data. Returns metrics:
+Train from all available data. Returns training metrics:
 
 ```json
 {
@@ -56,56 +123,131 @@ Train from all available data. Returns metrics:
   "num_negative": 58,
   "accuracy": 0.82,
   "feature_importances": {
-    "confidence": 0.23,
-    "outcome_count": 0.18,
-    "log_age_hours": 0.15,
-    "tier_production_validated": 0.12,
-    "version": 0.09
+    "confidence": 0.21,
+    "outcome_count": 0.17,
+    "version": 0.07,
+    "age_days": 0.11,
+    "log_age_hours": 0.14,
+    "is_fact": 0.03,
+    "is_belief": 0.01,
+    "is_experience": 0.05,
+    "tier_production_validated": 0.09,
+    "tier_production_observed": 0.0,
+    "tier_development": 0.0,
+    "tier_manual": 0.0,
+    "has_pattern_refs": 0.02,
+    "pattern_ref_count": 0.06,
+    "is_artifact": 0.04
   },
   "trained_at": "2026-04-01T14:30:00Z"
 }
 ```
 
-Train for a specific entity:
+Train on one entity's outcomes only:
 
 ```
 amfs_retrain(entity_path="checkout-service")
 ```
 
-Under the hood this is a gradient-boosted classifier (scikit-learn's
-`GradientBoostingClassifier`) trained on features of each `MemoryEntry` —
-confidence, outcome count, age, tier, and version.
+`accuracy` is the mean of a cross-validated score, not accuracy on the training
+set, so it is a fair estimate of how the model generalizes. The fold count scales
+with your data — `min(5, max(2, num_samples / 10))` — so a small store is scored
+on 2 folds and anything over 50 samples on 5.
 
-### Graceful Degradation
+The trained model is pickled to `ranker.pkl` under the model directory. Retraining
+overwrites it, and the file is loaded on startup, so a trained ranker survives
+restarts.
 
-With fewer than 20 training samples, the ranker falls back to confidence-based scoring. The `amfs_retrieve` tool works identically whether a model is trained or not — the learned strategy simply receives zero weight until training completes.
+### Where the model gets used
+
+Once a model exists, `amfs_retrieve` picks it up automatically and the pipeline
+rebalances to make room for it:
+
+| Strategy | Untrained | Trained |
+| :-- | :-- | :-- |
+| Semantic | 0.4 | 0.35 |
+| Keyword (BM25) | 0.2 | 0.2 |
+| Temporal | 0.2 | 0.2 |
+| Confidence | 0.2 | 0.15 |
+| Learned | 0.0 | 0.3 |
+
+Fusion is Reciprocal Rank Fusion with `k = 60`: each strategy contributes
+`weight / (60 + rank + 1)` to an entry's combined score.
+
+<Note>
+These are the configured weights, not necessarily the effective ones. Adaptive
+weighting is on by default and drops any strategy whose scores are nearly flat
+across the candidate set to weight 0 for that query. On a corpus with uniform
+confidence or near-identical write times, the confidence and temporal strategies
+routinely zero out — that is intended, since a constant ranking only contributes
+arbitrary tie-ordering to RRF.
+</Note>
+
+### Graceful degradation
+
+Below 20 labeled samples no model is trained. `amfs_retrain` still succeeds and
+reports `num_samples`, leaving `accuracy` at `0.0` and `feature_importances`
+empty — that is a "not enough data yet" result, not an error.
+
+Until a model exists, the learned strategy carries zero weight and `amfs_retrieve`
+behaves exactly as it does without the ML layer. Anything that asks the ranker to
+score entries directly falls back to sorting by confidence.
 
 ---
 
-## Adaptive Confidence Calibration
+## Adaptive confidence calibration
 
-### The Problem
+### The problem
 
-SenseLab uses fixed outcome multipliers — successes reinforce confidence,
-failures erode it:
+Committing an outcome multiplies the confidence of every entry it is linked to by
+a fixed factor. Successes reinforce, failures erode, and the result is clamped to
+the range 0.0 to 1.0:
 
-| Outcome | Default Multiplier |
-|:--------|:-------------------|
-| Success | × 1.03 |
-| Minor Failure | × 0.92 |
-| Failure | × 0.90 |
-| Critical Failure | × 0.85 |
+| Outcome | Default multiplier |
+| :-- | :-- |
+| `success` | × 1.03 |
+| `minor_failure` | × 0.92 |
+| `failure` | × 0.90 |
+| `critical_failure` | × 0.85 |
 
-These are reasonable defaults, but the actual signal strength of each outcome type varies by domain. A critical failure in a payment service carries different weight than one in a logging service.
+Failures move confidence further than a single success does, so trust is easy to
+lose and slow to rebuild. These are reasonable defaults, but how much signal an
+outcome type really carries varies by domain — a critical failure in a payment
+service does not mean what one in a logging service means.
 
-### How It Works
+### How it works
 
-The calibrator analyzes your outcome history to learn domain-specific multipliers:
+For each outcome type with at least 5 outcomes and at least one causal entry key,
+the calibrator asks how often the entries behind that outcome type also turn up in
+other outcomes:
 
-1. Groups outcomes by type
-2. For each type, measures how often causally-linked entries later appear in failures vs successes
-3. Adjusts multipliers based on observed signal strength
-4. Estimates optimal decay half-life from the age distribution of actively-used entries
+1. Collect the causal entry keys of every outcome of that type.
+2. Count how many of those keys also appear in a failure outcome
+   (`incident_linked`) and how many also appear in a `success` outcome
+   (`clean_linked`).
+3. `incident_ratio = incident_linked / (incident_linked + clean_linked)`.
+4. Scale the default by that ratio — `× (1 + 0.3 × incident_ratio)` for the three
+   failure types, `× (1 + 0.1 × incident_ratio)` for everything else — and round
+   to four decimals.
+
+Any outcome type with fewer than 5 outcomes, or with no causal entry keys, keeps
+its default multiplier unchanged.
+
+<Warning>
+Because `incident_ratio` is between 0 and 1, calibration only scales multipliers
+**upward** from the default. For a failure type that moves the multiplier toward
+1.0 — less erosion, not more — and past an incident ratio of about 0.59 a
+`critical_failure` multiplier crosses 1.0, where it would start reinforcing
+confidence instead of eroding it. Read the report as a measurement of signal
+strength, and sanity-check any value before treating it as a config change.
+</Warning>
+
+### Estimated decay half-life
+
+Alongside the multipliers, calibration reports a `decay_half_life_days` derived
+from the entries your agents actually still touch: the median age of entries with
+at least one outcome, floored at 7 days. Fewer than 5 such entries and it reports
+`null`.
 
 ### Via MCP
 
@@ -113,20 +255,25 @@ The calibrator analyzes your outcome history to learn domain-specific multiplier
 amfs_calibrate()
 ```
 
-Returns calibrated multipliers and analysis:
+Returns the calibrated multipliers and the analysis behind them:
 
 ```json
 {
   "global_multipliers": {
     "entity_path": null,
     "multipliers": {
-      "critical_failure": 0.8123,
-      "failure": 0.8845,
-      "minor_failure": 0.9312,
-      "success": 1.0416
+      "success": 1.0712,
+      "minor_failure": 0.9476,
+      "failure": 0.9675,
+      "critical_failure": 0.901,
+      "clean_deploy": 1.03,
+      "regression": 0.92,
+      "p2_incident": 0.9,
+      "p1_incident": 0.85
     },
     "decay_half_life_days": 21.5,
-    "num_outcomes_analyzed": 89
+    "num_outcomes_analyzed": 89,
+    "calibrated_at": "2026-04-01T14:30:00Z"
   },
   "entity_multipliers": [],
   "total_outcomes": 89,
@@ -134,53 +281,90 @@ Returns calibrated multipliers and analysis:
 }
 ```
 
-With per-entity overrides:
+The response carries a key for every outcome type, deprecated aliases included.
+Types you never commit simply come back at their defaults — `clean_deploy`,
+`regression`, `p2_incident`, and `p1_incident` above are untouched, not
+calibrated.
+
+To also get per-entity overrides:
 
 ```
 amfs_calibrate(per_entity=true)
 ```
 
-Returns global multipliers plus entity-specific overrides for any entity with
-enough data. Global calibration needs 5 outcomes of a given type before it will
-recalibrate that type; per-entity overrides need 5 outcomes on the entity in
-total, not 5 of each type.
+An entity qualifies for its own overrides once it has **5 outcomes in total**, not
+5 of each type — the per-type minimum then applies within that entity's outcomes.
+Entities are grouped by stripping the last segment from each causal entry key, so
+a key of `myapp/auth/rotation-policy` counts toward `myapp/auth`.
 
-Calibration also estimates a decay half-life from the age distribution of
-entries your agents actually still read, reported as `decay_half_life_days`.
+### Calibration is advisory
+
+`amfs_calibrate` computes and returns. It writes nothing, persists nothing, and
+does not change how `commit_outcome` updates confidence — that keeps using the
+fixed defaults in the table above. Nothing about your memory changes when you run
+it, so it is safe to run any time; acting on the numbers is a deliberate,
+separate step.
 
 ---
 
-## Training Data Export
+## Training data export
 
-### The Problem
+### The problem
 
-SenseLab captures structured decision traces: what the agent read, what it decided, and what happened next. These traces are the exact data structure needed for fine-tuning — `(context, action, reward)` tuples — but they're locked inside the memory store.
+SenseLab already captures structured decision traces: what the agent read, what it
+decided, and what happened next. That is the shape fine-tuning wants —
+`(context, action, reward)` — but it sits in the memory store rather than in a
+dataset file.
 
-### How It Works
+### What each format produces
 
-The exporter queries historical outcomes and their causally-linked entries, then formats them as training datasets in three formats:
+**SFT (supervised fine-tuning)** — built from `success` outcomes only. An outcome
+needs at least 2 causal entry keys, and among the entries that resolve, one is
+treated as the decision: an entry whose key starts with `decision-`, or whose
+`memory_type` is `experience`. The rest become the context. Outcomes with no
+qualifying decision entry, or with nothing left over for context, are skipped.
 
-**SFT (Supervised Fine-Tuning)** — Each successful decision trace becomes a training example. Context entries (what was read) pair with the decision entry (what was written). Only successful outcomes produce SFT examples.
+<Tip>
+That decision rule is the usual reason an SFT export comes back with zero
+examples. Agents that record choices under keys like `decision-retry-policy`, or
+write them with `memory_type="experience"`, produce SFT examples; agents that name
+everything else generate traces that are all context and no target.
+</Tip>
 
-**DPO (Direct Preference Optimization)** — Pairs a successful decision trace (chosen) with a failed one (rejected) for the same entity. The outcome replaces human preference annotation.
+**DPO (direct preference optimization)** — groups outcomes by entity path, then
+pairs each success with each failure on that entity. The pairing is a cartesian
+product, so an entity with 6 successes and 5 failures yields 30 pairs; use `limit`
+to keep exports bounded. Entries common to both traces become the shared context,
+and when the two traces have no entries in common the first two entries of the
+successful trace are used instead.
 
-**Reward Model** — Each entry is labeled with a score based on its outcome history: successes score +1.0, critical failures score -1.0, with intermediate values for the failure levels in between.
+**Reward model** — every entry appearing in any outcome's causal keys is labeled
+with the mean of the scores of the outcomes that touched it, rounded to three
+decimals:
+
+| Outcome type | Score |
+| :-- | :-- |
+| `success` | +1.0 |
+| `minor_failure` | -0.3 |
+| `failure` | -0.6 |
+| `critical_failure` | -1.0 |
+
+Deprecated aliases score 0.0. In each example, `outcome_type` is the single
+contributing type with the largest absolute score — the worst failure that touched
+the entry, or `success` if nothing worse did — and `outcome_count` is how many
+outcomes went into the label.
 
 ### Via MCP
-
-Export as SFT:
 
 ```
 amfs_export_training_data(format="sft")
 ```
 
-Export as DPO:
-
-```
-amfs_export_training_data(format="dpo")
-```
-
-Export as reward model data:
+| Parameter | Type | Default | Notes |
+| :-- | :-- | :-- | :-- |
+| `format` | string | `"sft"` | `"sft"`, `"dpo"`, or `"reward_model"` |
+| `entity_path` | string | `null` | Restrict to one entity |
+| `limit` | integer | `10000` | Maximum examples to generate |
 
 ```
 amfs_export_training_data(format="reward_model", entity_path="checkout-service")
@@ -192,10 +376,12 @@ Returns:
 {
   "format": "reward_model",
   "num_examples": 42,
+  "total": 234,
+  "entity_paths_included": ["checkout-service"],
   "examples": [
     {
       "entry": {"entity_path": "checkout-service", "key": "retry-pattern", "...": "..."},
-      "label": 0.85,
+      "label": 0.814,
       "outcome_type": "success",
       "outcome_count": 7
     }
@@ -204,67 +390,99 @@ Returns:
 }
 ```
 
-### Integration with Fine-Tuning Pipelines
+`num_examples` counts what the export produced; `total` is how many entries were
+in scope before any filtering, which is what tells you whether a small export
+means thin outcome coverage or a narrow filter. `entity_paths_included` lists the
+distinct entity paths those entries came from. Embeddings are stripped from every
+entry, so exports stay readable and small.
 
-SenseLab generates the data; you bring the training infrastructure. The exported formats are compatible with common fine-tuning workflows:
+The REST endpoint takes the same parameters plus `min_confidence`, and defaults
+`limit` to 5 since it backs a dashboard preview. The MCP tool does not expose
+`min_confidence`.
 
-| Format | Compatible With |
-|:-------|:----------------|
+### Integration with fine-tuning pipelines
+
+SenseLab generates the data; you bring the training infrastructure. The exported
+formats line up with common workflows:
+
+| Format | Compatible with |
+| :-- | :-- |
 | SFT | OpenAI fine-tuning API, Hugging Face `SFTTrainer`, Axolotl |
 | DPO | TRL `DPOTrainer`, OpenRLHF |
-| Reward Model | TRL `RewardTrainer`, custom reward model training |
+| Reward model | TRL `RewardTrainer`, custom reward model training |
 
 ---
 
-## Data Requirements
+## Data requirements
 
-The ML layer needs outcome data to learn from. Here's the minimum for each feature:
-
-| Feature | Minimum Data | Recommended |
-|:--------|:-------------|:------------|
-| Learned Ranking | 20 outcome-linked entries | 100+ entries with mixed outcomes |
-| Confidence Calibration | 5 outcomes per type | 20+ per type for reliable calibration |
-| Training Data Export (SFT) | 1 success with 2+ causal entries | Dozens of successful traces |
-| Training Data Export (DPO) | 1 positive + 1 negative outcome per entity | Multiple of each per entity |
-| Training Data Export (Reward) | 1 outcome-linked entry | Hundreds of entries for a useful dataset |
+| Feature | Minimum | Recommended |
+| :-- | :-- | :-- |
+| Learned ranking | 20 labeled samples | 100+ with a real mix of successes and failures |
+| Confidence calibration | 5 outcomes of a given type | 20+ per type |
+| Per-entity calibration | 5 outcomes on the entity, any type | 20+ on the entity |
+| Decay half-life estimate | 5 entries with at least one outcome | Enough that the median is stable |
+| SFT export | One success with 2+ causal entries, one of them a decision entry | Dozens of successful traces |
+| DPO export | One success and one failure on the same entity | Several of each, per entity |
+| Reward export | One outcome with causal entry keys | Hundreds of labeled entries |
 
 <Tip>
-What the ML layer learns from is `commit_outcome` history, so the value you get
-out of it is set by how consistently your agents commit outcomes. Agents that
-read and write but never commit produce no training signal at all.
+Every threshold here counts outcomes, not entries. The fastest way to make the ML
+layer useful is not to write more memories — it is to make sure the agents already
+writing them call `commit_outcome`, on failures as well as successes. A corpus of
+successes alone gives the ranker nothing to contrast and produces no DPO pairs at
+all.
 </Tip>
 
 ---
 
-## Environment Variables
+## Environment variables
 
-Set on the server that runs the models, so this only applies if you host the Pro
-server yourself. On SenseLab Cloud it is managed for you.
+This applies only if you run the Pro server yourself. On SenseLab Cloud it is
+managed for you.
 
 | Variable | Default | Description |
-|:---------|:--------|:------------|
-| `AMFS_ML_MODEL_DIR` | `.amfs/ml` | Directory for persisted ML models (ranker pickle files) |
+| :-- | :-- | :-- |
+| `AMFS_ML_MODEL_DIR` | `.amfs/ml` | Directory for persisted ML models |
+
+The ranker is the only component that persists anything, as `ranker.pkl` in that
+directory. Calibration and export compute their results on demand and store
+nothing.
+
+<Warning>
+`ranker.pkl` is loaded with Python's `pickle`, which executes code during
+deserialization. Treat the model directory as trusted storage: keep it on a volume
+only your server writes to, and do not point `AMFS_ML_MODEL_DIR` at a shared or
+user-writable location.
+</Warning>
 
 ---
 
-## How the Pieces Fit Together
+## How the pieces fit together
 
 ```
-Agents use SenseLab normally:
+Agents work normally:
   read → decide → write → commit_outcome
-      │                        │
-      │                        ▼
-      │               Outcome data accumulates
-      │                        │
-      ▼                        ▼
-  amfs_retrieve ◄── amfs_retrain (learns which entries are useful)
-      │
-      │            amfs_calibrate (learns optimal multipliers)
-      │
-      │            amfs_export_training_data (generates fine-tuning datasets)
-      │                        │
-      ▼                        ▼
-  Better retrieval      Better agents (via your fine-tuning pipeline)
+                                │
+                                ▼
+                     Outcome history accumulates
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+   amfs_retrain           amfs_calibrate     amfs_export_training_data
+        │                       │                       │
+        ▼                       ▼                       ▼
+    ranker.pkl            multiplier report      SFT / DPO / reward
+        │                  (advisory — you        datasets for your
+        ▼                   decide whether         fine-tuning pipeline
+   amfs_retrieve            to act on it)                 │
+   (0.3 of RRF weight)                                    ▼
+        │                                          Better agents
+        ▼
+  Better retrieval
 ```
 
-The feedback loop: agents produce outcome data by working normally. The ML layer consumes that data to improve retrieval and generate training datasets. Better retrieval leads to better decisions, which produce more outcome data.
+The loop closes on itself: agents produce outcome data by working normally, the ML
+layer turns that data into better retrieval and training datasets, and better
+retrieval leads to better decisions — which produce more outcome data. The only
+step that needs discipline is the last one in each agent's task: committing the
+outcome.
