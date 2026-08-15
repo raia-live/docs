@@ -86,13 +86,8 @@ subscription and covers the whole account.
 </Step>
 
 <Step title="Create the model">
-Pick the agent to clone, give the model a name, and choose a tier. The tier is
-fixed for the life of the model — changing it means creating a new one.
-
-| Tier | Serving price per million tokens (input / output) |
-| :-- | :-- |
-| `senselab-s1` | $1.00 / $5.00 |
-| `senselab-s1-pro` | $1.25 / $8.00 |
+Pick the agent to clone, give the model a name, and choose a tier — see
+[Choosing a tier](#choosing-a-tier) below if you're unsure.
 </Step>
 
 <Step title="Check the estimate">
@@ -108,6 +103,36 @@ tuning itself is the long part and takes hours, so there is nothing to watch —
 you're notified when it finishes. One run at a time per account.
 </Step>
 </Steps>
+
+### Choosing a tier
+
+Both tiers are the same product. Same subscription, same training allowance, same
+evaluation, same endpoint, same limits. What differs is how capable the model
+underneath is, and what its tokens cost you to serve.
+
+| | `senselab-s1` | `senselab-s1-pro` |
+| :-- | :-- | :-- |
+| Suited to | A narrow, repetitive loop | A loop with genuinely hard judgement calls |
+| Serving, per million input tokens | $1.00 | $1.25 |
+| Serving, per million output tokens | $5.00 | $8.00 |
+| Default | Yes | — |
+
+Most loops want the default, and it's worth remembering why: the job you're
+handing the model is to pick the tool your agent already picks, on a request
+shaped like ones it has seen many times. That's a narrow task. A more capable
+base model earns its price when the choice itself is hard — when which tool is
+right depends on reasoning through the request rather than recognising it.
+
+The reason to spend a minute on the decision is that the tier is fixed for the
+life of the model. Moving a loop to the other tier means creating a second model
+and paying for another training run, so it's a decision rather than a setting.
+Note also that the gap between the tiers is wider on output than on input, so a
+loop that emits long tool calls feels the difference more than the table suggests.
+
+If you're unsure, start on the default and let the evaluation report settle it.
+Per-tool agreement shows you which task shapes the cheaper tier handles and which
+it misses; if it falls short on the shapes that matter to you, that's the case for
+the pro tier — made with your own numbers rather than a guess.
 
 ---
 
