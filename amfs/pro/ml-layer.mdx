@@ -1,106 +1,63 @@
 ---
 title: "ML Layer"
-description: "How SenseLab learns from your outcomes — sharper recall, better-calibrated trust, and training data for your agents."
+description: "How SenseLab learns from your outcomes to sharpen recall, calibrate trust, and train better agents."
 icon: "chart-line"
 ---
 
-Every time an agent commits an outcome, it tells SenseLab something useful: this
-set of memories was in play, and the work went well — or it didn't. The ML layer
-is what SenseLab does with that signal.
+SenseLab's memory doesn't stand still. The more your agents work, the more it
+knows about which memories are worth surfacing and how far they can be trusted.
+The ML layer is the part that does that learning.
 
-It shows up in three ways:
-
-- **Recall gets sharper.** SenseLab learns which kinds of memories tend to precede
-  good work, and surfaces those first.
-- **Trust gets more accurate.** It checks whether the way it raises and lowers
-  confidence matches what actually happened in your data.
-- **Your agents become trainable.** The decision traces you've been accumulating
-  export as fine-tuning datasets.
-
-Nothing here needs setting up. The models run inside SenseLab and learn from data
-you already have, so there is no training infrastructure to stand up and no data
-to ship anywhere.
+It comes with your account and runs on its own. There is nothing to switch on, no
+training infrastructure to stand up, and no data to ship anywhere — the models
+train inside SenseLab, on history your agents are already producing.
 
 ## What it learns from
 
-One thing: your outcome history.
+Outcome history, and nothing else.
 
-When an agent finishes a task and commits an outcome, SenseLab records which
-memories were involved and how the task turned out. That pairing — what the agent
-knew, and what happened next — is the entire training signal.
+When an agent finishes a task, SenseLab records which memories were involved and
+how the work turned out. That pairing — what the agent knew, and what happened
+next — is the entire training signal. It accumulates quietly in the background
+while your agents do their jobs.
 
 <Warning>
-Agents that read and write memories but never commit an outcome produce no signal
-at all, and the ML layer has nothing to learn from.
-
-**Failures matter as much as successes.** A history of nothing but good news gives
-the models nothing to contrast, so recording only successes makes the ML layer
-weaker, not stronger.
+Failures teach as much as successes. A history of nothing but good news gives the
+models nothing to contrast, so memory that records only wins improves more slowly
+than memory that records both.
 </Warning>
 
 ---
 
 ## Sharper recall
 
-### The idea
+Retrieval starts out blending a few generic signals — how closely a memory matches
+the question, how recent it is, how much confidence it carries — in fixed
+proportions. Sensible defaults, but the same ones every account begins with. They
+can't know that in your account recency counts for more than confidence, or that
+the memories confirmed by real outcomes are the ones that consistently pay off.
 
-Out of the box, retrieval blends a few generic signals — how closely a memory
-matches the query, how recent it is, how confident it is — in fixed proportions.
-Sensible defaults, but they're the same for everyone. They can't know that in
-*your* store, recency counts for more than confidence, or that the memories which
-have been confirmed by real outcomes are the ones that consistently pay off.
+So SenseLab learns that from your history instead. Memories that were in play
+before work succeeded become examples of *useful*. Memories that preceded
+failures, or that nothing has ever validated, become examples of *not useful*. A
+model picks up the patterns that separate the two, weighing things like how
+confident a memory is, how old it is, how many outcomes have confirmed it, whether
+it's a stated fact or a working hypothesis, and whether it's genuine knowledge or
+just a stored working file.
 
-Learned ranking replaces that guess with evidence from your own history. Memories
-that were in play before successful work become examples of *useful*; memories
-that preceded failures — or that nobody has ever validated — become examples of
-*not useful*. A model learns the patterns that separate the two, drawing on things
-like how confident a memory is, how old it is, how many outcomes have confirmed
-it, whether it's a stated fact or a working hypothesis, and whether it's real
-knowledge or just a stored file.
-
-That learned judgement then joins retrieval as one more voice, with roughly a
-third of the say. The generic signals stay in the mix and make room for it.
-
-### Using it
-
-```
-amfs_retrain()
-```
-
-Or narrow it to one area of your memory:
-
-```
-amfs_retrain(entity_path="checkout-service")
-```
-
-You get back a short summary: how many examples it learned from, how well it
-performs on examples it wasn't trained on, and which signals turned out to matter
-most. That last part is often the interesting one — it's a read on what actually
-predicts usefulness in your organisation.
-
-From then on it's automatic. `amfs_retrieve` picks the model up on its own; there
-is no flag to set and nothing for your agents to change.
-
-Retraining as your history grows is safe and expected — each run simply replaces
-the last.
-
-### Before you have enough history
-
-Learned ranking needs around 20 examples to be worth anything. Below that,
-`amfs_retrain` tells you how many it found and stops there. Nothing breaks:
-retrieval keeps working exactly as it did before, and you can run it again once
-more outcomes have accumulated.
+Once it has learned something, that judgement joins retrieval alongside the
+generic signals, and briefings and recalls start putting your proven memories
+first. Your agents don't do anything differently — they ask the same questions and
+get better answers.
 
 ---
 
 ## Better-calibrated trust
 
-### The idea
-
-A memory's confidence is how much trust it has earned. Committing an outcome
-adjusts it: success nudges confidence up, failure pulls it down, and failures move
-it further than a single success does — trust should be easy to lose and slow to
-rebuild.
+Every memory carries a confidence score: how much trust it has earned. Outcomes
+move it. Work that succeeds nudges the memories behind it up; work that fails
+pulls them down, and further than a single success lifts them, because trust
+should be easy to lose and slow to rebuild.
 
 | Outcome | Effect on confidence |
 | :-- | :-- |
@@ -109,141 +66,78 @@ rebuild.
 | Failure | Larger decrease |
 | Critical failure | Largest decrease |
 
-Those are reasonable defaults, but how much a given outcome *should* count depends
-on what you do. A critical failure in a payments service doesn't mean the same
-thing as one in a logging service.
+How much each outcome *should* count, though, depends on what you do. A critical
+failure in a payments service doesn't mean what one in a logging service means.
 
-Calibration looks at your history and asks what actually became of the memories
-behind each kind of outcome. Did they keep turning up in failures, or did they go
-on to support work that succeeded? From that it reports the adjustments that fit
-your data, along with an estimate of how long memories in your store stay useful
-before they should be treated as stale.
-
-### Using it
-
-```
-amfs_calibrate()
-```
-
-To also get figures broken down by area of your memory rather than one set for
-everything:
-
-```
-amfs_calibrate(per_entity=true)
-```
+So SenseLab measures it. It looks at what became of the memories behind each kind
+of outcome — whether they kept turning up in failures, or went on to support work
+that succeeded — and works out the adjustments that fit your own history. It also
+estimates how long memories in your account stay useful before they're better
+treated as stale.
 
 <Note>
-Calibration is a report, not a switch. Running it changes nothing — your
-confidence values keep updating with the standard adjustments. It tells you what
-your data suggests, and whether to act on that is your call. That also makes it
-completely safe to run whenever you're curious.
+This is measurement, not silent surgery. SenseLab reports what your history
+suggests; the standard adjustments above keep applying unless someone deliberately
+changes them. Confidence scores never shift under you because a model decided they
+should.
 </Note>
-
-Calibration stays quiet until it has enough to go on: it needs at least five
-outcomes of a given kind before it will say anything about that kind, and five
-outcomes in an area before it will report figures specific to that area. Anything
-below the bar comes back at the standard value, unchanged.
 
 ---
 
 ## Training better agents
 
-### The idea
+This is the part that compounds.
 
-A decision trace is already shaped like training data. Here is what the agent
-knew, here is what it decided, here is how it turned out — context, action,
-result.
+A decision trace is already shaped like training data: here is what the agent
+knew, here is what it decided, here is how it turned out. Context, action, result.
 
-Normally, producing that data is the expensive part of fine-tuning, because
-someone has to sit down and label it. Your agents generate it as a by-product of
-working, and the outcome *is* the label.
+That shape is exactly what fine-tuning wants, and producing it is normally the
+expensive part — someone has to sit down and label thousands of examples. Your
+agents generate it as a by-product of working, and the outcome *is* the label.
+Nothing has to be ranked by hand.
 
-Export turns those traces into datasets in three shapes:
-
-| Format | What it captures | What it's for |
-| :-- | :-- | :-- |
-| SFT | Successful traces: what the agent knew, and what it decided | Teaching a model to imitate decisions that worked |
-| DPO | A success and a failure from the same area, side by side | Teaching preference — this, not that — with no human ranking required |
-| Reward model | Every memory, scored by how its outcomes turned out | Training a model that can judge quality on its own |
-
-### Using it
-
-```
-amfs_export_training_data(format="sft")
-```
-
-You get the examples themselves, a count, and how many memories were in scope
-altogether — which tells you whether a thin export means thin outcome coverage or
-just a narrow filter.
-
-<Tip>
-For SFT, SenseLab has to tell the *decision* apart from the background knowledge
-around it. It looks for the memory that records the choice — one written under a
-key like `decision-retry-policy`, or recorded as an experience.
-
-If your agents don't mark decisions that way, their traces look like all context
-and no decision, and SFT export comes back empty. Following the standard memory
-conventions gets you this for free.
-</Tip>
-
-SenseLab generates the data; you bring the training. The formats line up with the
-usual tools:
-
-| Format | Works with |
-| :-- | :-- |
-| SFT | OpenAI fine-tuning API, Hugging Face `SFTTrainer`, Axolotl |
-| DPO | TRL `DPOTrainer`, OpenRLHF |
-| Reward model | TRL `RewardTrainer`, custom reward model training |
+From that history SenseLab can produce datasets in the shapes the training
+ecosystem expects: examples of decisions that worked, pairs contrasting a success
+against a failure so a model can learn preference, and memories scored by how
+their outcomes turned out so a model can learn to judge quality on its own. Those
+feed the standard tools — OpenAI's fine-tuning API, Hugging Face, TRL — and what
+comes out the other side is a model that has internalised what your organisation
+already learned the hard way.
 
 ---
 
-## What you need before it pays off
+## When it starts helping
 
-| To get | You need |
-| :-- | :-- |
-| Sharper recall | Around 20 memories linked to outcomes, with a genuine mix of successes and failures |
-| Calibrated trust | Five outcomes of a kind; five in an area for area-specific figures |
-| A useful export | At least one committed outcome, though real datasets want dozens of traces |
+Learning needs something to learn from, so a new account starts on the defaults:
+recall uses the standard signals, confidence uses the standard adjustments, and
+nothing is worse for it.
 
-Every one of those counts *outcomes*, not memories. The fastest way to make the ML
-layer useful isn't writing more memories — it's making sure the agents already
-writing them commit an outcome when they finish, on the bad days as well as the
-good ones.
-
----
-
-## Where to find it
-
-**In the dashboard**, on the Pro page: the Calibration, Retrieval Playground, and
-Training Data Export panels cover all three without writing any code.
-
-**From an agent**, through `amfs_retrain`, `amfs_calibrate`, and
-`amfs_export_training_data` on the Pro MCP server — see [MCP Setup](/amfs/guides/mcp).
-If those tools aren't in your client's list, you're connected through the hosted
-connector, which doesn't carry them — use the dashboard instead.
+The models begin contributing once there is enough history to be meaningful — on
+the order of twenty outcome-linked memories before ranking improves, and a handful
+of each kind of outcome before trust calibration will draw a conclusion. With
+agents recording outcomes as they work, that point arrives on its own within the
+first weeks of real use.
 
 ---
 
 ## The loop
 
 ```
-        agents work, and commit outcomes
-                      │
-                      ▼
-            outcome history builds up
-                      │
-      ┌───────────────┼───────────────┐
-      ▼               ▼               ▼
- sharper recall  calibrated trust  training data
-      │                                 │
-      └────────► better decisions ◄─────┘
-                      │
-                      ▼
-              more outcome history
+        agents work, and record how it went
+                        │
+                        ▼
+              outcome history builds up
+                        │
+      ┌─────────────────┼─────────────────┐
+      ▼                 ▼                 ▼
+ sharper recall   calibrated trust   training data
+      │                                   │
+      └────────► better decisions ◄───────┘
+                        │
+                        ▼
+                more outcome history
 ```
 
-That's the whole point of it. Agents produce outcome history just by doing their
-work; the ML layer turns that history into better recall and better-trained
-agents; better recall leads to better decisions, which produce more history. The
-only step that takes any discipline is the last one in every task — committing the
-outcome.
+This is what separates memory from storage. Storage gives back what you put in.
+Memory that learns gives back more than you put in, because the work your agents
+do today is the training signal that makes them better tomorrow.
