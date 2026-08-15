@@ -1,12 +1,10 @@
 ---
 title: "Framework Integrations"
-description: "Use SenseLab with CrewAI, LangGraph, LangChain, and AutoGen."
+description: "Use SenseLab with CrewAI, LangGraph, LangChain, AutoGen, and Strands Agents."
 icon: "puzzle-piece"
 ---
 
-# Framework Integrations
-
-SenseLab integrates with popular multi-agent frameworks so you can add persistent memory to your existing workflows.
+SenseLab integrates with popular agent frameworks so you can add persistent memory to your existing workflows.
 
 ---
 
@@ -122,6 +120,41 @@ prefs = store.get("user_prefs")
 
 ---
 
+## Strands Agents
+
+Add memory to a [Strands](https://github.com/strands-agents/strands) agent as a plugin:
+
+```bash
+pip install amfs-strands
+```
+
+```python
+from strands import Agent
+from amfs import AgentMemory
+from amfs_strands import AMFSPlugin
+
+mem = AgentMemory(agent_id="research-agent")
+agent = Agent(
+    system_prompt="You are a research assistant with persistent memory.",
+    plugins=[AMFSPlugin(mem)],
+)
+
+agent("Research the latest AI papers and remember key findings")
+```
+
+The plugin registers six tools — `amfs_read`, `amfs_write`, `amfs_search`, `amfs_recall`, `amfs_list`, and `amfs_record_context` — and also records the agent's *other* tool calls into the causal chain, so decision traces cover the whole session rather than only the memory operations. Pass `AMFSPlugin(mem, auto_trace=False)` to register the tools without that tracing.
+
+If you'd rather have one action-based tool than the full plugin, `amfs_memory` handles `store`, `retrieve`, `search`, and `list`, and takes its agent identity from `AMFS_AGENT_ID`:
+
+```python
+from strands import Agent
+from amfs_strands import amfs_memory
+
+agent = Agent(tools=[amfs_memory])
+```
+
+---
+
 ## Building Your Own Integration
 
 All integrations are thin wrappers around the `AgentMemory` API. To build your own:
@@ -143,3 +176,16 @@ class MyFrameworkMemory:
         entry = self._mem.read(self._scope, key)
         return entry.value if entry else None
 ```
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Python SDK" icon="python" href="/amfs/guides/python">
+    The full `AgentMemory` API that every integration wraps.
+  </Card>
+  <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">
+    Understand versioning, provenance, and causal graphs in SenseLab.
+  </Card>
+</CardGroup>

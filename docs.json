@@ -44,7 +44,6 @@
                   "amfs/guides/typescript",
                   "amfs/guides/connectors",
                   "amfs/guides/integrations",
-                  "amfs/guides/strands",
                   {
                     "group": "Rooms",
                     "icon": "users",
@@ -127,6 +126,12 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/amfs/guides/strands",
+      "destination": "/amfs/guides/integrations#strands-agents"
+    }
+  ],
   "logo": {
     "light": "/logo/senselab-logo.png",
     "dark": "/logo/senselab-logo.png",
