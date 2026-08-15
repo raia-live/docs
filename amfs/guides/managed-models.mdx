@@ -1,0 +1,327 @@
+---
+title: "Managed Models"
+description: "SenseLab fine-tunes a model on your agents' own successful decisions, scores it against decisions it has never seen, and hosts it behind an endpoint your code already knows."
+icon: "microchip"
+---
+
+Your agents make the same kinds of decisions over and over, and a general-purpose
+model charges general-purpose prices for every one of them. Managed Models turns
+the decisions that worked into a small model of your own: SenseLab builds the
+training set from traces already in your account, runs the fine-tune, scores the
+result against decisions the model was never shown, and serves it.
+
+There is nothing to export, no training infrastructure to stand up, and no ML
+engineer in the loop. The [ML layer](/amfs/pro/ml-layer) improves what your
+agents *read*; this changes the model they *are*.
+
+---
+
+## What the model learns
+
+A decision trace already records what an agent was asked, what it knew, what it
+did, and how that turned out. Training pairs the request with the **first tool
+call** the agent made, across the decisions your own outcomes marked successful.
+What comes out is a model that answers a request with an action: the tool to
+call, and the arguments to call it with.
+
+<Warning>
+A managed model is not a smaller general-purpose chat model. It is trained to
+emit one tool call in your agent's own vocabulary, which makes it good at the
+routine decisions it has seen many times and no use at all for open-ended
+conversation. Keep a general model in the loop for everything else.
+</Warning>
+
+Decisions that went badly are never training targets — teaching a model the
+action that caused an incident is an expensive way to repeat it. They are kept
+for evaluation instead, where they answer a more useful question.
+
+---
+
+## What you need first
+
+**A Pro plan or above, plus a Managed Models subscription.** The subscription is
+$199/month per account and unlocks training for the whole account. Your plan
+decides how many models may serve at once: one on Pro, three on Teams, a hundred
+on Enterprise.
+
+**Agents that record what they did.** A decision becomes a training example only
+if it carries the request that started the work, at least one recorded action,
+and an outcome. In practice that means your agents calling `amfs_record_action`
+as they act and `amfs_commit_outcome(..., task_input=...)` when the work is
+done. Traces missing the request text or the action still count as traces, and
+the readiness panel names which half is missing.
+
+<Note>
+If decisions are arriving but none of them are eligible, it is almost always the
+request text. An agent that commits outcomes without `task_input` will never
+become trainable no matter how long it runs.
+</Note>
+
+**Enough of them.** Readiness is measured per agent over a rolling 90 days:
+
+| What's measured | What's needed |
+| :-- | :-- |
+| Outcome-labelled decisions | 200 recommended, 100 minimum |
+| Distinct tools across them | At least 3 |
+| Share that succeeded | At least 60% |
+
+Below 100 a run isn't worth the queue slot. Between 100 and 200 it's allowed but
+flagged, because the holdout gets thin enough that the scoring below stops
+meaning much. A model trained on a single tool has nothing to generalise across.
+
+The dashboard shows where you stand as a count and a rate rather than a verdict —
+"142 of 200, about a week at your current rate" — so the gap is something you
+can close.
+
+A model is scoped to one agent, because that is where the loop boundary is.
+
+---
+
+## Creating and training a model
+
+<Steps>
+<Step title="Subscribe">
+On **Models**, subscribe to Managed Models. This is separate from your plan
+subscription and covers the whole account.
+</Step>
+
+<Step title="Create the model">
+Pick the agent to clone, give the model a name, and choose a tier. The tier is
+fixed for the life of the model — changing it means creating a new one.
+
+| Tier | Serving price per million tokens (input / output) |
+| :-- | :-- |
+| `senselab-s1` | $1.00 / $5.00 |
+| `senselab-s1-pro` | $1.25 / $8.00 |
+</Step>
+
+<Step title="Check the estimate">
+Before a run starts, SenseLab shows how many tokens it is expected to consume,
+how much of your monthly training allowance that uses, and what it would cost if
+it goes past. The estimate is there to inform you, not to block you — if it
+can't be measured it says so rather than quietly reporting zero.
+</Step>
+
+<Step title="Start training">
+The run builds your dataset, submits it, tunes, and then scores the result. The
+tuning itself is the long part and takes hours, so there is nothing to watch —
+you're notified when it finishes. One run at a time per account.
+</Step>
+</Steps>
+
+---
+
+## How your model is evaluated
+
+Every run ends with the same question: is this version good enough to put in
+front of your traffic? SenseLab answers it, on the server. Going live is not a
+button you press against a model that agrees with your agent 40% of the time.
+
+### What it's scored on
+
+The most recent slice of your decisions — about 15% — is held back and never
+given to the trainer. Everything below is measured on that slice alone.
+
+Two details make it worth trusting:
+
+**The holdout is the recent slice, not a random sample.** The question a gate has
+to answer is whether the model will handle the decisions that come next, which is
+a question about the future. A randomly chosen decision usually has near-identical
+siblings from the same afternoon sitting in the training data, so it scores well
+for the wrong reason.
+
+**It is not the trainer's validation set.** The provider gets its own validation
+slice and uses it to fit the run, so by the time tuning finishes that data is no
+longer held out in any useful sense. Scoring against it would produce numbers
+that are optimistic by construction — and then show them to you as evidence.
+
+The holdout also keeps the decisions that went wrong, even though training
+excludes them. That's deliberate, and it's what makes the last row of the table
+below answerable at all.
+
+### The bars a version has to clear
+
+| Measure | What it asks | Bar |
+| :-- | :-- | :-- |
+| Valid actions | Is the answer an executable tool call at all, rather than prose? | At least 90% |
+| Tool agreement | On decisions that succeeded, does it reach for the same tool your agent did? | At least 75% |
+| Exact agreement | Tool *and* arguments identical | At least 45% |
+| Unfamiliar tools | Answers naming a tool it was never trained on | At most 15% |
+| Repeating failures | On decisions that went wrong, does it do the same thing again? | At most 30%, once there are at least 20 of them |
+| Enough to judge on | Successful held-back decisions | At least 20 |
+
+Agreement is measured over the successful decisions only. The two halves of the
+holdout ask opposite questions: the successes ask whether the model does what
+your agent did, and the failures ask whether it repeats what went wrong. Mixing
+them would penalise a model for declining to reproduce an incident.
+
+Tool agreement is the headline because picking the wrong tool is the failure you
+notice, while argument drift usually isn't — a one-hour window where your agent
+used six is often equally correct. That's also why exact agreement sits lower.
+
+The report carries more than the gate uses: a graded argument score that gives
+partial credit per field, agreement broken down per tool so you can see *which*
+task shape is weak, typical and worst-case latency, and a projected cost per
+thousand calls against what you're paying now.
+
+<Note>
+The honest limit: agreement is not correctness. SenseLab can measure whether the
+small model does what your agent did. It cannot measure whether that was the
+right thing to do — your outcome labels are the only correctness signal in the
+system, and they are already spent choosing which decisions are worth imitating.
+The failure half of the holdout is the one place this flips, and there agreement
+is the bad result.
+</Note>
+
+### What happens next
+
+If a version clears every bar it is promoted and starts serving, without you
+doing anything. If your plan has no free serving slot or billing is unsettled,
+the version waits and you promote it yourself when that's resolved.
+
+If it misses a bar, it isn't promoted, and the report says which bar and by how
+much in plain words — "tool agreement is 68%, needs 75%". Nothing about your
+currently live model changes. You can retrain when more decisions have
+accumulated, and if a run finished but couldn't be scored you can rescore it
+without paying for a new run.
+
+The report can be shared as a link that needs no login, so a budget holder can
+read the numbers without an account. Links expire after 30 days and you can
+revoke one at any time.
+
+---
+
+## Calling your model
+
+Your model is served behind an OpenAI-compatible endpoint, so most code needs a
+base URL, a key, and a model string:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://amfs-login.sense-lab.ai/api/v1",
+    api_key="<your-senselab-api-key>",
+)
+
+completion = client.chat.completions.create(
+    model="senselab-s1-4f8a2c9d1b7e",
+    messages=[{"role": "user", "content": "p99 latency on checkout is above 2s"}],
+)
+```
+
+The model string is the id shown on the model's **Connect** tab, and the key is an
+ordinary SenseLab API key. For Anthropic-dialect clients, point them at
+`/api/v1/messages` instead; the OpenAI path also supports streaming.
+
+A few expectations differ from a general model, and they follow from what the
+model is:
+
+- **Send the request, not the conversation.** Only the latest user message is
+  used, and SenseLab pulls the relevant memory in for you. A long `messages`
+  array doesn't produce a multi-turn call.
+- **Answers are short by design.** Output is capped, because the answer is a tool
+  call rather than an essay.
+- **You don't pass tool definitions.** The model was trained on your agent's
+  tools, so the answer *is* the call. Tool and function parameters are ignored.
+- **Failed calls aren't billed.**
+
+---
+
+## When the tuned model can't answer
+
+Some requests won't suit the tuned model, so SenseLab falls back to a general one
+rather than handing your agent something it can't execute. That happens when the
+answer isn't a parseable action, when it names a tool your agent doesn't use, when
+it's blocked on safety grounds, and when the tuned model is briefly unavailable or
+rate limited.
+
+You can nominate which model to fall back to, or leave it to SenseLab. Either way
+your caller gets an ordinary successful response. Fallback calls are charged at
+the fallback model's own rate rather than your tier's, and they're counted
+separately in usage — a climbing fallback count is the number to watch, because
+it means you're paying general-model prices for a model you tuned to avoid them.
+
+<Warning>
+The fallback only covers a model that is live. A model that is suspended or out
+of date refuses the request instead, so keep your own path to a general model for
+that case.
+</Warning>
+
+---
+
+## Keeping a model current
+
+A tuned model is a snapshot of a system that keeps moving. SenseLab watches for
+the ways the world goes out from under it, and marks a model out of date when:
+
+| Reason | What happened |
+| :-- | :-- |
+| The tier was retired | A model tuned on one base can't be served from another |
+| SenseLab changed how prompts are built | The serving prompt no longer matches the shape it was trained on |
+| The agent's tools changed | It keeps emitting calls your agent can no longer execute |
+| Most requests are being answered by the fallback | A quarter or more of the last week, once there's enough traffic for the ratio to mean anything |
+
+<Warning>
+A model marked out of date stops serving, and calls to it are refused rather than
+answered. That's deliberate: each of the reasons above degrades quality without
+producing a single error, so a model in that state would keep sounding
+confident. Retraining is how you get back.
+</Warning>
+
+Every run adds a version rather than replacing one. You can promote any version
+that passed its evaluation, and rolling back to the previous one takes effect
+immediately — useful if a newly promoted model behaves worse in production than
+its scores suggested.
+
+Retraining as decisions accumulate is the same pipeline, and the loop compounds:
+your tuned model's own runs are recorded like any other, so the next tune starts
+from a better baseline than the last one did.
+
+---
+
+## What it costs
+
+| Line | Price |
+| :-- | :-- |
+| Managed Models subscription | $199/month per account |
+| Training | 10M tokens per month included, then $10 per million |
+| Serving `senselab-s1` | $1.00 input / $5.00 output per million tokens |
+| Serving `senselab-s1-pro` | $1.25 input / $8.00 output per million tokens |
+| Fallback calls | Passed through at the fallback model's rate |
+
+Training is metered rather than capped, because a customer with years of history
+should be able to train on all of it. Serving has no included allowance and bills
+from the first token.
+
+Every model starts with a $500 monthly spend cap. You're warned at 80%, and at
+100% the model stops answering until you raise the cap — a cap is a floor under
+surprise invoices, not a performance setting.
+
+[Billing & Metering](/amfs/pro/billing) covers how this appears on your invoice.
+
+---
+
+## Worth knowing
+
+- **Training and serving are US-only.** There is no region choice.
+- **One training run at a time per account**, and runs queue behind other
+  accounts, so a run can wait before it starts.
+- **If your subscription lapses**, models stop serving but their weights are kept
+  for 30 days. After that they're deleted and the model has to be retrained.
+- **This is driven from the dashboard and the REST API.** There are no MCP tools
+  for creating or training a model: your agents produce the decisions, and people
+  decide when to turn them into a model.
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Immutable Traces" icon="lock" href="/amfs/pro/immutable-traces">
+    The sealed decision traces every managed model is trained from.
+  </Card>
+  <Card title="ML Layer" icon="chart-line" href="/amfs/pro/ml-layer">
+    How outcomes sharpen retrieval and calibrate confidence, without training a model.
+  </Card>
+</CardGroup>

@@ -53,7 +53,8 @@
                       "amfs/concepts/room-members",
                       "amfs/concepts/room-collaboration"
                     ]
-                  }
+                  },
+                  "amfs/guides/managed-models"
                 ]
               },
               {
