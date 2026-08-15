@@ -44,7 +44,17 @@
                   "amfs/guides/typescript",
                   "amfs/guides/connectors",
                   "amfs/guides/integrations",
-                  "amfs/guides/strands"
+                  "amfs/guides/strands",
+                  {
+                    "group": "Rooms",
+                    "icon": "users",
+                    "root": "amfs/concepts/rooms",
+                    "expanded": true,
+                    "pages": [
+                      "amfs/concepts/room-members",
+                      "amfs/concepts/room-collaboration"
+                    ]
+                  }
                 ]
               },
               {
@@ -77,17 +87,7 @@
                   "amfs/concepts/confidence",
                   "amfs/concepts/provenance",
                   "amfs/concepts/context-graphs",
-                  "amfs/concepts/git-timeline",
-                  {
-                    "group": "Rooms",
-                    "icon": "users",
-                    "root": "amfs/concepts/rooms",
-                    "expanded": true,
-                    "pages": [
-                      "amfs/concepts/room-members",
-                      "amfs/concepts/room-collaboration"
-                    ]
-                  }
+                  "amfs/concepts/git-timeline"
                 ]
               },
               {
