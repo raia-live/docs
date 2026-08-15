@@ -103,7 +103,6 @@
                   "amfs/pro/knowledge-graph",
                   "amfs/pro/security",
                   "amfs/pro/ml-layer",
-                  "amfs/pro/dashboard",
                   "amfs/pro/billing"
                 ]
               }
@@ -131,6 +130,10 @@
     {
       "source": "/amfs/guides/strands",
       "destination": "/amfs/guides/integrations#strands-agents"
+    },
+    {
+      "source": "/amfs/pro/dashboard",
+      "destination": "/amfs/editions#dashboard"
     }
   ],
   "logo": {
