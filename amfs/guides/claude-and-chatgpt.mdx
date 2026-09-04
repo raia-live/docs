@@ -68,16 +68,21 @@ Authorization uses OAuth 2.1 with PKCE. SenseLab never sees your Claude or ChatG
 
 ## What the Connector Can Reach
 
-A connector approved through the consent screen above gets SenseLab's full surface: **51 tools**, covering memory, search, rooms, negotiations, decision traces and agent identity.
+A connector approved through the consent screen above gets SenseLab's full surface: **64 tools**, covering memory, search, rooms, room discovery and access requests, negotiations and decision traces.
 
-This is deliberately more than a pasted API key gets. A connection configured with an API key — the pattern used by Cursor in URL mode and by builder platforms — sees six tools only:
+This is deliberately more than a pasted API key gets. A connection configured with an API key — the pattern used by Cursor in URL mode and by builder platforms — sees eleven tools only:
 
 <CodeGroup>
 ```text API key connections
 amfs_briefing
 amfs_commit_outcome
+amfs_my_rooms
+amfs_record_action
 amfs_record_context
 amfs_retrieve
+amfs_room_briefing
+amfs_room_join
+amfs_room_redeem
 amfs_search
 amfs_write
 ```
@@ -110,7 +115,7 @@ You can also ask us to revoke a connection for you at [hello@sense-lab.ai](mailt
     The connector's access has been revoked, or the account it was approved against was removed. Remove the connector and add it again.
   </Accordion>
   <Accordion title="A tool says it is not available on this connection">
-    That connection is authenticated with an API key rather than through the consent screen, so it has the six tools listed above. Add it as a connector by URL instead, and approve it.
+    That connection is authenticated with an API key rather than through the consent screen, so it has the eleven tools listed above. Add it as a connector by URL instead, and approve it.
   </Accordion>
   <Accordion title="Rooms appear empty">
     Check you signed in with the account that belongs to the room. Room membership follows the account, so approving the connector against a different one shows you that account's rooms instead.
