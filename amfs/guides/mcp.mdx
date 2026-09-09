@@ -227,7 +227,12 @@ of something without running `amfs_retrieve` first.
 3. **Work** — read before decisions, write after meaningful ones
 
 4. **Commit** — always at session end, it's free
-   `amfs_commit_outcome("task-ref", "success|minor_failure|failure")`
+   `amfs_commit_outcome("task-ref", "success|minor_failure|failure", task_input="<the request>", response_text="<your final answer>")`
+
+   `task_input` is what the agent was asked, in the words it arrived in;
+   `response_text` is what it answered, in full. SenseLab sees only its own
+   tool calls, so neither is captured unless the agent passes it — and a judge
+   grading the answer reads nothing without `response_text`.
 
 ## Entity path conventions
 Use hierarchical `{project}/{module}` paths to scope knowledge. Avoid generic paths like `project` or `app` — they become unsearchable.
