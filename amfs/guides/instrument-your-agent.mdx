@@ -1,0 +1,232 @@
+---
+title: "Instrument your agent"
+description: "Send steps, LLM calls and cost with every run so the Runs page shows a step tree, tokens and spend — and judges see the shape of the work."
+icon: "gauge-high"
+---
+
+A run reaches SenseLab flat unless the agent says otherwise: the memory it read,
+the tools it called and the contexts it recorded, in order, with no durations,
+no nesting, no token counts and no cost. The Runs page shows that list and a
+hint — **Want tokens, cost and nested steps? Instrument your agent.**
+
+Instrumenting adds three things to each run:
+
+- **Nested steps with durations.** Which tool call belonged to which plan, and
+  how long each took.
+- **LLM calls.** Model, input and output tokens, latency and cost per call, and
+  `total_tokens` / `total_cost_usd` on the run.
+- **Attributes.** Dimensions to filter and group runs by: customer, task type,
+  environment, ticket.
+
+Judges are shown the same tree, so a fail can point at the exact step.
+
+## Pick a path
+
+| You have | Use |
+| :-- | :-- |
+| An agent already emitting OpenTelemetry — LangChain, LangGraph, LlamaIndex, CrewAI, DSPy through OpenInference, the OTel GenAI instrumentors, or Traceloop | [OpenTelemetry](#opentelemetry) — point the exporter at SenseLab; no code changes |
+| An agent that uses SenseLab through MCP (Cursor, Claude Code, Codex) | [MCP tools](#mcp-tools) — the agent records steps and LLM calls with tool calls |
+| Anything else, in any language | [HTTP](#http) — post the run with its spans in one request |
+
+All three land as the same sealed trace. You can mix them across agents.
+
+---
+
+## OpenTelemetry
+
+SenseLab accepts OTLP/HTTP at `POST /v1/traces`, in protobuf or JSON, gzip
+optional. Authenticate with your API key in `X-AMFS-API-Key` or
+`Authorization: Bearer amfs_...`.
+
+Point an existing exporter at it with environment variables:
+
+```bash
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="https://amfs-login.sense-lab.ai/v1/traces"
+export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL="http/protobuf"
+export OTEL_EXPORTER_OTLP_HEADERS="X-AMFS-API-Key=${AMFS_API_KEY}"
+export OTEL_SERVICE_NAME="deploy-agent"   # becomes the agent id
+```
+
+Or configure it in code:
+
+```python
+import os
+
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+provider = TracerProvider(resource=Resource.create({"service.name": "deploy-agent"}))
+provider.add_span_processor(
+    BatchSpanProcessor(
+        OTLPSpanExporter(
+            endpoint="https://amfs-login.sense-lab.ai/v1/traces",
+            headers={"X-AMFS-API-Key": os.environ["AMFS_API_KEY"]},
+        )
+    )
+)
+trace.set_tracer_provider(provider)
+```
+
+Every OTLP trace becomes one run. The root span is the run; its children are
+the steps.
+
+### What is read from your spans
+
+SenseLab understands the OpenTelemetry GenAI conventions, OpenInference, and its
+own `amfs.*` attributes. The first match wins.
+
+| Run field | Read from |
+| :-- | :-- |
+| Agent id | `amfs.agent_id` (resource or root span), `gen_ai.agent.name`, then `service.name` |
+| Session id | `amfs.session_id`, `session.id`; defaults to the OTLP trace id |
+| Task input / response | The root span's `input.value` / `output.value` |
+| Outcome | `amfs.outcome_type` on the root, else the root span's status: `OK` → success, `ERROR` → failure |
+| Outcome reference | `amfs.outcome_ref` |
+| Step kind | `amfs.span.kind`, `openinference.span.kind` (`CHAIN`, `LLM`, `TOOL`, `RETRIEVER`, `AGENT`), `gen_ai.operation.name`, or inferred from the attributes below |
+| Model | `gen_ai.request.model`, `gen_ai.response.model`, `llm.model_name` |
+| Tokens | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens`, or `llm.token_count.prompt` / `llm.token_count.completion` |
+| Cost | `amfs.llm.cost_usd` |
+| Tool name | `tool.name`, `gen_ai.tool.name` |
+| Attributes | Resource attributes and the root span's attributes |
+
+<Note>
+  Cost is not estimated from the model name on this path. Set
+  `amfs.llm.cost_usd` on each LLM span if you want spend on the run; without it
+  the run shows tokens and no cost.
+</Note>
+
+### Batches and retries
+
+Exporters batch by time, so one trace often arrives in several requests. Late
+spans are merged into the run as a new version in the same session chain, and
+the Runs page shows the latest. A request that repeats spans already recorded
+writes nothing. The response is the standard OTLP one: `200` with an empty body
+on success, `partial_success` listing rejected spans otherwise — never a `4xx`
+for a mapping problem, so the exporter does not retry spans that were accepted.
+
+Bodies are capped at 4 MiB and each account at 600 requests a minute.
+
+---
+
+## MCP tools
+
+An agent working through the SenseLab MCP server already gets a step for every
+memory read, recorded action and context. Four tools add the rest, and
+`amfs_commit_outcome` seals everything into the run.
+
+| Tool | What it records |
+| :-- | :-- |
+| `amfs_start_span(name, kind, input)` → `span_id` | Opens a step and makes it current; everything until the matching end nests under it |
+| `amfs_end_span(span_id, output, status, error)` | Closes it, measuring the duration |
+| `amfs_record_span(name, kind, input, output, duration_ms)` | A step that already finished, in one call |
+| `amfs_record_llm_call(model, input_tokens, output_tokens, cost_usd, latency_ms)` | An LLM call — tokens and cost roll up to the run |
+| `amfs_set_trace_attributes({...})` | Dimensions to filter runs by |
+
+A run that reads as a tree:
+
+```text
+amfs_set_trace_attributes({"customer": "acme", "task_type": "deploy"})
+plan = amfs_start_span("plan", kind="chain", input={"ticket": "INC-2047"})
+  amfs_record_llm_call(model="gpt-5-mini", input_tokens=812, output_tokens=64, cost_usd=0.00033)
+amfs_end_span(plan, output={"chosen": "roll back to v41"})
+amfs_record_span("deploy_rollback", kind="tool", input={"to": "v41"}, output="ok", duration_ms=8300)
+amfs_commit_outcome("deploy-142", "success", task_input="roll api back to v41")
+```
+
+`kind` is one of `tool`, `retrieval`, `agent`, `chain`, `memory_read`,
+`memory_write`, `llm` or `custom`. Inputs and outputs are scanned for secrets
+and capped before storage. Spans left open are closed at commit.
+
+<Tip>
+  Put these in the agent's instructions rather than hoping it discovers them:
+  "open a span for each sub-task with `amfs_start_span`, record every model call
+  with `amfs_record_llm_call`, close spans with `amfs_end_span`."
+</Tip>
+
+Requires `amfs-mcp-server-pro` 0.1.53 or later.
+
+---
+
+## HTTP
+
+`POST /api/v1/traces` persists a run in one request. Steps, LLM calls and
+attributes travel inside `session_metadata` under `spans`, `llm_calls` and
+`attributes`; the response carries the sealed run's id as `immutable_trace_id`.
+
+```bash
+curl -X POST https://amfs-login.sense-lab.ai/api/v1/traces \
+  -H "X-AMFS-API-Key: $AMFS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @run.json
+```
+
+```json run.json
+{
+  "agent_id": "deploy-agent",
+  "session_id": "sess-142",
+  "outcome_ref": "deploy-142",
+  "outcome_type": "success",
+  "task_input": "roll api back to v41",
+  "response_text": "Rolled back to v41; error rate recovered.",
+  "session_started_at": "2026-09-05T12:00:00Z",
+  "session_ended_at": "2026-09-05T12:00:12Z",
+  "session_metadata": {
+    "attributes": { "customer": "acme", "task_type": "deploy" },
+    "spans": [
+      { "span_id": "root", "parent_span_id": null, "name": "deploy-agent run", "kind": "session",
+        "status": "ok", "started_at": "2026-09-05T12:00:00Z", "ended_at": "2026-09-05T12:00:12Z",
+        "duration_ms": 12000 },
+      { "span_id": "plan", "parent_span_id": "root", "name": "plan", "kind": "chain",
+        "status": "ok", "started_at": "2026-09-05T12:00:00Z", "ended_at": "2026-09-05T12:00:03Z",
+        "duration_ms": 3000, "input_payload": { "goal": "roll back" }, "output_payload": { "chosen": "v41" } },
+      { "span_id": "llm-1", "parent_span_id": "plan", "name": "gpt-5-mini", "kind": "llm",
+        "status": "ok", "started_at": "2026-09-05T12:00:00Z", "ended_at": "2026-09-05T12:00:02Z",
+        "duration_ms": 2300,
+        "llm": { "call_id": "llm-1", "model": "gpt-5-mini", "provider": "openai",
+                 "input_tokens": 812, "output_tokens": 64, "cost_usd": 0.00033, "latency_ms": 2300 } },
+      { "span_id": "tool-1", "parent_span_id": "root", "name": "deploy_rollback", "kind": "tool",
+        "status": "ok", "started_at": "2026-09-05T12:00:03Z", "ended_at": "2026-09-05T12:00:11Z",
+        "duration_ms": 8300, "input_payload": { "to": "v41" }, "output_payload": "ok" }
+    ],
+    "llm_calls": [
+      { "call_id": "llm-1", "model": "gpt-5-mini", "provider": "openai",
+        "input_tokens": 812, "output_tokens": 64, "cost_usd": 0.00033, "latency_ms": 2300 }
+    ]
+  }
+}
+```
+
+### Span fields
+
+| Field | Notes |
+| :-- | :-- |
+| `span_id`, `parent_span_id` | Any strings unique within the run. Exactly one span has `parent_span_id: null`; it is the run |
+| `name` | Short and stable — the same step should have the same name every run |
+| `kind` | `session` for the root; `tool`, `retrieval`, `agent`, `chain`, `memory_read`, `memory_write`, `llm` or `custom` otherwise |
+| `status` | `ok`, `error` or `unset`; add `error` text on a failure |
+| `started_at`, `ended_at`, `duration_ms` | ISO 8601 timestamps and milliseconds. Include `duration_ms`; it is what the Runs page shows |
+| `input_payload`, `output_payload` | Any JSON; scanned for secrets and capped, with the overflow kept by reference |
+| `llm` | An LLM call object, on `llm` spans. List every call in `llm_calls` too, with the same `call_id` |
+| `attributes` | Flat scalars for this step |
+
+`llm_calls` is what `total_tokens` and `total_cost_usd` are summed from. Leave
+`cost_usd` out of a call and the run's cost is left blank rather than
+understated.
+
+---
+
+## What you see afterwards
+
+Open **Agents → your agent → Runs** and pick a run. The header shows its
+duration and, once LLM calls are recorded, **agent spend** — tokens and cost.
+The Steps pane is the tree you sent; clicking an `llm` step shows model,
+tokens and cost for that call, and the instrumentation hint is gone. Judges
+that fail the run point at spans in this tree.
+
+<Note>
+  Runs that arrived before you instrumented keep their flat shape. Sealed traces
+  are never rewritten.
+</Note>

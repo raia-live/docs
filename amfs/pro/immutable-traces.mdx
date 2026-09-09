@@ -48,7 +48,9 @@ particular kind of failure.
 <Note>
 Recording is automatic once you are on a plan that includes it. Use
 `amfs_record_llm_call` to attach model and cost data to the current session, and
-`amfs_list_traces` and `amfs_get_trace` to read history back.
+`amfs_list_traces` and `amfs_get_trace` to read history back. To add nested
+steps, tokens and cost to every run — over OpenTelemetry, MCP or HTTP — see
+[Instrument your agent](/amfs/guides/instrument-your-agent).
 </Note>
 
 ## OpenTelemetry Export
