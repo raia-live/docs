@@ -47,6 +47,11 @@ export OTEL_EXPORTER_OTLP_HEADERS="X-AMFS-API-Key=${AMFS_API_KEY}"
 export OTEL_SERVICE_NAME="deploy-agent"   # becomes the agent id
 ```
 
+The dashboard's **Connect** page carries this block with your environment's
+host filled in, and a run's flat step tree links to it with the agent's id
+already set. Use the `_TRACES_` variables as written: exporters append
+`/v1/traces` to the generic `OTEL_EXPORTER_OTLP_ENDPOINT` themselves.
+
 Or configure it in code:
 
 ```python
@@ -83,7 +88,7 @@ own `amfs.*` attributes. The first match wins.
 | Agent id | `amfs.agent_id` (resource or root span), `gen_ai.agent.name`, then `service.name` |
 | Session id | `amfs.session_id`, `session.id`; defaults to the OTLP trace id |
 | Task input / response | The root span's `input.value` / `output.value` |
-| Outcome | `amfs.outcome_type` on the root, else the root span's status: `OK` → success, `ERROR` → failure |
+| Outcome | `amfs.outcome_type` on the root, else the root span's status: `OK` → success, `ERROR` → failure. `UNSET` — what most frameworks leave on a span that did not fail — records no outcome, so set `amfs.outcome_type` if you want one |
 | Outcome reference | `amfs.outcome_ref` |
 | Step kind | `amfs.span.kind`, `openinference.span.kind` (`CHAIN`, `LLM`, `TOOL`, `RETRIEVER`, `AGENT`), `gen_ai.operation.name`, or inferred from the attributes below |
 | Model | `gen_ai.request.model`, `gen_ai.response.model`, `llm.model_name` |
@@ -133,20 +138,32 @@ plan = amfs_start_span("plan", kind="chain", input={"ticket": "INC-2047"})
   amfs_record_llm_call(model="gpt-5-mini", input_tokens=812, output_tokens=64, cost_usd=0.00033)
 amfs_end_span(plan, output={"chosen": "roll back to v41"})
 amfs_record_span("deploy_rollback", kind="tool", input={"to": "v41"}, output="ok", duration_ms=8300)
-amfs_commit_outcome("deploy-142", "success", task_input="roll api back to v41")
+amfs_commit_outcome("deploy-142", "success",
+                    task_input="roll api back to v41",
+                    response_text="Rolled api back to v41; p99 is back under 400 ms.")
 ```
 
 `kind` is one of `tool`, `retrieval`, `agent`, `chain`, `memory_read`,
 `memory_write`, `llm` or `custom`. Inputs and outputs are scanned for secrets
 and capped before storage. Spans left open are closed at commit.
 
+### The response
+
+The one thing no tool call can capture is what the agent said. SenseLab sees
+its own tools, so a run committed through MCP has a task, steps and an outcome
+— and no response, which is what a judge grading the answer reads. Pass
+`response_text` on `amfs_commit_outcome`: the final message to the user, in
+full. Without it the run's response is empty and any judge that asks about the
+answer fails on `"response_text": null`.
+
 <Tip>
   Put these in the agent's instructions rather than hoping it discovers them:
   "open a span for each sub-task with `amfs_start_span`, record every model call
-  with `amfs_record_llm_call`, close spans with `amfs_end_span`."
+  with `amfs_record_llm_call`, close spans with `amfs_end_span`, and pass
+  `task_input` and `response_text` on `amfs_commit_outcome`."
 </Tip>
 
-Requires `amfs-mcp-server-pro` 0.1.53 or later.
+Requires `amfs-mcp-server-pro` 0.1.53 or later; `response_text` needs 0.1.54.
 
 ---
 
