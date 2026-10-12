@@ -26,9 +26,10 @@ Judges are shown the same tree, so a fail can point at the exact step.
 | :-- | :-- |
 | An agent already emitting OpenTelemetry — LangChain, LangGraph, LlamaIndex, CrewAI, DSPy through OpenInference, the OTel GenAI instrumentors, or Traceloop | [OpenTelemetry](#opentelemetry) — point the exporter at SenseLab; no code changes |
 | An agent that uses SenseLab through MCP (Cursor, Claude Code, Codex) | [MCP tools](#mcp-tools) — the agent records steps and LLM calls with tool calls |
+| An agent built on the SenseLab Python SDK | [Python SDK](#python-sdk) — two calls add attributes, tokens and cost to the run it already commits |
 | Anything else, in any language | [HTTP](#http) — post the run with its spans in one request |
 
-All three land as the same sealed trace. You can mix them across agents.
+All of them land as the same sealed trace. You can mix them across agents.
 
 ---
 
@@ -92,7 +93,7 @@ own `amfs.*` attributes. The first match wins.
 | Outcome reference | `amfs.outcome_ref` |
 | Step kind | `amfs.span.kind`, `openinference.span.kind` (`CHAIN`, `LLM`, `TOOL`, `RETRIEVER`, `AGENT`), `gen_ai.operation.name`, or inferred from the attributes below |
 | Model | `gen_ai.request.model`, `gen_ai.response.model`, `llm.model_name` |
-| Tokens | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens`, or `llm.token_count.prompt` / `llm.token_count.completion` |
+| Tokens | `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` (or the older `gen_ai.usage.prompt_tokens` / `completion_tokens`), or `llm.token_count.prompt` / `llm.token_count.completion` |
 | Cost | `amfs.llm.cost_usd` |
 | Tool name | `tool.name`, `gen_ai.tool.name` |
 | Attributes | Resource attributes and the root span's attributes |
@@ -164,6 +165,54 @@ answer fails on `"response_text": null`.
 </Tip>
 
 Requires `amfs-mcp-server-pro` 0.1.53 or later; `response_text` needs 0.1.54.
+
+---
+
+## Python SDK
+
+An agent built on the [Python SDK](/amfs/guides/python) and connected through
+the HTTP adapter already commits a run with every memory read, recorded action
+and context as a step. Two calls add the attributes and the LLM calls, and
+`commit_outcome` seals them in with the rest:
+
+```python
+mem.set_session_attributes({"customer": "acme", "task_type": "deploy"})
+
+resp = client.chat.completions.create(...)
+mem.record_llm_call(
+    resp.model, resp.usage.prompt_tokens, resp.usage.completion_tokens,
+    provider="openai", cost_usd=0.00033, latency_ms=412.0,
+)
+
+mem.record_action("deploy_rollback", {"to": "v41"}, result="ok", duration_ms=8300)
+
+mem.commit_outcome(
+    "deploy-142", OutcomeType.SUCCESS,
+    task_input="roll api back to v41",
+    response_text="Rolled api back to v41; p99 is back under 400 ms.",
+)
+```
+
+| Call | What it records |
+| :-- | :-- |
+| `set_session_attributes({...})` | Dimensions to filter runs by. Scalars only, at most 20 keys; merged into the bag the next `commit_outcome` stamps on the run |
+| `record_llm_call(model, input_tokens, output_tokens, cost_usd=, latency_ms=, provider=)` | An LLM call — tokens and cost roll up to the run |
+| `record_action(tool_name, arguments, result=, success=, duration_ms=)` | A tool call, as a step on the run |
+
+Both the attributes and the calls can also be handed straight to
+`commit_outcome(attributes={...}, llm_calls=[...])` for a session that did not
+record them as it went.
+
+<Note>
+  This path gives a run its attributes, tokens and cost. It does not nest
+  steps — they stay the flat list the run already had. For a step tree with
+  durations, send the run over [OpenTelemetry](#opentelemetry) or
+  [HTTP](#http). Cost is not estimated here either: pass `cost_usd` on each
+  call, or the run shows tokens and no cost.
+</Note>
+
+Requires `amfs` 0.5.10 or later. The TypeScript SDK does not have these calls
+yet; use OpenTelemetry or HTTP from Node.js.
 
 ---
 
