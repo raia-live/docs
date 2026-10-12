@@ -4,18 +4,42 @@ description: "Use SenseLab with CrewAI, LangGraph, LangChain, AutoGen, and Stran
 icon: "puzzle-piece"
 ---
 
-SenseLab integrates with popular agent frameworks so you can add persistent memory to your existing workflows.
+SenseLab integrates with popular agent frameworks so you can add persistent memory to your existing workflows. Every integration is a thin wrapper around one `AgentMemory` instance: you build the memory, connect it to your account, and hand it to the wrapper.
 
 ---
 
 ## Setup
 
-Set your connection env vars — all framework integrations pick them up automatically:
+Install the SDK and the HTTP adapter, then build one connected memory that every integration below shares:
 
 ```bash
-export AMFS_HTTP_URL="https://amfs-login.sense-lab.ai"
+pip install amfs amfs-adapter-http
 export AMFS_API_KEY="<your-api-key>"
 ```
+
+```python
+import os
+
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    agent_id="research-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
+```
+
+<Warning>
+  The integrations do not read `AMFS_HTTP_URL` or `AMFS_API_KEY`, and neither
+  does `AgentMemory`. A memory created without `adapter=` stores everything in
+  `.amfs/` on the local disk — silently — and nothing reaches your dashboard.
+  Pass the `HttpAdapter` as above.
+</Warning>
+
+Each package has an extra that pulls in the framework itself, for example `pip install "amfs-crewai[crewai]"`. If you already have the framework installed, the plain package is enough. Get a key from the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide.
 
 ---
 
@@ -28,15 +52,11 @@ pip install amfs-crewai
 ```
 
 ```python
-from amfs import AgentMemory
+from crewai import Agent
 from amfs_crewai import AMFSTool
 
-mem = AgentMemory(agent_id="crewai-agent")
 tools = AMFSTool(mem).tools()
-# Returns [AMFSReadTool, AMFSWriteTool, AMFSListTool]
-
-# Pass to your CrewAI agent
-from crewai import Agent
+# [amfs_read, amfs_write, amfs_list] — CrewAI BaseTool instances
 
 agent = Agent(
     role="Researcher",
@@ -45,29 +65,37 @@ agent = Agent(
 )
 ```
 
-The tools give your CrewAI agents the ability to read, write, and list memory entries as part of their task execution.
+The tools let a CrewAI agent read an entry (`entity_path`, `key`), write one (`entity_path`, `key`, JSON `value`) and list entries as part of its task. Requires CrewAI 0.80 or later; `tools()` raises `ImportError` with the install hint if CrewAI is missing.
 
 ---
 
 ## LangGraph
 
-Use SenseLab as a checkpointer for LangGraph:
+Keep graph state in SenseLab, keyed by `thread_id`:
 
 ```bash
 pip install amfs-langgraph
 ```
 
 ```python
-from amfs import AgentMemory
 from amfs_langgraph import AMFSCheckpointer
 
-mem = AgentMemory(agent_id="graph-agent")
-checkpointer = AMFSCheckpointer(mem)
+checkpointer = AMFSCheckpointer(mem)                       # entity_path="_langgraph_checkpoints"
 
-# Pass to your LangGraph graph builder
+config = {"configurable": {"thread_id": "conv-123"}}
+checkpointer.put(config, {"messages": [...], "step": 3})   # new version on every put
+latest = checkpointer.get(config)                          # the latest checkpoint, or None
+all_versions = checkpointer.list(config)                   # every version for the thread
 ```
 
-The checkpointer persists graph state to SenseLab, enabling cross-session graph execution.
+Because every `put` is a new version of the same entry, a thread's full history is kept and `list` returns it.
+
+<Note>
+  `AMFSCheckpointer` is a minimal checkpoint store with `put`, `get` and `list`.
+  It does not implement LangGraph's `BaseCheckpointSaver` interface, so call it
+  from your own nodes or wrap it rather than passing it straight to
+  `graph.compile(checkpointer=...)`.
+</Note>
 
 ---
 
@@ -80,42 +108,44 @@ pip install amfs-langchain
 ```
 
 ```python
-from amfs import AgentMemory
 from amfs_langchain import AMFSChatMemory
 
-mem = AgentMemory(agent_id="chat-agent")
-chat_memory = AMFSChatMemory(mem, session_key="conv-123")
+chat_memory = AMFSChatMemory(mem, session_key="conv-123")  # entity_path="_langchain_chat"
 
-# Save conversation context
+# Save a turn
 chat_memory.save_context(
     {"input": "What's the retry policy?"},
     {"output": "We use exponential backoff with max 3 retries."},
 )
 
-# Load conversation history
+# Load the conversation
 history = chat_memory.load_memory_variables({})
+# {"history": [{"input": "...", "output": "..."}, ...]}
+
+chat_memory.clear()
 ```
+
+Each session is one entry, versioned on every turn, so `mem.history("_langchain_chat", "conv-123")` shows how the conversation grew.
 
 ---
 
 ## AutoGen
 
-Use SenseLab as a memory store for AutoGen agents:
+Use SenseLab as a key-value memory store for AutoGen agents:
 
 ```bash
 pip install amfs-autogen
 ```
 
 ```python
-from amfs import AgentMemory
 from amfs_autogen import AMFSMemoryStore
 
-mem = AgentMemory(agent_id="autogen-agent")
-store = AMFSMemoryStore(mem)
+store = AMFSMemoryStore(mem)          # entity_path="_autogen_memory"
 
-# Store and retrieve data
 store.add("user_prefs", {"theme": "dark"})
-prefs = store.get("user_prefs")
+prefs = store.get("user_prefs")       # {"theme": "dark"}
+everything = store.get_all()          # {key: value, ...}
+store.clear("user_prefs")             # writes None at confidence 0.0; history is kept
 ```
 
 ---
@@ -130,10 +160,8 @@ pip install amfs-strands
 
 ```python
 from strands import Agent
-from amfs import AgentMemory
 from amfs_strands import AMFSPlugin
 
-mem = AgentMemory(agent_id="research-agent")
 agent = Agent(
     system_prompt="You are a research assistant with persistent memory.",
     plugins=[AMFSPlugin(mem)],
@@ -142,9 +170,9 @@ agent = Agent(
 agent("Research the latest AI papers and remember key findings")
 ```
 
-The plugin registers six tools — `amfs_read`, `amfs_write`, `amfs_search`, `amfs_recall`, `amfs_list`, and `amfs_record_context` — and also records the agent's *other* tool calls into the causal chain, so decision traces cover the whole session rather than only the memory operations. Pass `AMFSPlugin(mem, auto_trace=False)` to register the tools without that tracing.
+The plugin registers six tools — `amfs_read`, `amfs_write`, `amfs_search`, `amfs_recall`, `amfs_list` and `amfs_record_context` — and also records the agent's *other* tool calls into the causal chain as contexts, so the decision trace covers the whole session rather than only the memory operations. Pass `AMFSPlugin(mem, auto_trace=False)` to register the tools without that tracing. Requires `strands-agents` 1.0 or later.
 
-If you'd rather have one action-based tool than the full plugin, `amfs_memory` handles `store`, `retrieve`, `search`, and `list`, and takes its agent identity from `AMFS_AGENT_ID`:
+If you'd rather have one action-based tool than the full plugin, `amfs_memory` handles `store`, `retrieve`, `search` and `list`:
 
 ```python
 from strands import Agent
@@ -153,15 +181,42 @@ from amfs_strands import amfs_memory
 agent = Agent(tools=[amfs_memory])
 ```
 
+<Note>
+  `amfs_memory` builds its own `AgentMemory` — identity from `AMFS_AGENT_ID`
+  (default `strands-agent`), storage from `amfs.yaml` or the local `.amfs/`
+  directory — so it does not reach SenseLab. Use `AMFSPlugin` with the
+  connected memory from [Setup](#setup) for that.
+</Note>
+
 ---
 
-## Building Your Own Integration
+## Close the loop
+
+The wrappers above read and write. What makes the memory improve is telling SenseLab how the task went, on the same `mem` the framework used: every entry the agent read during the run is already in its read log.
+
+```python
+from amfs import OutcomeType
+
+# ... the crew / graph / agent runs ...
+
+mem.commit_outcome(
+    "task-42", OutcomeType.SUCCESS,
+    task_input="research the latest AI papers",
+    response_text=final_answer,
+)
+```
+
+Entries that led to a success gain confidence; entries that led to a failure lose it, and the next run's reads and briefing reflect that. See [Outcomes and decision traces](/amfs/guides/python#outcomes-and-decision-traces) in the Python SDK guide.
+
+---
+
+## Building your own integration
 
 All integrations are thin wrappers around the `AgentMemory` API. To build your own:
 
 1. Accept an `AgentMemory` instance in your constructor
-2. Map your framework's memory/tool API to `mem.read()`, `mem.write()`, `mem.list()`, etc.
-3. Use `entity_path` to scope data (e.g., per-conversation, per-task, per-agent)
+2. Map your framework's memory/tool API to `mem.read()`, `mem.write()`, `mem.list()`, `mem.search()`
+3. Use `entity_path` to scope data (per conversation, per task, per agent)
 
 ```python
 class MyFrameworkMemory:
@@ -177,6 +232,8 @@ class MyFrameworkMemory:
         return entry.value if entry else None
 ```
 
+Agents working through an MCP client (Cursor, Claude Code, Codex) need none of this — see the [MCP server](/amfs/guides/mcp) guide.
+
 ---
 
 ## What's next
@@ -185,6 +242,7 @@ class MyFrameworkMemory:
   <Card title="Python SDK" icon="python" href="/amfs/guides/python">
     The full `AgentMemory` API that every integration wraps.
   </Card>
+
   <Card title="Core Concepts" icon="brain" href="/amfs/concepts/overview">
     Understand versioning, provenance, and causal graphs in SenseLab.
   </Card>
