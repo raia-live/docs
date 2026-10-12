@@ -1,10 +1,12 @@
 ---
 title: "Python SDK"
-description: "Complete guide to the SenseLab Python SDK."
+description: "Install the SenseLab Python SDK, connect it to your account, and run the learning loop — get briefed, recall, record, write, commit."
 icon: "python"
 ---
 
-The Python SDK provides the `AgentMemory` class — the primary interface for reading, writing, and managing agent memory.
+# Python SDK
+
+The Python SDK (`amfs` on PyPI) provides `AgentMemory` — the interface for reading, writing and learning from agent memory — and `Run`, the smallest way to wire the learning loop into an agent you control.
 
 ## Installation
 
@@ -12,27 +14,101 @@ The Python SDK provides the `AgentMemory` class — the primary interface for re
 pip install amfs
 ```
 
-To connect to SenseLab rather than local storage, also install the HTTP
-adapter:
+To connect to SenseLab rather than local storage, also install the HTTP adapter:
 
 ```bash
 pip install amfs-adapter-http
 ```
 
----
+<Note>
+  Requires Python 3.11 or later. `pip install amfs` brings in the filesystem
+  adapter, which stores memory as JSON under `.amfs/` in the working directory
+  — nothing else has to be running. The project started life as AMFS (Agent
+  Memory File System), so the package names, environment variables and config
+  file still carry that name; `pip install amfs` gets you SenseLab.
+</Note>
 
-## Creating an Instance
+Other optional packages:
 
-By default `AgentMemory` uses the filesystem adapter, so everything stays on the
-local machine:
+```bash
+pip install amfs-adapter-postgres   # talk straight to Postgres (self-hosting)
+pip install amfs-adapter-s3         # S3-compatible object storage
+pip install amfs-cli                # the `amfs` command-line tool
+```
+
+Check that it works:
 
 ```python
 from amfs import AgentMemory
 
-mem = AgentMemory("my-agent")
+mem = AgentMemory(agent_id="test")
+entry = mem.write("test", "hello", "world")
+print(entry.value, entry.version)   # world 1
 ```
 
-To reach your account, pass an `HttpAdapter`:
+***
+
+## Quick start: the learning loop
+
+Every run follows the same four steps. Get briefed, do the work while recording what you relied on and what you did, write what a future agent would need, and commit the outcome. The outcome is what makes the next briefing better.
+
+```python
+import os
+
+from amfs import AgentMemory, OutcomeType
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    agent_id="deploy-agent",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
+
+# 1. Get briefed: compiled, evidence-tagged context for what you are about to touch.
+for digest in mem.briefing(entity_path="acme/checkout", compact=True):
+    print(digest.summary.get("narrative"))
+
+# 2. Recall specifics by meaning. No key, no exact path.
+hits = mem.retrieve("why does the checkout worker restart loop", entity_path="acme/checkout")
+for hit in hits:
+    print(hit.entry.key, round(hit.score, 2), hit.entry.evidence_status)
+
+# ... do the work, recording what you did ...
+mem.record_action("deploy_rollback", {"service": "checkout", "to_version": "v41"})
+
+# A remembered fix did not work? Say so before trying the next thing.
+mem.record_attempt(summary="restarted worker per runbook; queue still stuck")
+
+# 3. Write what a future agent would need.
+mem.write(
+    "acme/checkout", "risk-worker-restart-loop",
+    "Worker restarts loop when the Redis URL has no db index; add /0.",
+    memory_type="belief", confidence=0.8,
+)
+
+# 4. Commit the outcome. This is where learning happens.
+mem.commit_outcome(
+    "INC-2291", OutcomeType.SUCCESS,
+    task_input="checkout worker restart looping in prod",
+    response_text="Added the db index to REDIS_URL, worker stable for 30 min.",
+)
+```
+
+The same code runs against the default filesystem adapter if you drop the `adapter=` argument: reads, writes, local search, outcomes and confidence all work on your machine. Compiled briefings, semantic retrieval, action priors and persisted decision traces need SenseLab (or a self-hosted server) behind the SDK — see [Connecting to SenseLab](#connecting-to-senselab).
+
+<Warning>
+  Pass `outcome_type` as an `OutcomeType` member (`OutcomeType.SUCCESS`,
+  `OutcomeType.FAILURE`, …). The decision trace is built from the enum, so a
+  bare string such as `"success"` raises here.
+</Warning>
+
+***
+
+## Connecting to SenseLab
+
+By default `AgentMemory` reads `amfs.yaml` from the current directory (or any parent) and falls back to the filesystem adapter at `.amfs/`. To reach your account, pass an `HttpAdapter` with the server URL and an API key from **Settings → API Keys**:
 
 ```python
 import os
@@ -41,7 +117,7 @@ from amfs import AgentMemory
 from amfs_adapter_http import HttpAdapter
 
 mem = AgentMemory(
-    "my-agent",
+    agent_id="deploy-agent",
     adapter=HttpAdapter(
         base_url="https://amfs-login.sense-lab.ai",
         api_key=os.environ["AMFS_API_KEY"],
@@ -49,35 +125,93 @@ mem = AgentMemory(
 )
 ```
 
-<Note>
-  Setting `AMFS_HTTP_URL` on its own does not switch the SDK to the hosted
-  service — the adapter argument is what decides where memory goes. The
-  environment variable is read by the MCP server and the CLI, not by the SDK.
-</Note>
+Every method on `AgentMemory` then goes through the API: `retrieve()` uses the server's embedder and index, `briefing()` returns compiled digests, and `commit_outcome()` seals a decision trace you can browse on the dashboard or with `list_traces()`.
 
-### With Custom Configuration
+<Warning>
+  **The SDK does not read `AMFS_HTTP_URL` or `AMFS_API_KEY` by itself.** Those
+  variables are honoured by the MCP server and the CLI, but
+  `AgentMemory(agent_id=...)` with no `adapter=` always uses `amfs.yaml` or the
+  local filesystem — silently, with no error. If your dashboard stays empty
+  after "connecting", this is why. Construct the `HttpAdapter` as above.
+</Warning>
+
+The adapter identifies your agent and session on every request, so the server can attribute reads and keep a whole session together. `HttpAdapter(base_url, api_key, timeout=30.0)` also accepts a request `timeout` in seconds.
+
+See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide for getting a key.
+
+### Self-hosting: Postgres directly
+
+For a trusted, single-tenant deployment the SDK can talk to Postgres without the HTTP server in between:
+
+```python
+from amfs import AgentMemory
+from amfs_postgres import PostgresAdapter
+
+adapter = PostgresAdapter(dsn="postgresql://amfs:amfs@localhost:5432/amfs", namespace="default")
+mem = AgentMemory(agent_id="deploy-agent", adapter=adapter)
+```
+
+<Warning>
+  Never hand a Postgres DSN to agents in a multi-tenant deployment. Direct
+  database access bypasses tenant isolation, scope enforcement and audit
+  logging. Use the HTTP adapter for anything that is not your own box.
+</Warning>
+
+### Via `amfs.yaml`
+
+A config file in the project root (or any parent directory) selects the adapter for every `AgentMemory` created without an explicit `adapter=`:
+
+```yaml
+namespace: default
+layers:
+  primary:
+    adapter: postgres
+    options:
+      dsn: postgresql://amfs:amfs@localhost:5432/amfs
+```
+
+`adapter` can be `filesystem`, `postgres` or `s3`. Pass `config_path=Path("...")` to point at a specific file. See [Configuration](/amfs/getting-started/configuration).
+
+***
+
+## Creating an instance
+
+```python
+from amfs import AgentMemory
+
+mem = AgentMemory(agent_id="my-agent")
+```
+
+`agent_id` is the agent's identity. Everything it writes is tagged with it, `recall()` and `my_entries()` are scoped to it, and the dashboard groups work by it. Use a stable, kebab-case role name (`deploy-agent`, `dashboard-agent`) that persists across sessions, not a per-task name.
+
+### Constructor options
+
+| Parameter | Type | Description |
+| :- | :- | :- |
+| `agent_id` | `str` | Required. The agent's identity. |
+| `session_id` | `str \| None` | Reuse a session id; generated when omitted. |
+| `config_path` | `Path \| None` | Explicit `amfs.yaml`. |
+| `adapter` | `AdapterABC \| None` | Pre-built adapter; overrides the config file. |
+| `branch` | `str \| None` | Memory branch for every call that does not name one. Defaults to `AMFS_BRANCH`, then `main`. |
+| `ttl_sweep_interval` | `float \| None` | Seconds between TTL sweeps; starts a background sweeper when set. |
+| `decay_half_life_days` | `float \| None` | Apply time-based confidence decay on `read()`. |
+| `embedder` | `EmbedderABC \| None` | Local embedder for `semantic_search()` and local semantic scoring. |
+| `conflict_policy` | `ConflictPolicy` | `LAST_WRITE_WINS` (default) or `RAISE`. |
+| `on_conflict` | `callable` | Merge callback `(our_last_read, current, new_value) -> merged_value`. |
+| `importance_evaluator` | object | Scores every write; see below. |
+
+### With a pre-configured adapter
 
 ```python
 from pathlib import Path
 
-mem = AgentMemory(
-    agent_id="my-agent",
-    config_path=Path("./custom-amfs.yaml"),
-    ttl_sweep_interval=60.0,
-    decay_half_life_days=30.0,
-)
-```
-
-### With a Pre-configured Adapter
-
-```python
 from amfs_filesystem import FilesystemAdapter
 
 adapter = FilesystemAdapter(root=Path(".amfs"), namespace="staging")
 mem = AgentMemory(agent_id="my-agent", adapter=adapter)
 ```
 
-### With an Embedder
+### With an embedder
 
 ```python
 from amfs_core.embedder import EmbedderABC
@@ -92,7 +226,9 @@ class MyEmbedder(EmbedderABC):
 mem = AgentMemory(agent_id="my-agent", embedder=MyEmbedder())
 ```
 
-### With an Importance Evaluator
+Over the HTTP adapter you do not need one: the server owns the embedder and the index.
+
+### With an importance evaluator
 
 ```python
 from amfs_core.importance import ImportanceEvaluator
@@ -105,45 +241,48 @@ class MyEvaluator(ImportanceEvaluator):
 mem = AgentMemory(agent_id="my-agent", importance_evaluator=MyEvaluator())
 ```
 
-Every `write()` call will automatically score the entry and set `importance_score` and `importance_dimensions`. If the evaluator raises, the write proceeds without scoring.
+Every `write()` is scored and gets `importance_score` and `importance_dimensions`. If the evaluator raises, the write proceeds without scoring.
 
-### Full Constructor Signature
+### Context manager
 
 ```python
-AgentMemory(
-    agent_id: str,
-    *,
-    session_id: str | None = None,
-    config_path: Path | None = None,
-    adapter: AdapterABC | None = None,
-    ttl_sweep_interval: float | None = None,
-    decay_half_life_days: float | None = None,
-    embedder: EmbedderABC | None = None,
-    conflict_policy: ConflictPolicy = ConflictPolicy.LAST_WRITE_WINS,
-    on_conflict: Callable | None = None,
-    importance_evaluator: Any | None = None,
-)
+with AgentMemory(agent_id="my-agent") as mem:
+    mem.write("svc", "key", "value")
+    entry = mem.read("svc", "key")
+# Watchers, TTL sweepers and background threads are cleaned up
 ```
 
----
+### Acting as another agent
 
-## Core Operations
+A server that holds one process-wide handle can act for one of its callers without mutating shared state:
+
+```python
+server_mem = AgentMemory(agent_id="server", adapter=adapter)
+as_bob = server_mem.as_agent("bob-agent")   # same adapter, Bob's identity, its own read log
+```
+
+***
+
+## Core operations
 
 ### Write
 
 ```python
+from amfs import MemoryType
+
 entry = mem.write(
-    "checkout-service",              # entity_path
+    "checkout-service",              # entity_path — what this knowledge is about
     "retry-pattern",                 # key
-    {"max_retries": 3},              # value (any JSON-serializable data)
+    {"max_retries": 3},              # value — any JSON-serializable data
     confidence=0.85,                 # optional, default 1.0
-    pattern_refs=["retry"],          # optional cross-references
-    memory_type=MemoryType.FACT,     # optional: fact (default), belief, or experience
-    shared=True,                     # optional, default True — visible to other agents
-    artifact_refs=None,              # optional list of ArtifactRef
-    branch=None,                     # optional, defaults to "main"
+    pattern_refs=["retry"],          # optional cross-references to other keys
+    memory_type=MemoryType.FACT,     # fact (default), belief, experience or procedure
+    shared=True,                     # False = private to this agent
 )
+print(entry.version)   # 1 — writing the same key again creates version 2
 ```
+
+Writes never overwrite. Every write is a new immutable version; `history()` returns them all.
 
 Write with a TTL (time-to-live):
 
@@ -156,78 +295,79 @@ mem.write(
 )
 ```
 
+Private entries (`shared=False`) are invisible to other agents through `read()`, `search()`, `list()` and `read_from()`. Only the owning agent sees them, via `recall()` and `my_entries()`.
+
 ### Read
 
 ```python
 entry = mem.read("checkout-service", "retry-pattern")
 
 if entry:
-    print(entry.value)
-    print(entry.version)
-    print(entry.confidence)
-```
+    print(entry.value, entry.version, entry.confidence, entry.evidence_status)
 
-With minimum confidence filter:
-
-```python
+# With a confidence floor
 entry = mem.read("svc", "pattern", min_confidence=0.5)
-```
 
-Read from a specific branch:
-
-```python
+# From a specific branch
 entry = mem.read("svc", "pattern", branch="experiment-1")
 ```
+
+`read()` returns the latest shared version by any agent, or `None`. Every read is logged in the session's causal chain — this is what `commit_outcome()` credits by default.
+
+### Recall, my entries, and reading from another agent
+
+```python
+# What do *I* know about this? Only this agent's own versions, private ones included.
+mine = mem.recall("checkout-service", "retry-pattern")
+
+# Everything this agent has written, optionally for one entity.
+brain = mem.my_entries("checkout-service")
+
+# Read a specific key from a specific agent. Tracked as a cross-agent read.
+theirs = mem.read_from("deploy-agent", "checkout-service", "deploy-config")
+
+# Who have I learned from?
+mem.cross_agent_reads()    # {'deploy-agent': [{'entity_path': ..., 'key': ..., 'read_count': 2}]}
+mem.agents_i_read_from()   # ['deploy-agent']
+```
+
+Unlike `read()`, which returns the latest version by any agent, `recall()` falls back through history to find the most recent version authored by this agent. `read_from()` creates a `learned_from` edge in the knowledge graph and logs the read on both agents' timelines.
 
 ### List
 
 ```python
-# All entries
-entries = mem.list()
-
-# Entries for a specific entity
-entries = mem.list("checkout-service")
-
-# Include superseded versions
+entries = mem.list()                                     # everything visible to this agent
+entries = mem.list("checkout-service")                   # one entity
 entries = mem.list("checkout-service", include_superseded=True)
-
-# From a specific branch
 entries = mem.list("checkout-service", branch="experiment-1")
 ```
 
-### Search
-
-```python
-results = mem.search(entity_path="checkout-service", min_confidence=0.5)
-```
-
-Full search options:
+### Search (filters)
 
 ```python
 results = mem.search(
-    query="retry strategy",              # text query (full-text via adapter)
-    entity_path="checkout-service",      # filter by entity
-    entity_paths=["svc-a", "svc-b"],    # multi-scope search
-    min_confidence=0.5,                  # minimum confidence
-    max_confidence=1.0,                  # maximum confidence
+    query="retry strategy",              # text query (full-text on the server; substring locally)
+    entity_path="checkout-service",      # or entity_paths=["svc-a", "svc-b"] to merge several
+    min_confidence=0.5,
+    max_confidence=1.0,
     agent_id="review-agent",             # filter by author
-    since=datetime(2026, 3, 1),          # filter by time
+    since=datetime(2026, 3, 1, tzinfo=timezone.utc),   # filter by time (timezone-aware)
     pattern_ref="retry-pattern",         # filter by pattern reference
-    sort_by="confidence",                # "confidence" | "recency" | "version"
-    limit=100,                           # max results
-    depth=3,                             # tier depth (1=HOT, 2=HOT+WARM, 3=all)
+    sort_by="confidence",                # "confidence" | "recency" | "version" | "priority"
+    limit=100,
+    depth=3,                             # tier depth (1=hot, 2=hot+warm, 3=all)
 )
 ```
 
-Progressive retrieval with `depth` — search only high-priority tiers for fast, high-signal results:
+Progressive retrieval with `depth` searches only the high-priority tiers for fast, high-signal results:
 
 ```python
-hot_only = mem.search(query="retry strategy", depth=1)   # Hot tier
-hot_warm = mem.search(query="retry strategy", depth=2)   # Hot + Warm
-all_tiers = mem.search(query="retry strategy")            # All (default)
+hot_only = mem.search(query="retry strategy", depth=1)   # hot tier
+hot_warm = mem.search(query="retry strategy", depth=2)   # hot + warm
+all_tiers = mem.search(query="retry strategy")            # all (default)
 ```
 
-Composite recall scoring (blends semantic similarity, recency, and confidence):
+Composite recall scoring blends semantic similarity, recency and confidence:
 
 ```python
 from amfs import RecallConfig
@@ -241,176 +381,68 @@ for item in scored:
 ```
 
 <Note>
-Semantic scoring requires an `embedder`. Without one, the semantic component is 0.0.
+  Local semantic scoring needs an `embedder`; without one the semantic
+  component is 0.0. Connected to SenseLab, prefer `retrieve()` below — the
+  server does the semantic ranking for you.
 </Note>
 
-### Stats
+### Retrieve (by meaning)
+
+`retrieve()` is the default way to recall: a natural-language query, no key, no exact path. Connected to SenseLab it runs server-side — embeddings, full text, confidence and evidence together, with discredited entries held back. Locally it falls back to `search()` with composite scoring.
 
 ```python
-stats = mem.stats()
-print(f"Total entries: {stats.total_entries}")
-print(f"Total entities: {stats.total_entities}")
-print(f"Total agents: {stats.total_agents}")
-print(f"Confidence avg: {stats.confidence_avg}")
-print(f"Outcome-linked: {stats.outcome_linked_count}")
+hits = mem.retrieve("checkout worker restart loop", entity_path="acme/checkout", limit=5)
+for hit in hits:
+    print(hit.entry.entity_path, hit.entry.key, round(hit.score, 3), hit.entry.evidence_status)
 ```
 
----
-
-## Outcomes
-
-### Recording Outcomes
+**Ask for action priors.** When the task ends in a choice among a fixed set of actions, pass the candidates as `tool:action` keys and read the recommendation from `last_priors`:
 
 ```python
-from amfs import OutcomeType
-
-# With explicit causal keys
-updated = mem.commit_outcome(
-    outcome_ref="INC-1042",
-    outcome_type=OutcomeType.CRITICAL_FAILURE,
-    causal_entry_keys=["checkout-service/retry-pattern"],
+hits = mem.retrieve(
+    "customer did not receive the invoice email",
+    entity_path="acme/support",
+    include_priors=True,
+    candidate_actions=["resolve:resend_email", "resolve:update_payment_method", "resolve:refund"],
+    situation="invoice-not-received",     # optional stable label for this kind of task
+    compact=True,
 )
+priors = mem.last_priors
+print(priors["recommendation"]["mode"])              # "act" | "explore" | "escalate" | "abstain"
+print(priors["recommendation"].get("suggested_action"))
+print(priors["action_priors"])                        # per action: won / lost here on similar tasks
+```
 
-# With auto-causal linking (uses everything read in this session)
-updated = mem.commit_outcome(
-    outcome_ref="DEP-300",
-    outcome_type=OutcomeType.SUCCESS,
+| Mode | Meaning |
+| :- | :- |
+| `act` | An action has a good record here — take `suggested_action`. |
+| `explore` | Everything tried here failed, or a regime shift is flagged — try `suggested_action` first. It is assigned per agent, so peers on the same problem explore different actions. |
+| `escalate` | Every candidate has been tried here and failed — escalate on the first attempt. |
+| `abstain` | Nothing in scope has been tried or validated; the agent is on its own judgement. |
+
+Priors and the recommendation come from SenseLab; local adapters return entries without them (`last_priors` is `None`).
+
+### Semantic search (local embedder)
+
+```python
+results = mem.semantic_search(
+    "how do we handle retries?",
+    entity_path="checkout-service",
+    limit=10,
+    min_confidence=0.5,
+    min_similarity=0.3,
 )
-
-# With additional options
-updated = mem.commit_outcome(
-    outcome_ref="DEP-500",
-    outcome_type=OutcomeType.SUCCESS,
-    causal_confidence=0.9,
-    decision_summary="Deployed after CI passed and PagerDuty clear",
-)
+for entry, score in results:
+    print(f"{entry.key} (similarity: {score:.3f})")
 ```
 
-### Outcome Types
+Requires `embedder=` on the constructor.
 
-```python
-OutcomeType.CRITICAL_FAILURE  # × 1.15
-OutcomeType.FAILURE           # × 1.10
-OutcomeType.MINOR_FAILURE     # × 1.08
-OutcomeType.SUCCESS           # × 0.97
-```
-
----
-
-## Memory Types
-
-Classify entries to control decay behavior:
-
-```python
-from amfs import MemoryType
-
-# Facts (default) — objective knowledge, standard decay
-mem.write("svc", "config", {"pool_size": 10}, memory_type=MemoryType.FACT)
-
-# Beliefs — subjective inferences, decay 2× faster
-mem.write("svc", "hypothesis", "Likely an N+1 query issue", memory_type=MemoryType.BELIEF)
-
-# Experiences — action logs, decay 1.5× slower
-mem.write("svc", "action-log", "Added index on user_id", memory_type=MemoryType.EXPERIENCE)
-```
-
----
-
-## Agent-Scoped Memory
-
-The SDK distinguishes between shared memory and agent-scoped memory. Use `recall`, `my_entries`, and `read_from` for explicit agent-level operations.
-
-### Recall
-
-Read only entries written by this agent — what this brain knows from direct experience:
-
-```python
-mine = mem.recall("checkout-service", "retry-pattern")
-```
-
-Unlike `read()`, which returns the latest version by any agent, `recall()` falls back through history to find the most recent version authored by this agent.
-
-### My Entries
-
-List everything this agent has written:
-
-```python
-all_mine = mem.my_entries("checkout-service")
-```
-
-### Read From Another Agent
-
-Explicitly read from another agent's memory with tracked knowledge transfer:
-
-```python
-theirs = mem.read_from("deploy-agent", "checkout-service", "deploy-config")
-```
-
-This creates a graph edge (`learned_from`) and logs cross-agent read events on both sides for full traceability.
-
-### Cross-Agent Reads
-
-See which other agents' memory this agent has consumed:
-
-```python
-reads = mem.cross_agent_reads()
-# {'deploy-agent': [{'entity_path': 'checkout-service', 'key': 'retry-pattern', 'read_count': 3}]}
-
-# Convenience: just the agent IDs
-agents = mem.agents_i_read_from()
-# ['deploy-agent', 'review-agent']
-```
-
----
-
-## Scopes
-
-A `MemoryScope` provides a focused view bound to a single entity path, reducing boilerplate:
-
-```python
-from amfs import MemoryScope
-
-checkout = mem.scope("checkout-service")
-
-# All operations are scoped
-checkout.write("retry-pattern", {"max_retries": 5}, confidence=0.9)
-entry = checkout.read("retry-pattern")
-all_entries = checkout.list()
-history = checkout.history("retry-pattern")
-scope_info = checkout.info()
-
-# Readonly scopes prevent accidental writes
-readonly = mem.scope("checkout-service", readonly=True)
-readonly.write("key", "value")  # raises PermissionError
-```
-
-### Scope Utilities
-
-```python
-# List all entity paths that contain entries
-scopes = mem.list_scopes()
-
-# Get summary info about a scope
-info = mem.info("checkout-service")
-# ScopeInfo(path, entry_count, avg_confidence, keys, oldest, newest)
-
-# Render entity paths as an indented tree
-print(mem.tree())
-# myapp (5)
-#   auth (2)
-#   checkout-service (3)
-```
-
----
-
-## History (Temporal Queries)
-
-Retrieve the full version history of an entry with optional time filtering:
+### History
 
 ```python
 from datetime import datetime, timedelta, timezone
 
-# All versions
 versions = mem.history("checkout-service", "retry-pattern")
 for v in versions:
     print(f"v{v.version} — confidence: {v.confidence} — {v.provenance.written_at}")
@@ -420,166 +452,361 @@ since = datetime.now(timezone.utc) - timedelta(days=7)
 recent = mem.history("checkout-service", "retry-pattern", since=since)
 ```
 
----
-
-## Explainability
-
-Inspect the causal chain — which entries were read during the current session and how they connect to outcomes:
+### Stats
 
 ```python
-chain = mem.explain()
-print(chain["session_id"])
-print(chain["causal_entries"])     # full entry details for each causal key
-print(chain["external_contexts"])  # tool/API inputs that informed the decision
+stats = mem.stats()
+print(stats.total_entries, stats.total_entities, stats.total_agents)
+print(stats.confidence_avg, stats.outcome_linked_count)
 ```
 
-Filter by outcome reference:
+### Timeline
+
+Every write, outcome and cross-agent read is an event on the agent's timeline:
 
 ```python
-chain = mem.explain(outcome_ref="INC-1042")
-```
-
----
-
-## Decision Traces
-
-When you call `commit_outcome()`, SenseLab snapshots the full decision trace — every entry that was read, every context that was recorded, and every query that was made. The resulting trace is persisted and can be retrieved later.
-
-### Getting the Trace from an Outcome
-
-```python
-mem.record_context("ci-check", "All tests green", source="GitHub Actions")
-entry = mem.read("checkout-service", "retry-pattern")
-
-updated = mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
-
-# The trace is available after commit
-trace = mem._last_trace
-print(f"Trace ID: {trace.id}")
-print(f"Causal entries: {len(trace.causal_entries)}")
-print(f"External contexts: {len(trace.external_contexts)}")
-print(f"Session duration: {trace.session_duration_ms}ms")
-```
-
-### Browsing Past Traces
-
-```python
-# List recent traces (via adapter)
-traces = mem.adapter.list_traces(limit=10)
-for t in traces:
-    print(f"{t.id} — {t.agent_id} — {t.outcome_ref} ({t.outcome_type})")
-
-# Get a specific trace
-trace = mem.adapter.get_trace("ddbcefff-901a-4fa6-...")
-print(trace.decision_summary)
-for entry in trace.causal_entries:
-    print(f"  Read: {entry.entity_path}/{entry.key} (v{entry.version})")
-```
-
-### Filtering Traces
-
-```python
-traces = mem.adapter.list_traces(
-    entity_path="checkout-service",
-    agent_id="deploy-agent",
-    outcome_type="success",
-    limit=5,
-)
-```
-
----
-
-## Tool Context
-
-When agents call external tools or APIs, there are two ways to capture that context in SenseLab depending on your needs.
-
-### Record in the Causal Chain (Lightweight)
-
-Use `record_context()` to add external inputs to the causal chain without writing to storage. This makes `explain()` return a complete decision trace:
-
-```python
-entry = mem.read("checkout-service", "retry-pattern")
-
-mem.record_context(
-    "pagerduty-incidents",
-    "3 SEV-1 incidents in the last 24h for checkout-service",
-    source="PagerDuty API",
-)
-mem.record_context(
-    "git-log",
-    "15 commits since last deploy, 3 touching retry logic",
-    source="git",
-)
-
-mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
-
-chain = mem.explain()
-print(chain["causal_entries"])     # SenseLab entries that were read
-print(chain["external_contexts"])  # tool/API inputs that informed the decision
-```
-
-### Persist for Other Agents (Durable)
-
-Use `MemoryType.EXPERIENCE` with a TTL to store tool results so downstream agents can retrieve them:
-
-```python
-from datetime import datetime, timedelta, timezone
-
-mem.write(
-    "checkout-service",
-    "tool-result-pagerduty",
-    {"incidents": 3, "sev1": True, "last_24h": True},
-    memory_type=MemoryType.EXPERIENCE,
-    ttl_at=datetime.now(timezone.utc) + timedelta(hours=1),
-)
-```
-
-The next agent reads it with `mem.read("checkout-service", "tool-result-pagerduty")` instead of re-calling the API.
-
----
-
-## Timeline
-
-View the event log for this agent — every read, write, outcome, and cross-agent interaction:
-
-```python
-events = mem.timeline(limit=50)
-for event in events:
+for event in mem.timeline(limit=50):
     print(f"[{event.event_type}] {event.summary}")
 
-# Filter by event type
 writes = mem.timeline(event_type="WRITE", limit=20)
-
-# Filter by time
-from datetime import datetime, timedelta, timezone
 recent = mem.timeline(since=datetime.now(timezone.utc) - timedelta(hours=24))
 ```
 
----
-
-## Watch
-
-Get real-time notifications when entries change:
+### Watch
 
 ```python
 def on_change(entry):
     print(f"{entry.key} updated to v{entry.version}")
 
 handle = mem.watch("checkout-service", on_change)
-
-# Stop watching
 handle.cancel()
 ```
 
 <Note>
-Watch behavior depends on the adapter. The filesystem adapter supports real-time watches. The HTTP adapter currently logs a warning and returns a no-op handle — use the MCP server's streaming capabilities for remote real-time updates.
+  The filesystem adapter supports real-time watches. The HTTP adapter logs a
+  warning and returns a no-op handle — use the dashboard or the MCP server for
+  live updates from SenseLab.
 </Note>
 
----
+***
+
+## Memory types
+
+Classify entries to control how they decay and how the briefing presents them:
+
+```python
+from amfs import MemoryType
+
+# Facts (default) — stable, objective knowledge
+mem.write("svc", "config", {"pool_size": 10}, memory_type=MemoryType.FACT)
+
+# Beliefs — hypotheses; decay faster. Keep confidence below 0.9 and say why.
+mem.write("svc", "hypothesis", "Likely an N+1 query, because latency scales with cart size",
+          memory_type=MemoryType.BELIEF, confidence=0.6)
+
+# Experiences — records of actions taken; decay slower
+mem.write("svc", "action-log", "Added index on user_id", memory_type=MemoryType.EXPERIENCE)
+
+# Procedures — how to do a task: ordered steps, preconditions, what to do on failure.
+# Decay slowest; the briefing lists them in their own section.
+mem.write("svc", "procedure-rollback", {
+    "goal": "roll back a bad checkout deploy",
+    "steps": [{"text": "scale down canary", "action_key": "k8s:scale"},
+              {"text": "promote previous image", "action_key": "deploy:promote"}],
+    "preconditions": {"runtime": "python3.12"},
+}, memory_type=MemoryType.PROCEDURE)
+```
+
+***
+
+## Outcomes and decision traces
+
+Everything an agent reads, records and does in a session is collected into a decision trace. `commit_outcome()` seals it, persists it, and moves confidence on every entry the run relied on.
+
+### Record what you learned and what you did
+
+```python
+# External inputs that informed the decision — in the causal chain, not in storage.
+mem.record_context("pagerduty-incidents", "3 SEV-1 in the last 24h for checkout", source="PagerDuty API")
+
+# Consequential actions — deploys, rollbacks, edits, refunds. Record failures too.
+mem.record_action("deploy_rollback", {"service": "checkout", "to_version": "v41"},
+                  result='{"status": "rolled_back"}', duration_ms=1430)
+mem.record_action("shell", {"cmd": "pip install -r requirements.txt"},
+                  result=stderr, success=False, action_key="shell:pip_install")
+```
+
+`record_action()` is for what you *did*; `record_context()` is for what you *learned*. Reads and searches are tracked automatically and need neither. Use the real tool name consistently, and when the action is one of a fixed set pass `action_key="<tool>:<action>"` — it is what the outcome is credited to and what the next agent's action priors are counted over.
+
+### Mark a failed attempt before trying another
+
+```python
+mem.record_attempt(summary="restarted worker per runbook; queue still stuck")
+mem.record_attempt(outcome_type=OutcomeType.FAILURE,
+                   causal_entry_keys=["acme/support/fix-restart"])
+```
+
+Everything read and done since the previous boundary is attributed to that attempt. At `commit_outcome()` those entries receive the attempt's failure and only what was read afterwards is credited with the final success — a stale entry that misled the agent loses confidence instead of being reinforced by the recovery. When a success follows failed attempts, a `lesson-contrast-<ref>` entry is written naming what failed and what worked. `record_attempt()` sends nothing by itself; commit once, at the end.
+
+### Commit the outcome
+
+```python
+from amfs import OutcomeType
+
+updated = mem.commit_outcome(
+    "INC-1042", OutcomeType.SUCCESS,
+    task_input="checkout worker restart looping in prod",     # the request, as it arrived
+    response_text="Added the db index to REDIS_URL; stable.",  # your final answer, in full
+    verified_by="ci",                                          # who decided it, if not the agent
+    evidence={"run_id": "98765"},
+    attributes={"customer": "acme", "task_type": "deploy"},   # dimensions to filter runs by later
+)
+for e in updated:
+    print(e.entity_path, e.key, e.confidence, e.evidence_status)
+```
+
+| Parameter | Description |
+| :- | :- |
+| `outcome_ref` | Your reference: ticket, incident, PR, run id. |
+| `outcome_type` | `OutcomeType.SUCCESS`, `MINOR_FAILURE`, `FAILURE` or `CRITICAL_FAILURE`. |
+| `causal_entry_keys` | `["entity/key", ...]` to credit explicitly. Defaults to the session's read log, narrowed to what was read after the last `record_attempt()`. |
+| `task_input` / `response_text` | The request and the answer. Both are scanned for secrets before storage. Without `response_text` the run has no answer for a judge to grade. |
+| `verified_by` / `evidence` | Who decided the outcome when the agent did not — `"ci"`, `"human"`, `"verifier"`, `"customer"` — and pointers to the proof. |
+| `attributes` | Scalars only, at most 20 keys; merged over `set_session_attributes()`. |
+| `entity_path` / `entity_paths` | What this outcome is about, when the reads alone do not say. |
+| `situation` | A stable label for the kind of task; priors are later counted per situation. |
+| `tool_calls` / `llm_calls` | Supply actions and LLM calls directly instead of via `record_action()` / `record_llm_call()`. |
+| `causal_confidence` / `decision_summary` | How sure you are of the causal link, and a one-line summary for the trace. |
+
+Without `commit_outcome()` the trace is lost when the session ends.
+
+### How confidence moves
+
+Confidence is trust a memory has earned. Each committed outcome adds evidence to every entry it cited: a success confirms, a failure erodes, and failures weigh more than successes — a critical failure most of all. The effect is split across the entries the run relied on and scaled by surprise, so a failure on an entry everyone trusted costs more than one on an entry nobody was sure about. A long-validated entry survives one failure as `contested` and is `discredited` on the second.
+
+Every entry carries the result as `evidence_status`: `untested`, `validated`, `contested` or `discredited`. The briefing and `retrieve()` read it, so a discredited fix stops being recommended without anyone deleting it. See [Confidence](/amfs/concepts/confidence).
+
+### Explain the current session
+
+```python
+chain = mem.explain()
+print(chain["session_id"])
+print(chain["causal_entries"])     # entries read, with the version seen at read time
+print(chain["external_contexts"])  # record_context() inputs
+
+# Filter by outcome reference
+chain = mem.explain(outcome_ref="INC-1042")
+```
+
+### Browse past traces
+
+```python
+for t in mem.list_traces(entity_path="acme/checkout", limit=10):
+    print(t.id, t.agent_id, t.outcome_ref, t.outcome_type, t.created_at)
+
+trace = mem.get_trace(trace_id)
+print(trace.task_input, trace.response_text)
+for entry in trace.causal_entries:
+    print(f"  read {entry.entity_path}/{entry.key} v{entry.version}")
+for call in trace.tool_calls:
+    print(f"  did {call.tool_name} {call.arguments} success={call.success}")
+```
+
+`list_traces()` filters by `entity_path`, `agent_id`, `outcome_type`, `since` and `until`, and pages with `limit`, `offset` or `cursor`. It returns `[]` on the filesystem adapter — traces live on SenseLab or in Postgres.
+
+### Session attributes and LLM calls
+
+Attributes are the dimensions a run is later filtered and grouped by; LLM calls are what give a run real token and cost figures on the dashboard. Both are collected during the session and sealed into the trace at `commit_outcome()`.
+
+```python
+mem.set_session_attributes({"customer": "acme", "task_type": "deploy"})
+
+resp = client.chat.completions.create(...)
+mem.record_llm_call(
+    resp.model, resp.usage.prompt_tokens, resp.usage.completion_tokens,
+    provider="openai", cost_usd=0.00033, latency_ms=412.0,
+)
+
+mem.commit_outcome("deploy-42", OutcomeType.SUCCESS, task_input=..., response_text=...)
+```
+
+Attributes are scalars only — at most 20 keys of up to 64 characters, string values up to 256 characters; keys are lowercased. Cost is not estimated from the model name: pass `cost_usd` if you want spend on the run. For nested steps with durations, see [Instrument your agent](/amfs/guides/instrument-your-agent).
+
+***
+
+## Briefing
+
+Connected to SenseLab, agents retrieve pre-compiled knowledge digests ranked by relevance — summaries of entities, other agents and external sources — instead of searching through raw entries.
+
+```python
+briefs = mem.briefing(entity_path="myapp/checkout-service", limit=5)
+
+for digest in briefs:
+    print(digest.digest_type)   # "entity", "agent_brief", "source", or "connection_map"
+    print(digest.scope)         # the entity path, agent ID, or source ID
+    print(digest.summary)       # structured summary (varies by digest type)
+    print(digest.entry_count)   # number of source entries compiled
+    print(digest.compiled_at)   # when the digest was last compiled
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+| :- | :- | :- |
+| `entity_path` | `str \| None` | Focus on digests relevant to this entity |
+| `agent_id` | `str \| None` | Focus on digests relevant to this agent |
+| `limit` | `int` | Maximum number of digests to return (default: 10) |
+| `compact` | `bool` | Only the lead digest with its evidence sections — a fraction of the tokens |
+| `since` | `datetime \| None` | Only what changed after this moment |
+| `branch` | `str \| None` | Brief from a branch other than the active one |
+| `environment` | `Mapping \| None` | Override the run's environment (`model`, `agent_version`, `runtime`, `platform`); defaults to what the session knows |
+
+### Read the evidence sections first
+
+The lead digest carries the state of knowledge from the outcome record:
+
+- `validated` — entries every outcome confirmed. Act on these.
+- `discredited` — entries a failure gated, with `replaced_by` where a later success is known. Avoid these.
+- `regime_shift` — long-validated entries that recently started failing. Something changed; verify before reusing anything in the scope.
+
+Each `hot_context` row has an `evidence_status`. The briefing also carries `tried_here` — which actions were taken on this entity and how each fared — and, under a regime shift, an `explore` line naming the untried action assigned to you.
+
+### Digest types
+
+| Type | Scope | What it contains |
+| :- | :- | :- |
+| `entity` | Entity path (e.g. `myapp/checkout-service`) | Summary of all knowledge about an entity — key count, average confidence, top keys, narrative, evidence sections |
+| `agent_brief` | Agent ID (e.g. `deploy-agent`) | Summary of an agent's knowledge and activity — entries written, entities touched, outcomes |
+| `source` | Source ID (e.g. `github`) | Summary of external data from a connector — events ingested, entities touched |
+| `connection_map` | Cross-entity scope | Cross-entity relationships |
+
+### Environment scoping
+
+`briefing()` and `retrieve()` send the run's environment — `model`, `agent_version`, `runtime`, `platform` — read from the session (`mem.session_metadata = SessionMetadata(model=...)`, or `set_session_attributes()` with those keys). A procedure whose `preconditions` name a different environment is set apart as `procedures_not_applicable` in the briefing and dropped from `retrieve()` hits, with the failing precondition spelled out. Pass `environment={}` to send nothing.
+
+On the filesystem adapter `briefing()` returns an empty list, so agent code can call it unconditionally.
+
+***
+
+## Guidance with `Run`
+
+You control your agent's code; SenseLab does not. `amfs.Run` is the smallest way to wire it in — three calls at three points of a task — and it closes the loop that makes memory improve: guidance in, actions out, outcome in.
+
+```python
+from amfs import AgentMemory, Run
+
+mem = AgentMemory(agent_id="ci-bot", adapter=adapter)
+run = Run(mem)
+
+# 1. Before the agent acts: guidance scoped to this run.
+guidance = run.begin(
+    "fix the failing CI on PR 42",
+    entity_path="acme/ci",
+    model="gpt-4o", agent_version="ci-bot@1.4.0", runtime="python3.12",
+    candidate_actions=["shell:pip_install", "edit:requirements", "shell:pytest"],
+)
+if guidance.should_inject():          # strength is "strong" or "thin"
+    system_prompt = guidance.text + "\n\n" + system_prompt
+
+# 2. After each consequential tool call: record it; on failure, ask for a hint.
+hint = run.on_tool_result(
+    "shell", {"cmd": "pip install -r requirements.txt"},
+    result=stderr, success=False, action_key="shell:pip_install",
+)
+if hint is not None and hint.should_inject():
+    messages.append({"role": "system", "content": hint.text})
+
+# When the approach you were following did not work and you switch, name
+# the entry you followed (the keys are in guidance.text) or the top hit:
+run.attempt_failed("pinning urllib3 did not resolve the conflict",
+                   causal_entry_keys=cited or [guidance.top_key])
+
+# 3. When the run ends: the outcome, who decided it, and what it acted on.
+run.complete(True, verified_by="ci", evidence={"run_id": "98765"},
+             response_text=final_answer,
+             causal_entry_keys=cited or [guidance.top_key])
+
+# 4. What this run learned, as a claim the record can follow.
+run.learn("pip install fails on a urllib3/requests conflict", "edit:requirements", True,
+          "pinning urllib3<2 resolves it; re-running the install does not")
+```
+
+What to pass, and why:
+
+- **Name what the agent acted on.** `begin()` serves several entries and the agent follows one. `causal_entry_keys` on `attempt_failed()` and `complete()` sends the outcome to that one; left unnamed, every entry read since the last boundary is charged, and a correct lesson that merely shared the context with a wrong one loses confidence alongside it. Ask your model to return the keys it used, intersect them with `guidance.entry_keys`, and fall back to `guidance.top_key`. When the agent took an action a lesson recommended, `guidance.lessons_claiming(action)` gives you those keys without asking the model.
+- **Follow the plan, not just the first action.** `guidance.plan` is the order to try actions in for the whole run: the recommendation's action first, then what has a winning record on tasks like this, then the untried candidates — never an action that already failed here. `next_action` is its first entry.
+- **Declare the situation.** With `begin(..., situation="jest-snapshot-on-ui-pr")` the outcome is stored under that label, and the next run that declares the same one gets priors counted over that situation's own record rather than the pooled neighbourhood. Use a stable class label (the triage category, the failing check plus the kind of change), never the task text.
+- **Write lessons as claims.** `run.learn(situation, action, worked, text)` writes a structured lesson whose claim is `(situation, action, worked)`. Restating a lesson inherits its outcome record instead of opening a fresh, untested entry, so a discredited lesson does not come back clean.
+- **Pass the environment every time.** `model`, `agent_version` and `runtime` scope procedures to this run and are stamped on the sealed trace — which is how SenseLab tells a change in your agent from a change in its memory.
+- **Memory being down is not your agent being down.** If the retrieve behind `begin()` fails, it returns empty guidance with `error` set instead of raising; the run continues and `complete()` still seals the outcome. `on_tool_result()` returns `None` in the same case.
+
+`Guidance` carries:
+
+| Field | Meaning |
+| :- | :- |
+| `text` | Rendered guidance ready to inject: procedures first, then memory context, then priors, the recommendation, what not to retry, and the plan. |
+| `strength` | `strong` / `thin` / `none`. `should_inject()` is true for the first two. |
+| `procedures` / `not_applicable` | Procedures that apply to this run, and those whose environment preconditions it contradicts. Never inject one from `not_applicable`. |
+| `recommendation` | `act` / `explore` / `escalate` / `abstain` with `suggested_action`, `why` and `plan`; `priors` holds the per-action record. |
+| `plan` / `next_action` | The order to try actions in; `next_action` is its first entry. |
+| `lessons` / `lessons_claiming(action)` / `applicable_lessons` | The lessons this run was shown, the keys of those that claimed *action* worked, and the claims read as about this task. |
+| `entry_keys` / `top_key` | Every entry served, and the best-ranked one — the fallback for `causal_entry_keys`. |
+| `error` | Why the guidance is empty when memory could not be reached; `None` when the read succeeded. |
+| `guidance_id` | Names exactly what was served, stamped on the trace so the run says which guidance the agent saw. |
+
+***
+
+## Branches
+
+Every `AgentMemory` has an active branch — `main` unless `branch=` or `AMFS_BRANCH` says otherwise — and every read and write goes there unless the call names another. `checkout()` moves a live memory without rebuilding the session:
+
+```python
+mem = AgentMemory(agent_id="ci-bot", adapter=adapter, branch="experiment-1")
+mem.checkout("main")                                            # back to main
+entry = mem.read("acme/ci", "retry-pattern", branch="experiment-1")   # one call, another branch
+```
+
+Outcomes committed off `main` carry a `memory_branch` attribute, so a trace says which memory it read. See [Memory Branching](/amfs/pro/branching).
+
+***
+
+## Scopes
+
+A `MemoryScope` provides a focused view bound to a single entity path:
+
+```python
+checkout = mem.scope("checkout-service")
+
+checkout.write("retry-pattern", {"max_retries": 5}, confidence=0.9)
+entry = checkout.read("retry-pattern")
+all_entries = checkout.list()
+results = checkout.search(min_confidence=0.5)
+history = checkout.history("retry-pattern")
+scope_info = checkout.info()
+
+# Readonly scopes prevent accidental writes
+readonly = mem.scope("checkout-service", readonly=True)
+readonly.write("key", "value")  # raises PermissionError
+```
+
+### Scope utilities
+
+```python
+scopes = mem.list_scopes()         # every entity path that contains entries
+info = mem.info("checkout-service")
+# ScopeInfo(path, entry_count, avg_confidence, keys, oldest, newest)
+
+print(mem.tree())
+# myapp (5)
+#   auth (2)
+#   checkout-service (3)
+```
+
+***
 
 ## Transactions
 
-Group multiple writes into an atomic commit:
+Group multiple writes into one atomic commit:
 
 ```python
 with mem.transaction("update retry configs") as tx:
@@ -589,20 +816,39 @@ with mem.transaction("update retry configs") as tx:
     print(tx.pending_count)  # 3
 # All writes committed atomically on exit
 
-# Access commit info after
 print(tx.commit.id)
 print(len(tx.entries))
 ```
 
----
+### Commit log
 
-## Integrity Verification
+```python
+commits = mem.commit_log(limit=10)
+for c in commits:
+    print(f"{c.id} — {c.message} ({len(c.entries)} entries)")
+
+commit = mem.get_commit("abc123...")
+ancestor = mem.common_ancestor(commit_a_id, commit_b_id)
+```
+
+### Diff and patch
+
+```python
+diff = mem.diff("checkout-service", "retry-pattern")                 # two most recent versions
+diff = mem.diff("checkout-service", "retry-pattern", old_version=1)  # against a specific version
+
+patch = mem.create_patch("checkout-service", "retry-pattern")
+patch = mem.create_patch("checkout-service", "retry-pattern", source_version=2)
+```
+
+***
+
+## Integrity verification
 
 Verify content hashes and integrity chains for stored entries:
 
 ```python
-result = mem.verify("checkout-service")
-# Or verify all: mem.verify()
+result = mem.verify("checkout-service")   # or mem.verify() for everything
 
 print(result["total_checked"])
 print(result["valid"])
@@ -610,52 +856,43 @@ print(result["corrupted"])     # list of corrupted entry info
 print(result["chain_breaks"])  # list of chain break info
 ```
 
----
+***
 
-## Commit Log & DAG
+## Knowledge graph
 
-Inspect the commit history and navigate the commit DAG:
-
-```python
-# Get recent commits on the current branch
-commits = mem.commit_log(limit=10)
-for c in commits:
-    print(f"{c.id} — {c.message} ({len(c.entries)} entries)")
-
-# Get a single commit
-commit = mem.get_commit("abc123...")
-
-# Find common ancestor of two commits
-ancestor = mem.common_ancestor(commit_a_id, commit_b_id)
-```
-
----
-
-## Diff & Patch
-
-Compute structural diffs between entry versions:
+The knowledge graph builds automatically as agents write, commit outcomes and learn from each other. Pattern refs and causal chains create edges. You can traverse it directly:
 
 ```python
-# Diff between the two most recent versions
-diff = mem.diff("checkout-service", "retry-pattern")
-print(diff)
-
-# Diff against a specific old version
-diff = mem.diff("checkout-service", "retry-pattern", old_version=1)
-
-# Create a serializable patch
-patch = mem.create_patch("checkout-service", "retry-pattern")
-# Or from a specific source version
-patch = mem.create_patch("checkout-service", "retry-pattern", source_version=2)
+edges = mem.graph_neighbors(
+    "checkout-service/retry-pattern",
+    direction="both",
+    depth=2,
+    min_confidence=0.5,
+    limit=50,
+)
+for edge in edges:
+    print(f"{edge.source_entity} --{edge.relation}--> {edge.target_entity}")
 ```
 
----
+| Parameter | Type | Description |
+| :- | :- | :- |
+| `entity` | `str` | Starting entity to explore |
+| `relation` | `str \| None` | Filter by relation type (e.g. `"references"`, `"informed"`, `"learned_from"`, `"co_occurs_with"`) |
+| `direction` | `str` | `"outgoing"`, `"incoming"`, or `"both"` |
+| `depth` | `int` | Traversal depth (1 = direct neighbors, >1 for multi-hop) |
+| `min_confidence` | `float` | Minimum edge confidence (default: 0.0) |
+| `limit` | `int` | Maximum results (default: 50) |
 
-## Agent Binding
+<Note>
+  Multi-hop traversal (`depth > 1`) needs SenseLab or the Postgres adapter.
+  The filesystem and S3 adapters return an empty list for graph methods.
+</Note>
+
+***
+
+## Agent binding
 
 ### Profile
-
-Set a profile for this agent (description, defaults, tags):
 
 ```python
 mem.set_profile(
@@ -673,7 +910,7 @@ Declare capabilities so other agents can discover you:
 ```python
 mem.declare_capability(
     "deployment-analysis",
-    description="Analyzes deployment readiness based on CI, PagerDuty, and recent changes",
+    description="Analyzes deployment readiness based on CI and recent changes",
     entity_paths=["checkout-service", "payment-service"],
 )
 ```
@@ -698,194 +935,75 @@ mem.set_contracts([
 
 ### Discovery
 
-Find other agents by capability or entity path:
-
 ```python
 agents = mem.discover_agents(capability="deployment-analysis")
 agents = mem.discover_agents(entity_path="checkout-service")
 ```
 
----
+***
 
-## Briefing (Memory Cortex)
+## Conflict handling
 
-When the Memory Cortex is running, agents can retrieve pre-compiled knowledge digests ranked by relevance. This is how agents consume the "brain brief" — compiled summaries of entities, other agents, and external sources — without having to search through raw memory entries.
-
-### Basic Usage
+Handle concurrent writes to the same key:
 
 ```python
-mem = AgentMemory(agent_id="deploy-agent", adapter=adapter)
+from amfs import ConflictPolicy
 
-# Get a ranked briefing of compiled knowledge
-briefs = mem.briefing(entity_path="myapp/checkout-service", limit=5)
+# Raise StaleWriteError if another agent wrote since our last read
+mem = AgentMemory(agent_id="my-agent", conflict_policy=ConflictPolicy.RAISE)
 
-for digest in briefs:
-    print(digest.digest_type)   # "entity", "agent_brief", "source", or "connection_map"
-    print(digest.scope)         # the entity path, agent ID, or source ID
-    print(digest.summary)       # structured summary (varies by digest type)
-    print(digest.entry_count)   # number of source entries compiled
-    print(digest.compiled_at)   # when the digest was last compiled
+# Or merge
+def merge(our_last_read, current, new_value):
+    return {**current.value, **new_value}
+
+mem = AgentMemory(agent_id="my-agent", on_conflict=merge)
 ```
 
-### Parameters
+***
 
-| Parameter | Type | Description |
-|:----------|:-----|:------------|
-| `entity_path` | `str \| None` | Focus on digests relevant to this entity |
-| `agent_id` | `str \| None` | Focus on digests relevant to this agent |
-| `limit` | `int` | Maximum number of digests to return (default: 10) |
-| `branch` | `str \| None` | Branch to read digests from (defaults to active branch) |
+## Snapshots
 
-### Digest Types
-
-| Type | Scope | What It Contains |
-|:-----|:------|:-----------------|
-| `entity` | Entity path (e.g. `myapp/checkout-service`) | Summary of all knowledge about an entity — key count, average confidence, top keys, narrative |
-| `agent_brief` | Agent ID (e.g. `deploy-agent`) | Summary of an agent's knowledge and activity — entries written, entities touched, outcomes |
-| `source` | Source ID (e.g. `github`) | Summary of external data from a connector — events ingested, entities touched |
-| `connection_map` | Cross-entity scope | Cross-entity relationships (Pro) |
-
-### Resolution Order
-
-The briefing method tries multiple backends in order:
-
-1. **Adapter-native `briefing()`** — e.g. `HttpAdapter` proxies to the server
-2. **`amfs_cortex.BriefingService`** — full Cortex scoring (if `amfs-cortex` is installed)
-3. **Inline scoring via adapter `list_digests()`** — fallback when Cortex is not installed but adapter has digest access
-
-If none are available, `briefing()` returns an empty list — your agent code can safely call it without checking.
-
----
-
-## Knowledge Graph
-
-The knowledge graph builds automatically as agents write, commit outcomes, and learn from each other. Pattern refs and causal chains create edges. You can traverse it directly:
+Export and import the full state of your memory:
 
 ```python
-edges = mem.graph_neighbors(
-    "checkout-service/retry-pattern",
-    direction="both",
-    depth=2,
-    min_confidence=0.5,
-    limit=50,
-)
-for edge in edges:
-    print(f"{edge.source_entity} --{edge.relation}--> {edge.target_entity}")
+from pathlib import Path
+
+from amfs_core.snapshot import SnapshotExporter, SnapshotImporter
+from amfs_filesystem import FilesystemAdapter
+
+# Export (paths are pathlib.Path objects)
+exporter = SnapshotExporter(mem.adapter)
+exporter.export(Path("backup.json"))
+
+# Import into a different adapter
+target = FilesystemAdapter(root=Path("/new/.amfs"), namespace="restored")
+importer = SnapshotImporter(target)
+restored = importer.restore(Path("backup.json"))   # number of entries restored
 ```
 
-| Parameter | Type | Description |
-|:----------|:-----|:------------|
-| `entity` | `str` | Starting entity to explore |
-| `relation` | `str \| None` | Filter by relation type (e.g. `"references"`, `"informed"`, `"learned_from"`, `"co_occurs_with"`) |
-| `direction` | `str` | `"outgoing"`, `"incoming"`, or `"both"` |
-| `depth` | `int` | Traversal depth (1 = direct neighbors, >1 for multi-hop) |
-| `min_confidence` | `float` | Minimum edge confidence (default: 0.0) |
-| `limit` | `int` | Maximum results (default: 50) |
+The CLI does the same with `amfs export` / `amfs import` — see the [CLI guide](/amfs/guides/cli).
 
-<Note>
-Multi-hop traversal (`depth > 1`) requires the Postgres adapter. The Filesystem and S3 adapters return an empty list for graph methods.
-</Note>
+***
 
----
+## Rooms and collaboration
 
-## Semantic Search
-
-If you configure an embedder, you can search by meaning:
+Connected to SenseLab, `AgentMemory` also exposes rooms — shared workspaces where several users' agents collaborate. Entries written on a room's entity path are shared with every member.
 
 ```python
-results = mem.semantic_search(
-    "how do we handle retries?",
-    entity_path="checkout-service",
-    limit=10,
-    min_confidence=0.5,
-    min_similarity=0.3,
-)
-for entry, score in results:
-    print(f"{entry.key} (similarity: {score:.3f})")
-```
-
-| Parameter | Type | Description |
-|:----------|:-----|:------------|
-| `text` | `str` | The query text to search by meaning |
-| `entity_path` | `str \| None` | Filter to a specific entity |
-| `min_confidence` | `float` | Minimum entry confidence (default: 0.0) |
-| `limit` | `int` | Maximum results (default: 10) |
-| `min_similarity` | `float` | Minimum cosine similarity threshold (default: 0.0) |
-
----
-
-## Context Manager
-
-Use `AgentMemory` as a context manager for automatic cleanup:
-
-```python
-with AgentMemory(agent_id="my-agent") as mem:
-    mem.write("svc", "key", "value")
-    entry = mem.read("svc", "key")
-# Watchers, TTL sweepers, and background threads are cleaned up
-```
-
----
-
-## Connecting to SenseLab
-
-Install the HTTP adapter and pass it to `AgentMemory`:
-
-```bash
-pip install amfs-adapter-http
-export AMFS_API_KEY="<your-api-key>"
-```
-
-```python
-import os
-
-from amfs import AgentMemory
-from amfs_adapter_http import HttpAdapter
-
-mem = AgentMemory(
-    "my-agent",
-    adapter=HttpAdapter(
-        base_url="https://amfs-login.sense-lab.ai",
-        api_key=os.environ["AMFS_API_KEY"],
-    ),
-)
-mem.write("checkout-service", "retry-pattern", {"max_retries": 3})
-```
-
-See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide for details.
-
----
-
-## Rooms & Collaboration
-
-The SDK includes room-based collaboration APIs for multi-agent knowledge sharing. These require an HTTP adapter connection.
-
-```python
-# List rooms available to this agent
-rooms = mem.my_rooms()
-
-# Join a room
+rooms = mem.my_rooms()                 # rooms available to this agent
 mem.room_join("room-123")
-
-# Get room details
 info = mem.room_info("room-123")
-
-# Get recent activity
 updates = mem.room_updates("room-123", since="2026-05-01T00:00:00Z")
 
-# Post a discussion message
 mem.room_discuss(
     "room-123",
     "I've updated the retry config based on recent incidents",
     message_type="update",
     addressed_to="deploy-agent",
 )
-
-# Read discussions
 messages = mem.room_discussions("room-123", limit=20)
 
-# Leave a room (snapshots are preserved)
-mem.room_leave("room-123")
+mem.room_leave("room-123")             # snapshots are preserved
 ```
 
 ### Negotiation
@@ -893,15 +1011,11 @@ mem.room_leave("room-123")
 Rooms support structured negotiation sessions between agents:
 
 ```python
-# Create a negotiation session
 session = mem.negotiate_create(
-    "room-123",
-    "Retry Config Agreement",
-    description="Agree on shared retry parameters",
-    max_rounds=5,
+    "room-123", "Retry Config Agreement",
+    description="Agree on shared retry parameters", max_rounds=5,
 )
 
-# Make a proposal
 mem.negotiate_propose(
     "room-123", session["id"],
     action="propose",
@@ -909,67 +1023,37 @@ mem.negotiate_propose(
     rationale="Based on P99 latency data from last week",
 )
 
-# Respond to a proposal
-mem.negotiate_respond(
-    "room-123", session["id"],
-    action="accept",
-    rationale="Aligns with our SLA requirements",
-)
+mem.negotiate_respond("room-123", session["id"], action="accept",
+                      rationale="Aligns with our SLA requirements")
 
-# Check negotiation status
 status = mem.negotiate_status("room-123", session["id"])
 ```
 
 <Note>
-Room and negotiation methods require an HTTP adapter that exposes the rooms API. Set `AMFS_HTTP_URL` to enable these features.
+  Room and negotiation methods need the HTTP adapter connected to SenseLab.
+  See [Rooms](/amfs/concepts/rooms) for how rooms, members and invitations work.
 </Note>
 
----
+***
 
-## Conflict Handling
+## Troubleshooting
 
-Handle concurrent writes to the same key:
+**My writes do not show up on the dashboard.**
+The SDK does not read `AMFS_HTTP_URL` or `AMFS_API_KEY`. Pass `adapter=HttpAdapter(base_url=..., api_key=...)` explicitly — see [Connecting to SenseLab](#connecting-to-senselab). Check which adapter you have with `type(mem.adapter).__name__`.
 
-```python
-from amfs import ConflictPolicy
+**`commit_outcome` raises `AttributeError: 'str' object has no attribute 'value'`.**
+Pass `OutcomeType.SUCCESS` (or another member), not the string `"success"`.
 
-# Raise an error on conflict
-mem = AgentMemory(
-    agent_id="my-agent",
-    conflict_policy=ConflictPolicy.RAISE,
-)
+**`briefing()` returns `[]`, `list_traces()` returns `[]`.**
+Expected on the filesystem adapter: compiled digests and persisted traces live on SenseLab or in Postgres. Everything else — reads, writes, local search, outcomes and confidence — works locally.
 
-# Custom conflict resolution
-def merge(existing, incoming, value):
-    return {**existing.value, **value}
+**`read()` returns `None` for an entry I wrote.**
+If it was written with `shared=False` by another agent it is invisible to you. For your own private entries use `recall()`.
 
-mem = AgentMemory(
-    agent_id="my-agent",
-    on_conflict=merge,
-)
-```
+**`retrieve()` has no semantic ranking locally.**
+Pass an `embedder=` to the constructor, or connect to SenseLab so the server does it.
 
----
-
-## Snapshots
-
-Export and import the full state of your memory:
-
-```python
-from amfs_core.snapshot import SnapshotExporter, SnapshotImporter
-
-# Export
-exporter = SnapshotExporter(mem.adapter)
-exporter.export("backup.json")
-
-# Import into a different adapter
-from amfs_filesystem import FilesystemAdapter
-target = FilesystemAdapter(root=Path("/new/.amfs"), namespace="restored")
-importer = SnapshotImporter(target)
-importer.restore("backup.json")
-```
-
----
+***
 
 ## Exports
 
@@ -978,6 +1062,8 @@ from amfs import (
     # Classes
     AgentMemory,
     MemoryScope,
+    Run,
+    Guidance,
 
     # Models
     MemoryEntry,
@@ -1003,15 +1089,26 @@ from amfs import (
 )
 ```
 
----
-
 ## Properties
 
 | Property | Type | Description |
-|:---------|:-----|:------------|
+| :- | :- | :- |
 | `agent_id` | `str` | This agent's identifier |
 | `session_id` | `str` | Current session identifier |
 | `namespace` | `str` | Active namespace |
+| `branch` | `str` | Active memory branch |
 | `adapter` | `AdapterABC` | The underlying storage adapter |
 | `session_metadata` | `SessionMetadata \| None` | Get/set session metadata (model, client, platform) |
 | `read_log` | `list[str]` | Entry keys read during this session |
+| `last_priors` | `dict \| None` | Action priors and recommendation from the last `retrieve(include_priors=True)` |
+
+***
+
+## See also
+
+- [Connect to SenseLab](/amfs/getting-started/saas-connection) — get an API key
+- [Instrument your agent](/amfs/guides/instrument-your-agent) — steps, LLM calls and cost on every run
+- [TypeScript SDK](/amfs/guides/typescript)
+- [MCP server](/amfs/guides/mcp) — the same memory from Cursor, Claude Code and Codex
+- [Confidence](/amfs/concepts/confidence) and [Memory Entries](/amfs/concepts/memory-entries)
+- [Environment Variables](/amfs/reference/environment-variables)
