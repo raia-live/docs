@@ -30,7 +30,15 @@
                 "pages": [
                   "amfs/getting-started/saas-connection",
                   "amfs/getting-started/quickstart",
-                  "amfs/getting-started/configuration"
+                  "amfs/getting-started/configuration",
+                  {
+                    "group": "Agent Control",
+                    "icon": "sliders",
+                    "pages": [
+                      "amfs/guides/instrument-your-agent",
+                      "amfs/guides/behavior"
+                    ]
+                  }
                 ]
               },
               {
@@ -42,7 +50,6 @@
                   "amfs/guides/browser-extension",
                   "amfs/guides/python",
                   "amfs/guides/typescript",
-                  "amfs/guides/instrument-your-agent",
                   "amfs/guides/connectors",
                   "amfs/guides/integrations",
                   {

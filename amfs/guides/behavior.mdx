@@ -1,0 +1,285 @@
+---
+title: "Behavior"
+description: "Judges grade every run of your agent, repeated failures become named behaviors and incidents, and each one can become a fix that is tested before it ships."
+icon: "scale-balanced"
+---
+
+An agent reports success on almost every run. Some of those runs promised a refund it could not give, answered without looking anything up, or retried the same call forty times and then said "done". Reading transcripts by hand does not scale past the first week, and "the agent said it worked" is the only signal most teams have.
+
+The **Behavior** section on each agent's page answers three questions: is this agent behaving, where is it not, and what do we do about it. Judges read every run and say whether the agent behaved. Repeated failures are grouped into named behaviors. Behaviors that keep recurring become incidents. And each failure can become a fix that is tested against the runs it claims to repair before anything changes.
+
+In one line: you get the failures the agent called a success, and a tested fix for each one.
+
+<Note>
+  Open it from the [dashboard](https://amfs.sense-lab.ai): **Agents → your
+  agent → Behavior**. The section is available on the Pro, Teams and
+  Enterprise plans. Automatic repair policies and canaries are available on
+  Teams and Enterprise.
+</Note>
+
+---
+
+## What you need first
+
+Judges grade **runs**. A run is a sealed decision trace: what the agent was asked, what it read, what it did and what it answered. Runs reach SenseLab in three ways, and any of them is enough to start:
+
+| Your agent | A run is sealed when |
+| :-- | :-- |
+| Uses SenseLab through MCP (Cursor, Claude Code, Codex) | It calls `amfs_commit_outcome` |
+| Is built on the [Python SDK](/amfs/guides/python) | It calls `commit_outcome(...)` |
+| Exports OpenTelemetry, or posts runs over HTTP | The trace arrives — see [Instrument your agent](/amfs/guides/instrument-your-agent) |
+
+Two things make verdicts sharper:
+
+- **Pass `task_input` and `response_text` when you commit.** The request and the answer are what most judges read. Without them a judge sees what the agent did but not what it was asked or what it said, and will often return *Uncertain*.
+- **Instrument the run.** Steps, LLM calls, tokens and cost are optional, but a judge that can see the step tree can point its fail at the exact step. [Instrument your agent](/amfs/guides/instrument-your-agent) covers every path.
+
+---
+
+## Your first verdict
+
+The Overview tab opens with a three-step setup card. It takes about two minutes.
+
+<Steps>
+  <Step title="Seed starter judges">
+    One click adds five judges that catch the failures common to every agent. They are ordinary judges: edit the wording, change what share of runs they grade, or disable any of them.
+
+    | Judge | Fails a run when |
+    | :-- | :-- |
+    | **Ungrounded claim** | The response states as fact something no tool output, no memory the agent read and no external context supports. A claim supported only by memory is grounded and passes. |
+    | **Missing required tool** | The task needed a lookup, search, write or API call and the agent answered without making it, or the answer presents fetched-looking data (ids, counts, prices) with no tool or memory source. |
+    | **Retry storm** | The same tool or LLM call was repeated many times in a row with the same or near-identical arguments. |
+    | **Tool error cascade** | A tool call failed and the agent carried on as if it had succeeded, or later steps used the failed call's result. Recovering, retrying once, or telling the user passes. |
+    | **Unresolved user repetition** | The user asked for the same thing more than once and the response still does not address it. |
+
+    From now on they grade new runs as they arrive. The starter judges sample a share of new runs (15% by default) so a busy agent does not generate more verdicts than anyone will read; raise it to 100% for a low-volume agent.
+  </Step>
+  <Step title="Grade recent runs">
+    Grades your last 50 runs with every enabled judge — every run, not the sample — so there is something to look at today. It runs in the background with a progress bar; you can leave the page. **Choose…** grades with a single judge instead.
+  </Step>
+  <Step title="Review failing runs">
+    Opens the runs a judge failed. Each shows the sentence of evidence the judge quoted, the step it points at, and what the agent itself reported for that run.
+  </Step>
+</Steps>
+
+Once judges exist and verdicts are in, the card collapses to a single line and the Overview becomes the weekly picture.
+
+---
+
+## Verdicts
+
+A verdict is one of four things:
+
+| Verdict | Meaning |
+| :-- | :-- |
+| **Pass** | The run did not show the failure this judge looks for. |
+| **Fail** | It did. A fail must quote the exact offending text and name the step or memory entry it came from — a judge cannot fail a run without evidence. |
+| **Uncertain** | The judge could not tell from the record, usually because the run is missing the request, the response or the steps. |
+| **Error** | Grading itself failed. |
+
+Only Pass and Fail count. The **fail rate** is fail verdicts over decided verdicts (pass + fail), so a flaky judge does not read as a failing agent.
+
+The Overview shows, for the current window (two weeks by default):
+
+- **Coverage** — the share of runs at least one judge graded. Below 100% means sampling, disabled judges, or runs sealed before a judge existed.
+- **Fail rate**, with its trend per day.
+- **Disagreement** — runs the agent recorded as a success that a judge failed. This is the best single signal that the agent's own outcome records cannot be trusted alone.
+- **Open incidents**, **verdicts by judge** (one bar per judge), the **top behaviors** by how many runs they were seen in, and the **fixes** waiting for a decision.
+
+Every number is a link to the runs behind it.
+
+---
+
+## Runs
+
+The Runs tab lists every run with its verdicts, duration, tokens and cost (once the agent is [instrumented](/amfs/guides/instrument-your-agent)), and the attributes the agent stamped on it. Filter by judge, verdict, behavior, duration, errors, or any attribute. **Grade** on a row grades that one run now.
+
+Open a run to see its step tree on the left and, on the right, the behaviors found in it, each step's payload, the memory it read, and the response it gave, with the evidence each judge quoted highlighted in place. From the run you can **grade it**, **flag a behavior**, **propose a fix** (when a judge has failed it), or **compare** it with another run.
+
+<Tip>
+  The red *failure* chip on a run is the agent's own report (`outcome_type`).
+  It does not count as a verdict until a judge grades the run, which is why a
+  `verdict = fail` filter can be empty on an agent full of self-reported
+  failures. Grade first.
+</Tip>
+
+---
+
+## Judges
+
+A judge is a rule a run is graded against, written in plain language. A name and a one-sentence description — "The agent states something no tool result or memory supports" — is a complete judge: the rubric the grader uses is written from the description, and you can edit it directly if you want more control. In the rubric, `{{trace}}` is where the run goes and `{{evidence}}` is an optional grounding report of each claim in the response and where it is supported.
+
+For each judge you choose:
+
+- **Share of runs to grade.** The share of new runs this judge grades as they land. Below 100% it samples — enough to see a trend, fewer verdicts to read. *Grade recent runs* and backfills grade every run regardless.
+- **Model.** Which model grades. Leave it on the account default unless you have a reason.
+- **Enabled.** A judge that is off keeps its history and its verdicts; it just stops grading.
+
+Before enabling a judge, **dry-run** it: it grades 20 recent runs without storing anything and shows what it would fail and what it would cost, so you tune the wording on real runs rather than in the abstract. **Backfill** grades the past with a new or edited judge so you have a baseline the same day.
+
+Every edit is a new version. A judge's page shows its history with a diff between any two versions, its detection rate per day, how often it disagreed with what the agent reported, and the runs it graded. A judge that suddenly fails everything can be read against what it said last week; a verdict always records the judge version it was graded under.
+
+<Note>
+  Through the API a judge can also be limited to runs that contain a matching
+  step (for example, only runs where a `deploy_*` tool errored) and can return
+  a category or a number instead of pass/fail. See
+  [From your agent or scripts](#from-your-agent-or-scripts).
+</Note>
+
+**Writing a judge that works**
+
+- One failure per judge. "Promised something it cannot do" and "answered without checking" are two judges, not one.
+- Say what passes as well as what fails. The starter judges do this: "recovering, retrying once, or telling the user passes".
+- Hedged statements and questions are not claims. Say so if your judge is about claims.
+- Dry-run, read the fails, adjust, dry-run again. Then enable and backfill.
+
+---
+
+## Behaviors
+
+A behavior is a named pattern of failure: "Skips the smoke test after promotion". Behaviors come from two places:
+
+- **Discovered.** When several runs fail the same way, SenseLab proposes a named behavior and links the runs. It is marked *novel* until someone reviews it. **Rediscover** runs discovery again on recent verdicts.
+- **Flagged by you.** From any run, **Flag a behavior**: a name and one sentence is enough, and you say whether it counts as a failure or as something to watch.
+
+Each behavior shows how many runs it was seen in, the share of all runs affected, and an occurrence chart — when it happens, and on which slice of traffic. Behaviors are what incidents and fixes attach to.
+
+---
+
+## Incidents and alerts
+
+A behavior that keeps recurring across runs opens an **incident** — one open incident per behavior. Open ones are still happening; **acknowledge** one to say it is being looked at, **resolve** it when it has stopped, or **mute** it for a while if you have decided to live with it.
+
+The Incidents tab has a **segmentation explorer**: pick a behavior and a dimension — model, agent version, tool, or any attribute your agent stamps on its runs — and see where the failures concentrate. The dimensions available are the ones your runs carry; [attributes](/amfs/guides/instrument-your-agent) are how you add more.
+
+An incident can be **shared into a Room**, so the team's agents know about it, or **as a public report** with a link for someone who is not on SenseLab.
+
+The **alerts bell** at the top of the section fires when:
+
+- a behavior with a shipped fix comes back,
+- a behavior's rate drifts sharply against the previous window,
+- discovery promotes a behavior nobody has named,
+- an incident opens on a behavior you watch,
+- grading spend nears the account's monthly cap.
+
+A muted incident silences alerts on its behavior. The account also receives a weekly digest email covering every agent.
+
+---
+
+## Fixes
+
+A fix is a claim with a test attached, not an edit and a hope. Every fix carries a **prediction** — the failing runs it repairs, the passing runs it must not disturb, and the prevention it expects — and is replayed against that prediction before anything changes.
+
+Fixes are proposed from any run a judge failed (**Propose fix** on the run), and SenseLab proposes them on its own when an incident opens.
+
+### Where the fix goes
+
+The first thing a fix does is say what kind of failure this was, so the repair goes where the fault is:
+
+| Lever | Means | The fix is |
+| :-- | :-- | :-- |
+| **Knowledge** | The failure traces back to what the agent remembered. | A corrective memory entry. The wrong note is superseded; every future run reads the right one. No code changes. |
+| **Procedure** | The agent knew the facts and did the task the wrong way — a step skipped, out of order, or never verified. | A procedure the next run follows: a goal, numbered steps, and how to verify. No code changes. |
+| **Code** | The memory was right; the agent's code did the wrong thing with it. | A handoff — what failed, what the evidence shows, what to change and where to look — to copy to your coding agent or engineer. Nothing ships on its own. |
+| **Undetermined** | Not enough failing runs yet to tell the three apart. | The fix says so rather than guessing. |
+
+### How a fix is tested
+
+The fix is staged on its own memory branch, so the live agent does not read it yet. Then:
+
+1. **Replay test.** The failing runs are replayed with the fix in place and graded by the judge that failed them. The passing runs on the same work are replayed too, so a fix that repairs one thing by breaking another is caught. The result is *Test passed*, *Test failed*, or *Test inconclusive* — inconclusive means too little of the run could be reconstructed to call it, and is not treated as a fail.
+2. **Your agent's replay** (optional). With a **replay webhook** set on the Overview, each case is sent, signed, to your own agent, which runs it for real on the fix's branch and reports back. The verdict is then not only SenseLab's replay of your agent.
+3. **Canary** (optional, Teams and Enterprise). The fix goes live on its branch for a share of the agent's sessions while the rest stay on the current knowledge. It passes when the fixed behavior recurs significantly less on the branch than on main, fails if the branch does worse, and is called inconclusive if the window closes without a significant difference. It never widens on its own, and writes from either arm still land on your main knowledge.
+
+### Shipping, verifying, rolling back
+
+**Ship it** merges a knowledge or procedure fix into the agent's memory — the next run reads it. A code fix becomes *Handed off* once you copy the handoff. A week after shipping, a **verify sweep** compares what happened to what the fix predicted: did the behavior stop recurring in new runs, and did the passing runs stay passing? The fix becomes *Verified* or *Regressed*. **Roll back** is always one click and nothing in memory is deleted: the previous version is restored and the fix's entries are retired.
+
+| Status | Meaning |
+| :-- | :-- |
+| Proposed | Drafted, with its prediction, waiting to be tested |
+| Testing | Replaying the failing runs on the fix's branch |
+| Test passed / failed / inconclusive | The replay's verdict |
+| Canary | Live for a share of sessions |
+| Memory shipped | Merged into the agent's memory |
+| Handed off | A code fix, copied to whoever changes the code |
+| Verified / Regressed | The verify sweep's verdict a week after shipping |
+| Dismissed | Closed without shipping |
+
+### Proof
+
+Attach a fix to a **suite** to pin the runs it claims to repair as cases you can **re-check** any time, and the fix shows the behavior's rate before and after shipping against what it predicted. "We fixed it" becomes a number with a date.
+
+### Who decides: the repair policy
+
+One setting per agent, on the Overview:
+
+| Policy | What happens |
+| :-- | :-- |
+| **Review** (default) | Every fix stops at the test; a person ships it. With a replay webhook, your own agent replays the cases first. |
+| **Auto after replay** | Ships on its own when the replay test passes — and, with a webhook, when your own agent has passed the cases too. Rolled back if the verify sweep finds it regressed. |
+| **Auto after canary** | After the test (and your agent's replay, with a webhook), puts the branch live for a share of sessions and ships when the fixed behavior recurs significantly less there than on main. |
+
+Automatic policies only act once your runs carry what they need to tell a fix's effect from everything else: **which model ran** each run, **which version of your agent** ran it, and, for canaries, an **outcome confirmed from outside the agent** — CI, a monitor, a reviewer. The Overview shows the policy as *Active*, *Warming up* (waiting for enough runs that carry them) or *Paused* (runs are missing one), with what to add. Until then a fix that passes waits for you. [Attributes](/amfs/guides/instrument-your-agent) are how you stamp model and agent version on a run.
+
+---
+
+## Investigate
+
+The box above the tabs takes a question in your own words — *why did the agent promise refunds this week?* — and answers from this agent's runs, verdicts, behaviors and fixes, with each thing it refers to as a link to the exact slice.
+
+---
+
+## From your agent or scripts
+
+Everything above is also available to your agents. The SenseLab MCP server (installed with an API key — see [MCP Setup](/amfs/guides/mcp)) exposes the Behavior tools; the most useful:
+
+| Tool | What it does |
+| :-- | :-- |
+| `amfs_seed_starter_judges` | Add the five starter judges to an agent |
+| `amfs_judges` / `amfs_judge_define` | List judges; create one from a rubric. `dry_run=True` grades 20 recent runs without storing verdicts. New judges grade on demand unless `mode="continuous"` |
+| `amfs_backfill` | Grade recent runs with a judge |
+| `amfs_judge_trace` / `amfs_verdicts` | Grade one run; list verdicts |
+| `amfs_eval_summary` | The Overview numbers for a window |
+| `amfs_behaviors` / `amfs_behavior_define` / `amfs_behavior_from_trace` | List, author, or flag a behavior from a run |
+| `amfs_incident` / `amfs_segment` / `amfs_dimensions` | List, acknowledge, resolve or mute incidents; segment a behavior by a dimension; list the dimensions your runs carry |
+| `amfs_propose_fix` / `amfs_fixes` / `amfs_fix` | Propose a fix from a failing run; list fixes; test, replay, canary, ship, roll back or dismiss one |
+| `amfs_repair_policy` | Read or set the agent's repair policy |
+| `amfs_investigate` / `amfs_alerts` | Ask a question; list open alerts |
+
+The same operations are REST endpoints under `/api/v1/eval/` on `https://amfs-login.sense-lab.ai`, authenticated with your API key. These tools act on your SenseLab account; connected to a local store they return a message saying so.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause |
+| :-- | :-- |
+| Fixes is empty but the Runs table shows failures | Those are the agent's own failure reports. A fix needs a judge's Fail verdict: grade the run (or backfill), then propose from it. |
+| Coverage is well below 100% | Judges sample new runs; some judges are disabled; or runs were sealed before any judge existed. *Grade recent runs* fills in the past. |
+| Most verdicts are Uncertain | The runs are missing `task_input`, `response_text`, or steps. Pass them on commit and [instrument](/amfs/guides/instrument-your-agent) the agent. |
+| A judge suddenly fails everything | Open its history and diff the current version against the previous one; dry-run the wording before saving again. |
+| "Over the grading budget" | Grading has a monthly spend cap per account. The alerts bell warns as spend approaches it; grading resumes with the new month. |
+| The policy shows *Paused* or *Warming up* | Runs are missing model, agent version, or a verified outcome — or there are not enough of them yet. The row says which. |
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Instrument your agent" icon="gauge-high" href="/amfs/guides/instrument-your-agent">
+    Steps, tokens, cost and attributes on every run, so judges see the shape of the work and segmentation has dimensions.
+  </Card>
+
+  <Card title="Python SDK" icon="python" href="/amfs/guides/python">
+    Commit runs with `task_input` and `response_text`, and let outcomes move memory confidence.
+  </Card>
+
+  <Card title="Rooms" icon="users" href="/amfs/concepts/rooms">
+    Share an incident with the team so every member's agent knows about it.
+  </Card>
+
+  <Card title="MCP Setup" icon="plug" href="/amfs/guides/mcp">
+    Connect Cursor, Claude Code or Codex so their runs are graded too.
+  </Card>
+</CardGroup>
