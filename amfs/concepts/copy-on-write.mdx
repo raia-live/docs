@@ -4,7 +4,9 @@ description: "How SenseLab preserves full version history through copy-on-write 
 icon: "copy"
 ---
 
-Every write in SenseLab creates a new version of an entry. The previous version is preserved as **superseded**. This means you never lose history — every change is traceable.
+Every write in SenseLab creates a new version of an entry. The previous version is preserved as **superseded**. Nothing an agent learned is ever overwritten.
+
+This is what the rest of the loop stands on. A decision trace can cite the exact version an agent read, so an outcome is credited to what the agent actually saw rather than to whatever the entry says today. A fix that makes things worse can be [rolled back](/amfs/guides/learning-as-git#rolling-back) to the version before it. And two agents that disagree both keep their position, with their names on it, instead of one silently winning.
 
 ---
 
@@ -56,11 +58,7 @@ To see all versions across an entity rather than one key, use `list()`:
 all_versions = mem.list("svc", include_superseded=True)
 ```
 
-Or use the CLI:
-
-```bash
-amfs inspect diff svc config
-```
+On the dashboard, the same history is the **Event Log** of the agent's Git Repository section — see [Learning as Git](/amfs/guides/learning-as-git).
 
 ---
 
@@ -101,11 +99,7 @@ Every version is kept. Superseding a key never overwrites the previous value —
 it marks it as no longer current and stores the new one alongside it, so the
 full chain stays queryable through `history()` for as long as the entry exists.
 
-<Note>
-  Running SenseLab yourself? How versions are laid out on disk depends on the
-  storage backend you pick — see the [adapter
-  reference](/amfs/adapters/overview).
-</Note>
+Outcomes are versions too: when a committed outcome moves an entry's confidence, the entry gets a new version with the new confidence and the old one is superseded, so the trust an entry has earned over time is as traceable as its value.
 
 ---
 
@@ -119,10 +113,11 @@ When two agents write to the same key concurrently, the `conflict_policy` determ
 | `RAISE` | Raises `StaleWriteError` if another agent advanced the version since your last read. |
 
 ```python
-from amfs_core.models import ConflictPolicy
+from amfs import ConflictPolicy
 
 mem = AgentMemory(
     agent_id="my-agent",
+    adapter=adapter,
     conflict_policy=ConflictPolicy.RAISE,
 )
 ```
@@ -136,14 +131,18 @@ def resolve(existing, incoming, value):
 
 mem = AgentMemory(
     agent_id="my-agent",
+    adapter=adapter,
     on_conflict=resolve,
 )
 ```
 
+For changes that need review before they reach everyone, write them on a [branch](/amfs/pro/branching) and open a pull request instead of resolving the conflict at write time.
+
 ---
 
-## Why CoW?
+## Why copy-on-write
 
-- **Auditability** — Every change is recorded. You can always trace how knowledge evolved.
-- **Safety** — No data is lost. Mistakes can be identified by comparing versions.
-- **Outcome tracking** — Outcomes create new versions with updated confidence scores, preserving the score history.
+- **Attribution** — An outcome is credited to the version the agent read, so trust moves on the right thing.
+- **Reversibility** — A fix, a merge or a bad write can be undone by rolling back; nothing has to be reconstructed.
+- **Audit** — Months later, `history()` and the decision trace still answer who believed what, at what confidence, and what followed.
+- **Training data** — The record of what was known at each decision, as it was then, is what a model can be trained on. See [ML Layer](/amfs/pro/ml-layer).

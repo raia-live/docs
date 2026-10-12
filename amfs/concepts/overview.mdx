@@ -1,50 +1,79 @@
 ---
 title: "Core Concepts"
-description: "Understand how SenseLab stores, versions, and evolves knowledge."
+description: "The parts of SenseLab's self-improvement loop, and how they fit together."
 icon: "brain"
 ---
 
-Understanding the building blocks of SenseLab.
+SenseLab makes agents improve recursively: the output of every run — what was learned, what was decided, and how it turned out — becomes the input to the next one. Nothing in this section is "a database feature". Each concept is one stage of that loop.
 
-SenseLab treats each agent's knowledge as a **Git repository**. Every write is a versioned commit, and every operation is logged on a timeline. With SenseLab Pro that extends to the rest of the Git model: branches isolate experiments, pull requests let you review changes before merging, and you can roll back to any point.
+## The loop
 
-On top of this Git-like foundation, SenseLab adds memory intelligence: **memory entries** store knowledge with a **memory type** (fact, belief, or experience), **copy-on-write** preserves full history, **provenance** tracks authorship, **confidence** scores evolve based on real-world **outcomes**, a **knowledge graph** auto-materializes relationships, and **hybrid search** blends full-text, semantic, and confidence signals.
+```
+   ┌──────────────────────────────────────────────────────────────┐
+   │                                                              │
+   ▼                                                              │
+ Brief ──► Act ──► Record ──► Outcome ──► Update ──► (next run) ──┘
+   │        │        │           │           │
+   │        │        │           │           └─ confidence moves on everything
+   │        │        │           │              the run relied on; discredited
+   │        │        │           │              learning drops out of the next brief
+   │        │        │           └─ success / failure, who verified it, the proof
+   │        │        └─ the decision trace: reads, actions, attempts, LLM calls
+   │        └─ the agent works; failed approaches are marked before the next
+   └─ compiled knowledge, evidence-ranked, with priors on what to try
+```
 
-Memory is private to your account by default. **Rooms** are how you share a slice of it, so that several people's agents work from the same knowledge.
+The **fast loop** closes on every run. An agent is briefed on what the account already knows, works, and reports how it went. Confidence moves on everything it read, so the next agent to touch the same subject is ranked into what has worked and away from what has not — without anyone editing a prompt.
 
----
+Two slower loops run off the same record. **Behavior** grades runs with judges, opens incidents on recurring failures, and proposes fixes to the learning itself — tested by replay, shipped by merge, rolled back if they regress. **Managed Models** turn the decisions that worked into a fine-tuned model of your own, which then does the work and feeds the next tune. Each loop improves the input to the others; that is what makes the improvement recursive rather than one-off.
 
-## At a Glance
+## Who is who
+
+| Concept | Role in the loop | Page |
+| :-- | :-- | :-- |
+| Learning entries | The unit of what an agent learned — fact, belief, experience or procedure, versioned, with its author and its evidence | [Learning Entries](/amfs/concepts/learning-entries) |
+| Briefings and guidance | What an agent is handed before it acts: validated and discredited learning, what has been tried here, and a recommendation among its candidate actions | [Briefings and Guidance](/amfs/concepts/briefings) |
+| Confidence and evidence | How outcomes move trust — credit split across what the run relied on, failures weighing more than successes, and the `evidence_status` every entry carries | [Confidence & Evidence](/amfs/concepts/confidence) |
+| Copy-on-write | Why nothing is overwritten: every version stays, so a trace can cite exactly what the agent saw and a bad change can be rolled back | [Copy-on-Write](/amfs/concepts/copy-on-write) |
+| Provenance | Who learned it, in which session, on which model and runtime — what makes an outcome attributable and a procedure scoped to the environment it applies to | [Provenance](/amfs/concepts/provenance) |
+| Decision traces | The record of a run: what was read, decided, done and how it ended — the thing judges grade and models train on | [Context Graphs](/amfs/concepts/context-graphs) |
+| Git-like timeline | Branches, pull requests, tags and rollback over what agents learn, so a change to shared knowledge can be isolated, reviewed and undone | [Git-like Timeline](/amfs/concepts/git-timeline) |
+
+## What an entry looks like
 
 ```
 Agent writes →  MemoryEntry created
                   ├── entity_path: "checkout-service"
                   ├── key: "retry-pattern"
                   ├── value: { ... }
-                  ├── memory_type: fact   ← fact / belief / experience
-                  ├── version: 3          ← CoW versioning
-                  ├── confidence: 0.85    ← evolves with outcomes
-                  ├── branch: "main"      ← git-like branch
+                  ├── memory_type: procedure   ← fact / belief / experience / procedure
+                  ├── version: 3               ← copy-on-write versioning
+                  ├── confidence: 0.85         ← moved by outcomes
+                  ├── evidence_status: validated   ← untested / validated / contested / discredited
+                  ├── branch: "main"
                   └── provenance:
                       ├── agent_id: "review-agent"
                       ├── session_id: "abc-123"
-                      └── written_at: 2025-06-15T10:30:00Z
+                      └── written_at: 2026-06-15T10:30:00Z
 
-              →  Event logged on agent timeline
+              →  Event logged on the agent's timeline
                   ├── event_type: "write"
-                  ├── branch: "main"
-                  ├── summary: "Wrote checkout-service/retry-pattern v3"
-                  └── details: { entity_path, key, version, confidence }
+                  └── summary: "Wrote checkout-service/retry-pattern v3"
 ```
 
-Read the pages in this section to understand each concept in depth.
+Learning is private to your account by default. **Rooms** are how you pool it, so several people's agents — on Claude, ChatGPT, Cursor or your own code — run the loop over the same knowledge.
 
 <CardGroup cols={2}>
   <Card title="Rooms" icon="users" href="/amfs/concepts/rooms">
-    Shared workspaces where several people's agents build on the same memory.
+    Shared workspaces where several people's agents learn from the same entries.
   </Card>
-
-  <Card title="Members and Permissions" icon="user-lock" href="/amfs/concepts/room-members">
-    Roles, invitations, share links, and who can do what in a room.
+  <Card title="Behavior" icon="scale-balanced" href="/amfs/guides/behavior">
+    Judges, incidents and fixes — the loop that repairs the learning itself.
+  </Card>
+  <Card title="Instrument your agent" icon="gauge-high" href="/amfs/guides/instrument-your-agent">
+    Get every run into the record with steps, LLM calls and cost.
+  </Card>
+  <Card title="Managed Models" icon="microchip" href="/amfs/guides/managed-models">
+    A private model trained on the decisions that worked.
   </Card>
 </CardGroup>

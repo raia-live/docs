@@ -1,0 +1,51 @@
+---
+title: "Pro Features"
+description: "What Pro, Teams and Enterprise add on top of the learning loop, and where each capability lives."
+icon: "gem"
+---
+
+Every account runs the fast loop: agents are briefed, work, commit outcomes, and confidence moves. The paid tiers add the machinery that makes the loop improve *itself* — grading, repair, safe change, training — and the controls a team needs to run it at scale.
+
+This page is the map. Each row says what the capability does for the loop and where to find it.
+
+## Making the loop recursive
+
+| Capability | What it adds | Where |
+| :-- | :-- | :-- |
+| [Behavior](/amfs/guides/behavior) | Judges grade runs, incidents open on recurring failures, and fixes to the learning are proposed, replayed against the failing traces, shipped and rolled back. Pro proposes fixes; Teams and Enterprise can ship them automatically after replay or a canary. | Agent page → **Behavior** |
+| [Learning Branching](/amfs/pro/branching) | Branches, pull requests, tags and rollback over what agents learn, so a change can be isolated, reviewed and undone. | Agent page → **Git Repository** |
+| [Learning Consolidation](/amfs/pro/consolidation) | Demotes superseded and stale learning automatically and proposes merges of convergent knowledge for review. | Git Repository → **Branches → Consolidation** |
+| [Managed Models](/amfs/guides/managed-models) | A private model fine-tuned on the decisions that worked, scored against your own history, served behind one model string. Pro: one live model; Teams: three. | **Models** |
+| [ML Layer](/amfs/pro/ml-layer) | Learned ranking, per-account calibration of how much outcomes count, and training-data export. | **Pro Tools** |
+
+## Seeing what the loop knows
+
+| Capability | What it adds | Where |
+| :-- | :-- | :-- |
+| [Immutable Decision Traces](/amfs/pro/immutable-traces) | Every run sealed, signed and chained, with LLM calls, cost and OpenTelemetry export. | **Traces**, and **Runs** on the agent page |
+| [Knowledge Graph and Expertise](/amfs/pro/knowledge-graph) | Paths and queries across the whole graph, and which agent knows what. | **Knowledge Graph**, **Expertise Map** |
+| [Pattern Detection](/amfs/pro/pattern-detection) | Conflicts, stale knowledge, single points of knowledge and recurring failures across your agents. | **Patterns** |
+| [Intelligence Layer](/amfs/pro/intelligence) | Entity extraction, the memory critic, the distiller, pre-write validation and multi-strategy retrieval. | **Pro Tools**, **Entity Extraction** |
+| Learnings Health and Learning Tiers | The confidence, composition and integrity of everything learned, and which of it is hot, warm or archived. | **Learnings Health**, **Learning Tiers** |
+
+## Running it as a team
+
+| Capability | What it adds | Where |
+| :-- | :-- | :-- |
+| [Accounts and Access](/amfs/pro/multi-tenant) | Account isolation, roles, teams, scoped API keys, rate limits and the audit log. | **Settings** |
+| [Learning Security](/amfs/pro/security) | Secrets, personal data, poisoning and contamination found in what agents learned, with quarantine and revert. | **Security** |
+| [Rooms](/amfs/concepts/rooms) | Shared workspaces where several people's agents learn from the same entries, with discussions, negotiations and documents. | **Rooms** |
+| Room Hub | Publish a room for other accounts to subscribe to, or subscribe to one — read-only, always current, connected to your agents' MCP tools. | **My Listings**, **My Subscriptions** |
+| [Billing & Metering](/amfs/pro/billing) | What counts as an operation, what each plan includes, and what happens at the limit. | **Settings → Usage** |
+
+<Note>
+  Behavior, the Git Repository section, Managed Models and the Pro dashboard
+  pages need a Pro, Teams or Enterprise plan. Security is gated by role rather
+  than plan. [Editions](/amfs/editions) has the full comparison.
+</Note>
+
+## Getting data in
+
+- **Migrate** imports what your agents already know from mem0, Zep or a Hugging Face dataset. Nothing is written until you have reviewed the mapping. Open **Migrate** from the dashboard.
+- **Connectors** and **Integrations** bring external events — GitHub, Slack, Linear and others — into the record. See [Connectors](/amfs/guides/connectors) and [Integrations](/amfs/guides/integrations).
+- **Instrumentation** gets every run from an agent you operate into the record with steps, LLM calls and cost. See [Instrument your agent](/amfs/guides/instrument-your-agent).

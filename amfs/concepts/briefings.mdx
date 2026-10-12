@@ -1,0 +1,89 @@
+---
+title: "Briefings and Guidance"
+description: "What an agent is handed before it acts: compiled, evidence-ranked knowledge and a recommendation on what to try."
+icon: "clipboard-list"
+---
+
+The loop starts before the agent does anything. A **briefing** is the compiled state of what the account knows about the thing the agent is about to touch — not a search over raw entries, but a digest that already says which learning has held up, which has failed, and what has been tried here before. **Guidance** adds the decision layer: given the actions this agent could take, which one the record recommends.
+
+Every other stage of the loop exists to make the next briefing better.
+
+## Where briefings come from
+
+SenseLab compiles digests continuously from what agents write, read and commit. Each digest has a type and a scope:
+
+| Digest | Scope | What it contains |
+| :-- | :-- | :-- |
+| `entity` | An entity path such as `acme/checkout` | What is known about it: top entries, a narrative, and the evidence sections below |
+| `agent_brief` | One agent | What that agent has learned and done — entries, entities touched, outcomes |
+| `source` | A connector such as GitHub or Slack | What has been ingested from it and which entities it touched |
+| `connection_map` | Across entities | The strongest relationships in the knowledge graph around the scope |
+
+Recompilation is gated on drift, so a digest is rebuilt when the knowledge under it has changed, not on a timer. Agents read them with `amfs_briefing(entity_path=...)` in MCP or `mem.briefing(...)` in the SDKs; `compact=True` returns only the lead digest, and `since=<timestamp>` on a repeat call returns only what changed.
+
+## Read the evidence sections first
+
+The lead digest carries the state of the record, not just a summary:
+
+| Section | Meaning | What to do |
+| :-- | :-- | :-- |
+| `validated` | Entries every outcome so far has confirmed | Act on these |
+| `discredited` | Entries a failure gated, with `replaced_by` where a later success is known | Avoid these; follow the replacement |
+| `regime_shift` | Entries that were validated repeatedly and have just started failing | Something changed. Verify before reusing anything in the scope |
+| `tried_here` | The actions taken on this entity and how each fared — `resolve:resend_email 6/6`, `resolve:update_payment_method 0/8` | Do not repeat what keeps failing |
+| `hot_context` | The entries most worth reading now, each with an `evidence_status` | An untested 0.9 and a validated 0.9 are different things to act on |
+
+The labels come from the [evidence model](/amfs/concepts/confidence): `untested`, `validated`, `contested`, `discredited`. A regime shift is an event rather than a state — it is flagged for a week after the latest failure and then clears, so a rule discredited last month does not keep steering today's runs.
+
+### Procedures and the environment
+
+Procedures — entries of type `procedure` that say how to do a task — are listed in their own section of the briefing. A procedure whose preconditions name a different environment (another model, runtime or agent version) is set apart as `procedures_not_applicable`, with the failing precondition spelled out, so an agent on Python 3.12 is not handed steps that only work on 3.10. The agent's environment is read from the session; the SDKs let you pass it explicitly.
+
+## Guidance: what to try
+
+When a task ends in a choice among a fixed set of actions — a tool with an `action` enum, a runbook with numbered fixes — the agent asks for priors on the candidates:
+
+```
+amfs_retrieve(query="customer did not receive the invoice email",
+              entity_path="acme/support", include_priors=True,
+              candidate_actions=["resolve:resend_email", "resolve:update_payment_method", "resolve:refund"],
+              compact=True)
+```
+
+The response ends with `action_priors` — for each action, how often it won and lost here on similar tasks, who tried it and when — and a `recommendation`:
+
+| Mode | Meaning |
+| :-- | :-- |
+| `act` | The top hit is validated or an action has a good record here. Take `suggested_action`. |
+| `explore` | Everything tried here has failed, or a regime shift is flagged. Try `suggested_action` first — it is assigned per agent, so peers working the same problem explore different actions instead of the same one. |
+| `escalate` | Every candidate has been tried here and failed. Escalate on the first attempt rather than the third. |
+| `abstain` | Nothing in scope has been tried or validated. The agent is on its own judgement, and knows it. |
+
+Declaring a `situation` — a stable label for the kind of task, never the task text — stores the outcome under that label, so the next run that declares the same one gets priors counted over that situation's own record.
+
+In the Python SDK, `Run.begin()` wraps this into a single `Guidance` object with the rendered text to inject, the procedures that apply, the recommendation and a `plan` — the order to try actions in for the whole run, never including one that already failed here. See [Guidance with `Run`](/amfs/guides/python#guidance-with-run).
+
+## Closing the loop from the briefing
+
+Guidance is only as good as what flows back. Three habits keep it sharp:
+
+- **Name what you acted on.** A briefing serves several entries and the agent follows one. Passing `causal_entry_keys` on the outcome sends the result to that one, instead of charging every entry in the context.
+- **Mark failed attempts.** `amfs_record_attempt` closes the approach the agent just tried, so the entry that misled it receives the failure and only what was read afterwards is credited with the recovery.
+- **Commit the outcome.** Without `amfs_commit_outcome`, the run never reaches the record and the next briefing is no better than this one.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Confidence & Evidence" icon="chart-line" href="/amfs/concepts/confidence">
+    How outcomes move the labels the briefing reads.
+  </Card>
+  <Card title="Context Graphs" icon="diagram-project" href="/amfs/concepts/context-graphs">
+    The decision trace an outcome is committed against.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/amfs/guides/python#briefing">
+    `briefing()`, `retrieve()` with priors, and `Run`.
+  </Card>
+  <Card title="Behavior" icon="scale-balanced" href="/amfs/guides/behavior">
+    When the record says a fix is needed, not just a different action.
+  </Card>
+</CardGroup>

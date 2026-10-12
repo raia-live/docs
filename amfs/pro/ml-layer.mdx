@@ -77,9 +77,10 @@ treated as stale.
 
 <Note>
 This is measurement, not silent surgery. SenseLab reports what your history
-suggests; the standard adjustments above keep applying unless someone deliberately
-changes them. Confidence scores never shift under you because a model decided they
-should.
+suggests — on **Pro Tools → Calibration** and through `amfs_calibrate` — and the
+standard [evidence model](/amfs/concepts/confidence) keeps applying unless
+someone deliberately changes it. Confidence scores never shift under you because
+a model decided they should.
 </Note>
 
 ---
@@ -103,6 +104,16 @@ their outcomes turned out so a model can learn to judge quality on its own. Thos
 feed the standard tools — OpenAI's fine-tuning API, Hugging Face, TRL — and what
 comes out the other side is a model that has internalised what your organisation
 already learned the hard way.
+
+You do not have to run that training yourself. [Managed Models](/amfs/guides/managed-models)
+watches for the point where an agent has enough outcome-labelled decisions,
+runs the fine-tune, scores the candidate against a holdout of your own history,
+and serves it behind one model string. The tuned model's runs are recorded like
+any other, so the next tune starts from a better baseline — the slow loop
+feeding itself.
+
+Export the datasets directly from **Pro Tools → Training Data Export**, or with
+`amfs_export_training_data`.
 
 ---
 

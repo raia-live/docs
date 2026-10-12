@@ -4,7 +4,7 @@ description: "How SenseLab tracks who wrote what, and when."
 icon: "fingerprint"
 ---
 
-Every memory entry in SenseLab carries **provenance** — metadata about who wrote it and when. This creates an audit trail and enables agents to assess the trustworthiness of information.
+Every learning entry in SenseLab carries **provenance** — who learned it, in which session, and when. Provenance is what makes the loop attributable: an outcome can be credited to the agent whose learning it relied on, a procedure can be scoped to the environment it was learned in, and when a run goes wrong you can tell whether the agent changed or its knowledge did.
 
 ---
 
@@ -24,7 +24,7 @@ Every memory entry in SenseLab carries **provenance** — metadata about who wro
 Provenance is recorded automatically. You don't need to set it manually:
 
 ```python
-mem = AgentMemory(agent_id="review-agent")
+mem = AgentMemory(agent_id="review-agent", adapter=adapter)
 entry = mem.write("svc", "finding", "potential memory leak")
 
 print(entry.provenance.agent_id)    # "review-agent"
@@ -97,11 +97,20 @@ when you audit a decision later you can tell which model made it.
 amfs_set_identity("deploy-agent", "Rolling out v2.14", model="claude-4-opus")
 ```
 
+### Environment
+
+The SDKs extend this with the run's **environment** — `model`, `agent_version`, `runtime` and `platform` — stamped on every sealed trace and sent with every briefing and retrieval. Two things depend on it:
+
+- A **procedure** whose preconditions name a different environment is set apart in the briefing as not applicable, instead of being handed to an agent it will not work for.
+- When a long-validated rule starts failing, the environment on the traces is how SenseLab tells a change in your agent — a new model, a new version — from a change in what it knows.
+
+In the Python SDK, pass them to `Run.begin(...)` or set them with `set_session_attributes()`; see [Environment scoping](/amfs/guides/python#environment-scoping).
+
 ---
 
 ## Provenance Tiers
 
-SenseLab computes a **provenance tier** for each entry based on the agent ID and outcome history. This enables downstream systems to prioritize production-validated knowledge over manually seeded assumptions.
+SenseLab computes a **provenance tier** for each entry from the agent ID and the outcome history. It is a coarse answer to "how was this learned?" — in production and confirmed by outcomes, in production but unconfirmed, in development, or seeded by hand — and retrieval and training both prefer the top of the scale.
 
 | Tier | Value | Criteria |
 |:-----|:------|:---------|

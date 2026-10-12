@@ -6,7 +6,7 @@ icon: "brain"
 
 # Intelligence Layer
 
-The Intelligence Layer uses LLMs and advanced algorithms to keep your memory store healthy, your retrieval sharp, and your agents onboarded faster.
+The Intelligence Layer is the set of LLM-driven and statistical tools that keep what your agents have learned healthy, make retrieval sharp, and let a new agent start from the best of an existing one. Most of it lives on the **Pro Tools** page of the dashboard and behind the Pro MCP tools listed at the end.
 
 ## Entity & Relationship Extraction
 
@@ -28,12 +28,11 @@ Six relation types are recognised:
 | `reads_from` | One entity consumes data from another |
 | `writes_to` | One entity produces data into another |
 
-Extraction runs on demand. To have it run automatically as traces arrive, set
-`AMFS_AUTO_EXTRACT=true` on the server.
+Extraction runs on demand: open **Entity Extraction** in the dashboard and run it over recent traces, or call it through the API. Extracted entities and relations are reviewable there before you rely on them in the graph.
 
 ## Memory Critic
 
-Automated quality analyzer that scans the memory store and detects five issue classes:
+Automated quality analyser that scans everything learned and detects five issue classes:
 
 - **Toxic** — repeated negative correlations
 - **Stale** — entries not referenced in a long time
@@ -64,22 +63,29 @@ Validation returns findings; it never blocks a write on your behalf.
 
 ## Multi-Strategy Retrieval
 
-Combines semantic, BM25 keyword, temporal, and confidence signals via Reciprocal
-Rank Fusion, weighted 0.4 / 0.2 / 0.2 / 0.2 by default. Once a
-[learned ranking model](/amfs/pro/ml-layer) has been trained it joins the
-pipeline with 30% of the weight, and the other strategies rebalance to make room
-for it.
+`amfs_retrieve` runs several searches in parallel and fuses them with Reciprocal Rank Fusion: semantic similarity (0.4), BM25 keyword match (0.2), recency (0.2), confidence (0.2) and **evidence** (0.3) — the outcome record, so a validated entry outranks an untested one that reads the same, and discredited entries are held back rather than ranked. A strategy whose scores carry no signal for a given query is dropped automatically instead of adding noise.
+
+Around that core:
+
+- **Query rewriting** makes first-stage recall robust to paraphrase, so a question that shares no vocabulary with the stored fact still finds it.
+- **Reranking** passes the candidate set through a cross-encoder before the final order.
+- **A calibrated abstain gate** returns nothing when the store has no answer, rather than confidently surfacing an irrelevant fact.
+- Once a [learned ranking model](/amfs/pro/ml-layer) has been trained on your outcomes, it joins the fusion and the generic signals rebalance to make room for it.
+
+Compare configurations on real queries from **Pro Tools → Retrieval Playground** and **Retrieval Compare**.
 
 ## Pro MCP Tools
 
 | Tool | Description |
 |:-----|:------------|
 | `amfs_critique` | Run the Memory Critic and get a quality report |
-| `amfs_distill` | Trigger distillation (prune, consolidate, or generate bootstrap set) |
+| `amfs_distill` | Produce a bootstrap set — the highest-value slice of what has been learned |
 | `amfs_validate` | Validate a candidate memory before writing |
 | `amfs_retrain` | Train the learned ranking model from outcome data |
-| `amfs_calibrate` | Learn optimal confidence multipliers from outcome history |
-| `amfs_export_training_data` | Export decision traces as SFT/DPO/reward model datasets |
+| `amfs_calibrate` | Measure, from your outcome history, how much each kind of outcome should count |
+| `amfs_export_training_data` | Export decision traces as SFT / DPO / reward-model datasets |
 | `amfs_record_llm_call` | Record an LLM call with model, tokens, cost, and latency |
-| `amfs_graph_path` | Find shortest trust-weighted path between two entities in the knowledge graph |
+| `amfs_graph_path` | Find the strongest trust-weighted path between two entities in the knowledge graph |
 | `amfs_graph_query` | Flexible graph edge search by relation, entity type, or confidence range |
+
+The evaluation and repair tools — judges, incidents, fixes, replay — are covered in [Behavior](/amfs/guides/behavior#from-your-agent-or-scripts).

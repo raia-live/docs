@@ -12,6 +12,13 @@ you are in. Pro persists the same thing permanently, signed and tamper-evident,
 so you can answer "why did the agent do that?" months after the agent has
 stopped running.
 
+The trace is also what the rest of the loop consumes. Judges in
+[Behavior](/amfs/guides/behavior) grade it, a proposed fix is tested by replaying
+the traces that failed against the fixed learning, and
+[Managed Models](/amfs/guides/managed-models) train on the traces whose outcomes
+were good. A record that can be edited after the fact would corrupt all three,
+which is why these are sealed.
+
 ## What Every Trace Captures
 
 Committing an outcome snapshots the whole session:
@@ -43,14 +50,22 @@ agents, not just reads.
 
 **Search across history.** Query stored traces by entity path, agent, outcome
 type, or time range, which is how you find every decision that preceded a
-particular kind of failure.
+particular kind of failure. `amfs_trace_search` finds traces by what happened in
+them — which tools were called, what failed — not just who committed them.
+
+**Verify, replay, compare.** `amfs_trace_verify` recomputes a trace's hash and
+checks its signature. `amfs_trace_replay` reconstructs the exact learning the
+agent had at decision time, entry by entry at the versions it read.
+`amfs_trace_compare` aligns two traces step by step — what changed between a
+run that worked and one that failed.
 
 <Note>
-Recording is automatic once you are on a plan that includes it. Use
-`amfs_record_llm_call` to attach model and cost data to the current session, and
-`amfs_list_traces` and `amfs_get_trace` to read history back. To add nested
-steps, tokens and cost to every run — over OpenTelemetry, MCP or HTTP — see
-[Instrument your agent](/amfs/guides/instrument-your-agent).
+Recording is automatic once you are on a plan that includes it. Browse traces
+under **Traces** in the dashboard, or as **Runs** on the agent's page where they
+carry their verdicts. Use `amfs_record_llm_call` to attach model and cost data to
+the current session, and `amfs_list_traces` and `amfs_get_trace` to read history
+back. To add nested steps, tokens and cost to every run — over OpenTelemetry, MCP
+or HTTP — see [Instrument your agent](/amfs/guides/instrument-your-agent).
 </Note>
 
 ## OpenTelemetry Export
