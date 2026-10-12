@@ -1,204 +1,187 @@
 ---
-title: "Confidence & Outcomes"
-description: "How confidence scores evolve based on real-world outcomes."
+title: "Confidence & Evidence"
+description: "How outcomes move the trust an entry has earned, and the evidence status every entry carries."
 icon: "chart-line"
 ---
 
-Every memory entry carries a **confidence score** that evolves over time based on real-world outcomes. This is SenseLab's feedback loop — connecting agent observations to production reality.
+Confidence is the trust a piece of learning has earned. It starts where the author set it and is moved by one thing only: the outcomes of runs that relied on it. This is the mechanism that makes the loop self-correcting — learning that keeps leading to good outcomes rises into every briefing, learning that keeps leading to failures sinks out of them, and no one has to decide which is which.
 
 ---
 
-## Confidence Score
+## Confidence score
 
-Confidence starts at `1.0` by default and represents how much trust to place in an entry:
+Confidence is a number from `0.0` to `1.0`. It starts at the value the author wrote (default `1.0`) and is clamped to that range forever after:
 
 ```python
 entry = mem.write("svc", "pattern", "use connection pooling", confidence=0.85)
-print(entry.confidence)  # 0.85
+print(entry.confidence)        # 0.85
+print(entry.evidence_status)   # "untested" — nothing has relied on it yet
 ```
 
-<Note>
-Confidence is clamped to the range `0.0`–`1.0`. Successes can never push an entry past certainty, and repeated failures floor at zero rather than going negative.
-</Note>
+Write beliefs below `0.9`. A hypothesis that starts at certainty has nowhere to go but down, and the first failure will take it a long way.
 
 ---
 
-## Outcome Types
+## Outcomes
 
-When something significant happens in the real world, you record it as an **outcome**. Knowledge that led somewhere good is trusted more; knowledge that led somewhere bad is trusted less:
+When a run finishes, the agent commits an outcome. Four kinds are recognised, and they are not symmetric:
 
-| Outcome | Multiplier | Effect |
-|:--------|:-----------|:-------|
-| `SUCCESS` | × 1.03 | Reinforced — the knowledge held up |
-| `MINOR_FAILURE` | × 0.92 | Mild erosion |
-| `FAILURE` | × 0.90 | Moderate erosion |
-| `CRITICAL_FAILURE` | × 0.85 | Strong erosion — the knowledge led into a severe failure |
+| Outcome | Weight | Meaning |
+| :-- | :-- | :-- |
+| `SUCCESS` | 1.0 | The work held up |
+| `MINOR_FAILURE` | 1.5 | A setback |
+| `FAILURE` | 2.0 | The run failed |
+| `CRITICAL_FAILURE` | 3.0 | The run caused a severe failure |
 
-Erosion is deliberately steeper than reinforcement: it takes many successes to
-rebuild the trust one critical failure removes.
+Failures weigh more than successes because trust should be easy to lose and slow to rebuild.
 
 <Note>
-  Four older names are still accepted as aliases and map onto the same
-  multipliers: `clean_deploy` (success), `regression` (minor failure),
-  `p2_incident` (failure), and `p1_incident` (critical failure).
+  Four older names are still accepted as aliases: `clean_deploy` (success),
+  `regression` (minor failure), `p2_incident` (failure), `p1_incident`
+  (critical failure).
 </Note>
-
----
-
-## How It Works
-
-### Recording an Outcome
 
 ```python
 from amfs import OutcomeType
 
-# An incident happened related to the retry pattern
 updated = mem.commit_outcome(
-    outcome_ref="INC-1042",         # reference ID (ticket, deploy ID, etc.)
-    outcome_type=OutcomeType.CRITICAL_FAILURE,
+    "INC-1042", OutcomeType.CRITICAL_FAILURE,
     causal_entry_keys=["checkout-service/retry-pattern"],
+    task_input="checkout worker restart looping in prod",
+    response_text="Rolled back; worker stable.",
 )
-
 for entry in updated:
-    print(f"{entry.key}: confidence {entry.confidence}")
+    print(entry.key, entry.confidence, entry.evidence_status)
 ```
-
-### Confidence Formula
-
-```
-new_confidence = clamp(old_confidence × outcome_multiplier, 0.0, 1.0)
-```
-
-### Confidence Over Time
-
-Imagine an entry written with `confidence=0.85`:
-
-```
-Write              → 0.85
-Critical failure   → 0.85  × 0.85 = 0.723
-Success            → 0.723 × 1.03 = 0.744
-Success            → 0.744 × 1.03 = 0.767
-Success            → 0.767 × 1.03 = 0.789
-Failure            → 0.789 × 0.90 = 0.711
-Success            → 0.711 × 1.03 = 0.732
-```
-
-Knowledge that keeps working climbs slowly back toward certainty. Knowledge that
-keeps misleading sinks, and agents filtering on `min_confidence` stop seeing it.
 
 ---
 
-## Auto-Causal Linking
+## How an outcome moves confidence
 
-If you don't specify `causal_entry_keys`, SenseLab automatically links the outcome to **every entry the agent read during the current session**:
+Each outcome adds **evidence** to every entry it cited, and the entry's confidence is the balance of that evidence against the author's prior:
 
-```python
-# Agent reads several entries during its work
-mem.read("svc", "retry-pattern")
-mem.read("svc", "timeout-config")
-mem.read("svc", "pool-settings")
-
-# Record outcome without specifying keys —
-# it applies to all three entries above
-mem.commit_outcome("DEP-300", OutcomeType.SUCCESS)
+```
+confidence = (2 × prior + evidence_for) / (2 + evidence_for + evidence_against)
 ```
 
-This is powered by the **ReadTracker**, which logs reads as the session runs.
+The prior counts as two units of evidence, so one confident outcome moves a fresh entry a long way and a handful settle it. Three things decide how much evidence one outcome adds:
 
-Exactly what lands in that causal set is worth knowing, because it decides which
-entries an outcome moves:
+- **Severity.** The weight in the table above.
+- **Credit split.** The weight is divided across the entries the run relied on. An outcome that cited eight entries cannot hand each of them a full unit of evidence; one that cited a single entry gives it everything.
+- **Surprise.** A failure on an entry trusted at `0.95` counts nearly twice as much as one on an entry at `0.5`, and a success on an already-trusted entry counts for little. Confirmation of what everyone expected is weak evidence.
+
+Evidence also **decays**: before each update, both balances are scaled by 0.8, so the last few outcomes dominate and an entry can recover from an old failure once it starts working again.
+
+With the defaults, a fresh entry at `0.7` drops to about `0.26` on its first failure and lifts to about `0.82` on its first success.
+
+### First-strike tolerance
+
+An entry with three or more successes and no failure yet is treated differently on its first failure: the surprise term is left out. A single failure against a long run of successes is more often the agent's slip or a noisy environment than a change in the world. The entry is left **contested** at about `0.62` instead of being discredited outright; a second failure in a row still discredits it (about `0.40`). A real change in the world is unlearned in two strikes.
+
+---
+
+## Evidence status
+
+Every entry carries a label derived from its outcome record, and the briefing, `retrieve()` and the dashboard read the label rather than the raw number:
+
+| Status | Meaning |
+| :-- | :-- |
+| `untested` | No outcome has relied on it yet |
+| `validated` | Outcomes have relied on it and none has failed — or its record is strong enough that an occasional failure does not change the verdict |
+| `contested` | Outcomes disagree, or a long-validated entry has just taken its first failure |
+| `discredited` | A failure pushed it below `0.5`. It is held back from retrieval and listed in the briefing's `discredited` section, with `replaced_by` once a later run succeeds with something else |
+
+Nothing is deleted when an entry is discredited. It stays in history, its versions stay readable, and it comes back if the evidence does.
+
+### Regime shift
+
+A **regime shift** is the record saying that a rule which used to work has just stopped: validated at least three times, latest outcome a failure within the last seven days, label no longer `validated`. The briefing lists these in `regime_shift`, and guidance switches to `explore` for the scope, so agents try something other than the rule that just failed. The flag clears after the window — a rule discredited last month is history, not a reason to keep skipping what has been winning since.
+
+---
+
+## What an outcome is credited to
+
+If `causal_entry_keys` is not given, the outcome is credited to what the agent read during the session:
 
 | Call | Enters the causal set? |
-|:--|:--|
+| :-- | :-- |
 | `read()` and `read_from()` | Yes, every entry returned |
-| `retrieve()` | Only the top-ranked hit, so an outcome doesn't reinforce candidates the agent never used |
-| `search()` and `list()` | No — recorded on the trace as a query event, but not treated as causal |
+| `retrieve()` | Only the top-ranked hit, so an outcome does not reinforce candidates the agent never used |
+| `search()` and `list()` | No — recorded on the trace as query events, not treated as causal |
 
-The tracker is cleared after each `commit_outcome()`, so the next task starts
-with a fresh causal window rather than re-linking the previous one's reads.
+The set is cleared after each `commit_outcome()`, so the next task starts a fresh causal window.
+
+### Mark failed attempts
+
+When a remembered fix did not work and the agent tries something else, it should say so before moving on:
+
+```python
+mem.record_attempt(summary="restarted worker per runbook; queue still stuck")
+```
+
+Everything read and done since the previous boundary is attributed to that attempt. At commit time those entries receive the attempt's failure, and only what was read afterwards is credited with the final success. Without this, an entry that sent the agent down the wrong path would be *reinforced* by the recovery from it — the opposite of learning.
+
+### Name what you acted on
+
+A briefing serves several entries and the agent follows one. Passing `causal_entry_keys` on the outcome sends the result to that one; left unnamed, every entry read since the last boundary is charged, and a correct lesson that merely shared the context with a wrong one loses confidence alongside it.
 
 ---
 
-## Four-Signal Decay Model
+## Time decay (optional)
 
-When `decay_half_life_days` is configured, SenseLab uses four signals to determine how fast an entry's effective confidence decays:
-
-| Signal | Effect | Mechanism |
-|:-------|:-------|:----------|
-| **Time** | Base exponential decay | `effective_half_life` in days |
-| **Memory type** | Facts 1×, beliefs 0.5× (faster), experiences 1.5× (slower) | Type multiplier on half-life |
-| **Outcome validation** | Validated entries decay 2× slower | `outcome_count > 0` doubles half-life |
-| **Access frequency** | Frequently read entries resist decay | `log1p(recall_count)` extends half-life |
-
-The effective half-life formula:
-
-```
-effective_half_life = base × type_multiplier × (1 + log1p(recall_count)) × (2 if outcomes else 1)
-```
-
-For example, a fact with `decay_half_life_days=30`, 10 reads, and 1 outcome:
-
-```
-30 × 1.0 × (1 + log1p(10)) × 2 = 30 × 1.0 × 3.40 × 2 = 204 days
-```
-
-This means actively used, production-validated knowledge persists far longer than cold, unvalidated beliefs.
+Outcomes are the only thing that changes stored confidence. Separately, the SDK can apply **time decay on read**, so that learning nobody has confirmed in a long time counts for less when compared against `min_confidence`. It is opt-in:
 
 ```python
-mem = AgentMemory(agent_id="my-agent", decay_half_life_days=30.0)
+mem = AgentMemory(agent_id="my-agent", adapter=adapter, decay_half_life_days=30.0)
 ```
 
-<Note>
-  Time decay is **opt-in**. With no `decay_half_life_days`, stored confidence
-  changes only when you commit an outcome. When you do set it, decay is applied
-  when an entry is read rather than written back to storage — the stored
-  confidence stays put, and the decayed value is what gets compared against
-  `min_confidence`.
-</Note>
+Four signals set how fast an entry decays:
+
+| Signal | Effect |
+| :-- | :-- |
+| Time | Exponential decay with the configured half-life |
+| Kind of learning | Facts 1×; beliefs decay 2× faster; experiences 1.5× slower; procedures 2× slower |
+| Outcome validation | Entries with any outcome decay 2× slower |
+| Recall | Frequently read entries resist decay (`log1p(recall_count)` extends the half-life) |
+
+A fact with a 30-day half-life, 10 reads and one outcome has an effective half-life of about 204 days. Actively used, outcome-validated learning persists; cold, unvalidated beliefs fade.
 
 ---
 
-## Filtering by Confidence
-
-Use `min_confidence` to filter out low-confidence entries:
+## Filtering by confidence
 
 ```python
-# Only return entries with confidence >= 0.5
 entry = mem.read("svc", "pattern", min_confidence=0.5)
-
-# Search with confidence filter
 results = mem.search(min_confidence=0.7)
 ```
 
+Prefer reading `evidence_status` to picking a threshold. An untested `0.9` and a validated `0.9` are different things to act on, and `retrieve()` already holds discredited entries back.
+
 ---
 
-## The Feedback Loop
+## The feedback loop
 
 ```
-Agent observes pattern → writes entry (confidence: 0.85)
-                              │
-                              ▼
-                   Incident occurs → commit_outcome("CRITICAL_FAILURE")
-                              │
-                              ▼
-                   Confidence erodes → 0.723
-                              │
-                              ▼
-                   Next agent sees the advice, now visibly less trusted
-                              │
-                              ▼
-                   Agent applies a better approach → clean deploy
-                              │
-                              ▼
-                   That entry is reinforced → 1.03× on its own confidence
+Agent writes a belief at 0.7
+        │
+        ▼
+Run relies on it → fails → confidence ~0.26, status discredited
+        │
+        ▼
+Next briefing lists it under `discredited`; retrieve() holds it back
+        │
+        ▼
+Another run tries a different approach → succeeds → that entry rises,
+the discredited one gains `replaced_by`
+        │
+        ▼
+Every agent on the account inherits the correction
 ```
 
-This creates a self-correcting system: advice that keeps causing incidents sinks
-out of the results agents rely on, advice that keeps working rises, and every
-agent inherits the corrections rather than rediscovering them.
+This is what separates learning from storage. Storage gives back what was put in. A record with outcomes attached gives back what has been shown to work — and keeps revising the answer as the evidence changes.
 
-<Warning>
-  If you are reading a much older version of this page, note that these
-  multipliers were once inverted — confidence was described as a risk signal that
-  failures increased. Confidence now means trustworthiness: failures erode it.
-</Warning>
+<Note>
+  SenseLab also measures, per account, how much each kind of outcome *should*
+  count and how long learning stays useful, from your own history. See
+  [ML Layer](/amfs/pro/ml-layer).
+</Note>

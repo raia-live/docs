@@ -57,7 +57,7 @@
                     "group": "Rooms",
                     "icon": "users",
                     "root": "amfs/concepts/rooms",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "amfs/concepts/room-members",
                       "amfs/concepts/room-collaboration"
@@ -92,6 +92,7 @@
                 "pages": [
                   "amfs/concepts/overview",
                   "amfs/concepts/learning-entries",
+                  "amfs/concepts/briefings",
                   "amfs/concepts/copy-on-write",
                   "amfs/concepts/confidence",
                   "amfs/concepts/provenance",
@@ -103,6 +104,7 @@
                 "group": "Pro Features",
                 "icon": "gem",
                 "pages": [
+                  "amfs/pro/overview",
                   "amfs/pro/branching",
                   "amfs/pro/multi-tenant",
                   "amfs/pro/immutable-traces",

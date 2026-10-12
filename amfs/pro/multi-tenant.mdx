@@ -9,6 +9,12 @@ asking, whether they are allowed, and what it counts against — and every route
 in, whether an MCP client, an SDK or a direct API call, goes through the same
 checks. There is no side door that skips them.
 
+That matters more for a system that learns than for one that stores. What one
+agent writes shapes what every other agent on the account is briefed with, and
+what the repair loop ships changes shared knowledge for everyone. Isolation,
+roles and scoped keys are what keep that influence inside the boundaries you
+set.
+
 ## Your data is isolated from every other account
 
 Isolation between accounts is enforced at the storage layer, underneath the
@@ -29,6 +35,14 @@ Everyone you invite holds one role, and the role decides what they can reach:
 
 Rooms have their own lighter roles for collaborators and viewers, covered in
 [Room Members and Permissions](/amfs/concepts/room-members).
+
+### Teams
+
+Members can be grouped into **teams**, managed from the account menu. A team is
+a unit you grant access to: branch access in the Git Repository section can be
+given to a team as well as to an API key, so a branch of in-progress learning is
+readable by the people working on it and nobody else. See
+[Learning as Git](/amfs/guides/learning-as-git#branches).
 
 ## Every agent gets its own key
 

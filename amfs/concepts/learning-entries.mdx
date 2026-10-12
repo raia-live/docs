@@ -6,6 +6,8 @@ icon: "file-lines"
 
 A learning entry is the unit of what an agent has learned in SenseLab: one thing it found out, decided, did, or now believes, recorded so that it — and every other agent on your account — can act on it next time instead of working it out again. In the SDK it is a `MemoryEntry`.
 
+An entry is not a static note. It carries its own evidence: every run that relies on it and reports an outcome moves its confidence and its `evidence_status`, so the same entry reads differently after it has been proven, contested or discredited. That is what lets the next briefing rank it honestly.
+
 ---
 
 ## Structure
@@ -19,6 +21,8 @@ Every learning entry has these fields:
 | `value` | `Any` | What was learned — any JSON-serializable data |
 | `version` | `int` | Version number, incremented on each write |
 | `confidence` | `float` | How far this learning can be trusted, `0.0`–`1.0`. Raised and lowered by the outcomes of tasks that relied on it (default: `1.0`) |
+| `evidence_status` | `str` | `untested`, `validated`, `contested` or `discredited` — the verdict of the outcome record, which briefings and `retrieve()` read in preference to the raw number. See [Confidence & Evidence](/amfs/concepts/confidence) |
+| `success_count` / `failure_count` | `int` | How many outcomes that relied on this entry succeeded or failed |
 | `provenance` | `Provenance` | Who learned it, when, in which session, and any `pattern_refs` |
 | `shared` | `bool` | Whether other agents can learn from it (default: `True`). Private entries are visible only to the author |
 | `outcome_count` | `int` | Number of task outcomes that have affected this entry |

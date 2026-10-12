@@ -14,17 +14,25 @@ what each plan includes, and what happens at the limit.
 
 | Operation | Ops | Examples |
 |:----------|:---:|:---------|
-| Read | **1** | `amfs_read`, `amfs_recall`, `amfs_search`, `amfs_retrieve`, `amfs_list`, fetching an entry over REST |
-| Write | **2** | `amfs_write`, `amfs_record_context`, creating an entry over REST |
+| Read | **1** | `amfs_read`, `amfs_recall`, `amfs_search`, `amfs_retrieve`, `amfs_briefing`, `amfs_list`, `amfs_history`, `amfs_explain`, fetching an entry over REST |
+| Write | **2** | `amfs_write`, `amfs_record_context`, creating an entry over REST; branch, tag, pull request, rollback, fork and snapshot operations |
 | Outcome | **0** | `amfs_commit_outcome` |
 
-Committing an outcome is deliberately free. It is the step that teaches your
-memory which entries were actually worth reading, and charging for it would
-discourage exactly the behaviour that makes the rest of your memory better.
+Committing an outcome is deliberately free. It is the step that teaches the
+loop which learning was actually worth relying on, and charging for it would
+discourage exactly the behaviour that makes everything else better.
 
-Room and negotiation tools, health checks, and account administration are also
-free. Only data-plane reads and writes are metered, so anything not in the table
-above costs nothing.
+Room and negotiation tools, evaluation and repair (judges, incidents, fixes),
+traces, patterns, health checks, and account administration are also free. Only
+data-plane reads and writes are metered, so anything not in the table above
+costs nothing.
+
+<Note>
+  Managed Models bill separately: a monthly platform fee per account plus
+  metered serving and training tokens, on their own subscription. Requests to a
+  managed model are not counted as operations, so they are never billed twice.
+  See [Managed Models](/amfs/guides/managed-models).
+</Note>
 
 ## Plans
 
@@ -40,6 +48,21 @@ above costs nothing.
 Enterprise is priced per agreement and lifts every limit above. Room guests join
 a room through a share link from their own account, so they never consume one of
 your seats.
+
+### What each plan unlocks
+
+Beyond the allowances, the tiers gate how much of the loop runs for you:
+
+| | Free / Starter | Pro | Teams | Enterprise |
+|:---|:---:|:---:|:---:|:---:|
+| Behavior: judges, incidents, fixes | — | Yes | Yes | Yes |
+| Fixes proposed automatically when an incident opens | — | Yes | Yes | Yes |
+| Fixes shipped automatically after a passing replay | — | — | Yes | Yes |
+| Canary shipping (a fix runs live for a share of sessions first) | — | — | Yes | Yes |
+| Git Repository: branches, pull requests, tags, rollback | — | Yes | Yes | Yes |
+| Managed Models — live models at once | — | 1 | 3 | 100 |
+
+Security is gated by role rather than plan; see [Learning Security](/amfs/pro/security).
 
 ## Going Over
 

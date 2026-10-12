@@ -1,15 +1,16 @@
 ---
-title: "Memory Consolidation"
-description: "Compacting a memory store that has grown faster than it has improved."
+title: "Learning Consolidation"
+description: "Compacting what agents have learned when it has grown faster than it has improved."
 icon: "layer-group"
 ---
 
-A memory store that only ever grows gets worse at its job. Superseded beliefs sit
+Learning that only ever accumulates gets worse at its job. Superseded beliefs sit
 alongside the facts that replaced them, entries nobody has read in months compete
 for space in briefings, and three agents independently record the same finding in
-slightly different words.
+slightly different words. Every one of those makes the next briefing a little
+worse than it should be.
 
-Consolidation compacts the store. It is deliberately conservative: the safe
+Consolidation compacts what has been learned. It is deliberately conservative: the safe
 operations happen automatically, and anything that changes meaning is proposed
 for review rather than applied.
 
@@ -52,8 +53,8 @@ A **candidate** is a detection result computed on the fly and not stored
 anywhere. A **proposal** is a candidate that has been persisted as a branch and
 is waiting for a decision.
 
-Review proposals in the dashboard under agent branches, on the **Consolidation**
-tab. Each shows the diff between what exists now and what the merge would
+Review proposals in the dashboard in the agent's **Git Repository** section, under
+**Branches → Consolidation** (see [Learning as Git](/amfs/guides/learning-as-git#consolidation)). Each shows the diff between what exists now and what the merge would
 produce. **Approve & Merge** applies it through the normal branch merge path;
 **Reject** closes the branch and leaves memory as it was.
 

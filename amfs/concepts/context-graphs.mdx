@@ -4,7 +4,7 @@ description: "How SenseLab captures decision traces that explain not just what h
 icon: "diagram-project"
 ---
 
-SenseLab doesn't just store what agents know — it captures **why** they acted. Every read, write, tool consultation, and outcome forms a decision trace that becomes searchable precedent.
+SenseLab doesn't just store what agents know — it records **how they used it**. Every read, external input, action, failed attempt and outcome in a run forms a **decision trace**. The trace is the raw material of the loop: it is what an outcome is credited against, what the briefing is compiled from, what judges grade, and what a model is eventually trained on. One record, four jobs.
 
 ---
 
@@ -13,10 +13,10 @@ SenseLab doesn't just store what agents know — it captures **why** they acted.
 AI agents are stateless. Each session starts from scratch with no memory of past decisions, patterns, or mistakes. When something goes wrong, there's no way to answer:
 
 - **What information did the agent have when it decided?**
-- **What external sources did it consult?**
+- **What external sources did it consult, and what did it do?**
 - **Has a similar decision been made before, and what happened?**
 
-Traditional systems of record (CRMs, ERPs, ticketing systems) store the **final state** — the deal was closed, the ticket was resolved, the deploy succeeded. But the reasoning that connected data to action was never treated as data in the first place.
+Traditional systems of record (CRMs, ERPs, ticketing systems) store the **final state** — the deal was closed, the ticket was resolved, the deploy succeeded. The reasoning that connected data to action was never treated as data, so nothing could learn from it.
 
 ---
 
@@ -91,15 +91,29 @@ mem.write(
 )
 ```
 
-### 4. What happened next
+### 4. What the agent did
 
-Outcomes close the feedback loop. Confidence on causal entries adjusts automatically:
+Consequential actions — deploys, rollbacks, edits, refunds — are recorded as they happen, failures included. When a remembered approach did not work, the attempt is closed before the next one starts, so the entries behind it receive the failure rather than the credit for the recovery:
 
 ```python
-mem.commit_outcome("DEP-500", OutcomeType.SUCCESS)
+mem.record_action("deploy_rollback", {"service": "checkout", "to_version": "v41"})
+mem.record_attempt(summary="restarted worker per runbook; queue still stuck")
 ```
 
-### 5. Why did we do that?
+### 5. What happened next
+
+The outcome closes the loop. Confidence moves on the causal entries, and the request and the answer travel with the trace so a judge can grade the run later:
+
+```python
+mem.commit_outcome(
+    "DEP-500", OutcomeType.SUCCESS,
+    task_input="deploy checkout v2.14 safely",
+    response_text="Rolled back the retry change first; deploy clean.",
+    verified_by="ci",
+)
+```
+
+### 6. Why did we do that?
 
 `explain()` returns the complete causal chain:
 
@@ -158,7 +172,7 @@ Over time, this graph captures institutional knowledge that no single agent or p
 
 ## The Knowledge Graph
 
-SenseLab now has a **persisted knowledge graph** that complements the session-scoped decision trace. The two layers serve different purposes:
+A **persisted knowledge graph** complements the session-scoped decision trace. The two layers serve different purposes:
 
 | Layer | Scope | Storage | Purpose |
 |:------|:------|:--------|:--------|
@@ -231,7 +245,9 @@ Agent makes decision → writes entry + records trace
                    Agent makes better decision → new trace
 ```
 
-Entries that led to good outcomes are reinforced and decay slower; entries correlated with incidents lose confidence and sink out of results. The system learns which decisions lead to good outcomes without any explicit training.
+Entries that led to good outcomes are reinforced and decay slower; entries correlated with failures lose confidence and sink out of results. The system learns which decisions lead to good outcomes without any explicit training.
+
+The same traces feed the two slower loops. [Behavior](/amfs/guides/behavior) grades them with judges, opens an incident when a failure recurs, and proposes a fix to the learning itself — tested by replaying the failing traces against the fixed memory before it ships. [Managed Models](/amfs/guides/managed-models) take the traces whose outcomes were good as a labelled training set. Both improve what the next run starts from, which is what makes the improvement recursive.
 
 ---
 
@@ -253,11 +269,15 @@ The resulting trace includes:
 
 | Field | Description |
 |:------|:------------|
+| `task_input` / `response_text` | The request as it arrived and the answer the agent gave — what a judge grades |
 | `causal_entries` | Full snapshots of every read entry (value, memory_type, written_by, read_at, duration_ms) |
 | `external_contexts` | All `record_context()` calls with timestamps |
+| `tool_calls` / `llm_calls` | Actions the agent took, and the model calls behind them with tokens, cost and latency |
+| `attempts` | Each approach that was tried and marked as failed before the next |
 | `query_events` | Every `search()` and `list()` call with parameters, result counts, and per-operation latency |
 | `error_events` | Any errors during reads, writes, or tool calls |
 | `state_diff` | Entries created, entries updated, and detailed confidence changes |
+| `attributes` / environment | The dimensions a run is filtered by (customer, task type…) and the model, agent version and runtime it ran on |
 | `session_started_at` / `session_ended_at` / `session_duration_ms` | Session timing |
 | `decision_summary` | Optional human-readable summary |
 
@@ -315,12 +335,14 @@ SenseLab extends the traces in SenseLab Open Source with cryptographic guarantee
 Via the MCP server, AI coding agents can build decision traces automatically:
 
 ```
-1. amfs_search("checkout-service")           → find existing context
-2. amfs_read("checkout-service", "pattern")  → read relevant entries (auto-tracked)
-3. amfs_record_context("git-log", "...", "git")  → capture tool inputs
-4. amfs_write("checkout-service", "decision-...", "...")  → record the decision
-5. amfs_commit_outcome("DEP-500", "success")  → close the loop
-6. amfs_explain("DEP-500")                   → inspect the full trace
+1. amfs_briefing("checkout-service")                → what is already known, evidence-ranked
+2. amfs_read("checkout-service", "pattern")         → read relevant entries (auto-tracked)
+3. amfs_record_context("git-log", "...", "git")     → capture tool inputs
+4. amfs_record_action("deploy_rollback", {...})     → record what was done
+5. amfs_record_attempt(summary="...")               → close an approach that did not work
+6. amfs_write("checkout-service", "decision-...", "...")  → record the decision
+7. amfs_commit_outcome("DEP-500", "success", task_input=..., response_text=...)  → close the loop
+8. amfs_explain("DEP-500")                          → inspect the full trace
 ```
 
-No manual instrumentation required. The causal chain builds itself from normal agent workflow.
+The causal chain builds itself from the normal workflow. To add nested steps, LLM calls and cost from an agent you run yourself, see [Instrument your agent](/amfs/guides/instrument-your-agent).

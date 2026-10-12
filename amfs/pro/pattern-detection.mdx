@@ -6,13 +6,15 @@ icon: "magnifying-glass-chart"
 
 # Automated Pattern Detection
 
-Continuously analyse your memory store to surface how well your agents are
-actually working together — where they contradict each other, where knowledge is
-going stale, and where one agent has become a single point of failure.
+Analyse everything your agents have learned to surface how well they are
+actually working together — where they contradict each other, where learning is
+going stale, where one agent has become a single point of knowledge, and which
+entries keep turning up behind failed runs.
 
 Run a scan from **Patterns** in the dashboard, or through the API. A scan reads
 your entries, branches, pull requests, and outcome history, and returns a report
-grouped by category and severity.
+grouped by category and severity. Detections persist until you resolve them, and
+a new scan replaces the unresolved ones with what it finds now.
 
 ## Pattern Types
 
@@ -60,17 +62,25 @@ The thresholds that decide when something counts as a pattern are configurable:
 | `similarity_threshold` | 0.75 | String similarity above which two entries count as redundant |
 | `incident_threshold` | 2 | Failures an entry must appear in to count as a recurring failure |
 
-## Alerting
+## Acting on a pattern
 
-Alert rules fire when a scan turns up something matching. Each rule filters by
-pattern type, minimum severity, and entity path, and has a cooldown so a
-persistent problem does not alert every scan.
+Each detection names the entity and entries it was found on, so the fix is
+usually a short walk away: resolve a knowledge conflict on the entries page,
+close or merge an orphaned branch in the agent's Git Repository, review a stale
+pull request. Mark a detection **Resolved** once it is dealt with; the Patterns
+page hides resolved detections by default and can show them again.
 
-Alerts are delivered to a callback you register, which means routing is up to
-you — send them wherever your team already handles alerts.
+Patterns with a concrete fix also appear in the **Do next** panel on the agent's
+page, so the agent's owner sees them without visiting Patterns.
 
 <Note>
-Rules match on the pattern type strings above, such as `knowledge_conflict` or
-`recurring_failure`, and severities are lowercase: `info`, `warning`,
-`critical`.
+  A **recurring failure** is the pattern that closes the loop. The same entries
+  appearing behind failed outcomes is what [Behavior](/amfs/guides/behavior)
+  turns into an incident and, on Pro and above, a proposed fix to the learning
+  itself — and it is the alert kind you can subscribe to there. Pattern
+  detection shows you the shape of the problem; Behavior repairs it.
 </Note>
+
+Pattern type strings are the lowercase names above — `knowledge_conflict`,
+`recurring_failure` — and severities are `info`, `warning`, `critical`. Both
+are what the API returns and what the Patterns page filters on.

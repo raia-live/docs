@@ -4,7 +4,9 @@ description: "How SenseLab treats each agent's memory as a Git repository."
 icon: "code-branch"
 ---
 
-SenseLab models every agent's memory as a **Git repository**. Each write, outcome, cross-agent read, and brain brief is recorded as an event on the agent's timeline — like commits in Git. This gives you full auditability, rollback capability, and branch-based collaboration.
+SenseLab models everything an agent learns as a **Git repository**. Each write, outcome, cross-agent read, and compiled brief is recorded as an event on the agent's timeline — like commits in Git.
+
+This is what lets the loop change shared knowledge safely. A fix to what agents know can be made on a branch, replayed against the failures that prompted it, reviewed as a diff, merged when it holds up, and rolled back if it regresses — the same discipline you apply to code, applied to learning. For the dashboard side of all of this, see [Learning as Git](/amfs/guides/learning-as-git).
 
 ---
 
@@ -64,7 +66,7 @@ Every operation produces a typed event on the agent's timeline:
 ```python
 from amfs import AgentMemory
 
-mem = AgentMemory(agent_id="deploy-agent")
+mem = AgentMemory(agent_id="deploy-agent", adapter=adapter)
 
 events = mem.timeline(limit=50)
 for event in events:
@@ -111,7 +113,7 @@ amfs_timeline(agent_id="deploy-agent", limit=50)
 
 ## Branches (Pro)
 
-With SenseLab Pro, you can create branches from an agent's main timeline — just like Git branches. Branches let you:
+On Pro, Teams and Enterprise you can create branches from an agent's main timeline — just like Git branches. SenseLab uses them itself: every [fix](/amfs/guides/behavior#fixes) the repair loop proposes is drafted on its own branch and only merged into `main` when it ships. Branches let you:
 
 - **Experiment safely** — write to a branch without affecting main memory
 - **Share selectively** — grant read or read/write access to specific users, teams, or API keys
@@ -123,7 +125,7 @@ With SenseLab Pro, you can create branches from an agent's main timeline — jus
 ```python
 from amfs_branching.sdk import extend_with_branching
 
-mem = AgentMemory(agent_id="deploy-agent")
+mem = AgentMemory(agent_id="deploy-agent", adapter=adapter)
 extend_with_branching(mem)
 
 mem.create_branch("experiment/retry-v3", description="Testing aggressive retry")
@@ -275,4 +277,6 @@ print(f"Forked {count} entries to deploy-agent-v2")
 
 The timeline records everything on `main` from your first write, with nothing to
 turn on. Branching, merging, tags, rollback, cherry-pick, fork, and branch
-access control are [SenseLab Pro](/amfs/editions) features.
+access control are available on Pro, Teams and Enterprise — see
+[Learning Branching](/amfs/pro/branching) for the model and
+[Learning as Git](/amfs/guides/learning-as-git) for the dashboard.
