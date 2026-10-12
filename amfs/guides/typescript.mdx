@@ -6,7 +6,7 @@ icon: "js"
 
 # TypeScript SDK
 
-The TypeScript SDK (`@senselab-ai/amfs`) brings SenseLab memory to Node.js and TypeScript applications — reads and writes with ReadTracker and auto-causal linking, search, history, stats, scopes, transactions, integrity verification, explainability, and a connection to your SenseLab account.
+The TypeScript SDK (`@senselab-ai/amfs`) connects Node.js and TypeScript agents to your SenseLab account — briefings, reads and writes, search, outcomes and decision traces over the `HttpAdapter` — and ships an in-memory adapter with ReadTracker, auto-causal linking, scopes, transactions and integrity verification for tests and prototypes.
 
 ---
 
@@ -22,10 +22,12 @@ The package is ESM-only, has no runtime dependencies, and needs Node.js 18 or la
 
 ## Two ways to run it
 
+The `HttpAdapter` is how the SDK reaches your account. Its `*Async` methods are what you use in an agent; the synchronous API exists for the in-memory adapter.
+
 | Mode | Adapter | API | When |
 | :- | :- | :- | :- |
-| **Connected to SenseLab** | `HttpAdapter` | `await adapter.*Async(...)` | Production. Memory is shared across sessions, agents and machines, and runs appear on the dashboard. |
-| **Local, in memory** | default `InMemoryAdapter` | synchronous `mem.read()`, `mem.write()`, … | Tests, prototypes, single-process agents. Nothing persists when the process exits. |
+| **Connected to SenseLab** | `HttpAdapter` | `await adapter.*Async(...)` | Your agents. Everything learned is shared across sessions, agents and machines, and runs appear on the dashboard. |
+| **In memory** | default `InMemoryAdapter` | synchronous `mem.read()`, `mem.write()`, … | Unit tests and prototypes. Nothing persists when the process exits, and nothing reaches SenseLab. |
 
 <Warning>
   Over the `HttpAdapter`, the synchronous methods `read()`, `write()`, `list()`
@@ -91,7 +93,99 @@ Pass `causalEntryKeys` on remote commits: the SDK's `ReadTracker` only sees sync
 
 ---
 
-## Quick start: local, in memory
+## Connecting to SenseLab
+
+### Using the HttpAdapter
+
+```typescript
+import { AgentMemory, HttpAdapter } from "@senselab-ai/amfs";
+
+const adapter = new HttpAdapter({
+  url: "https://amfs-login.sense-lab.ai",
+  apiKey: process.env.AMFS_API_KEY,
+  agentId: "review-agent",          // stamped on outcomes committed through this adapter
+  headers: { "X-Team": "payments" }, // optional extra headers on every request
+});
+
+const mem = new AgentMemory("review-agent", { adapter });
+```
+
+The `HttpAdapter` provides async methods for everything that reaches your account:
+
+```typescript
+// Read and write
+const entry = await adapter.readAsync("checkout-service", "retry-pattern");
+const written = await adapter.writeAsync({
+  entityPath: "checkout-service",
+  key: "retry-pattern",
+  value: { maxRetries: 3 },
+  confidence: 0.9,
+  memoryType: "fact",        // "fact" | "belief" | "experience"
+  patternRefs: ["retry"],
+});
+
+// Search and list
+const results = await adapter.searchAsync({
+  query: "retry strategy",
+  entityPath: "checkout-service",
+  minConfidence: 0.7,
+  sortBy: "confidence",
+  limit: 10,
+});
+const entries = await adapter.listAsync("checkout-service");
+
+// Briefing — compiled, ranked knowledge about an entity
+const briefing = await adapter.briefingAsync({ entityPath: "checkout-service", limit: 5 });
+
+// Outcomes — this is where learning happens
+const result = await adapter.commitOutcomeAsync({
+  outcomeRef: "DEP-500",
+  outcomeType: "success",   // "success" | "minor_failure" | "failure" | "critical_failure"
+  entityPath: "checkout-service",
+  causalEntryKeys: ["checkout-service/retry-pattern"],
+  causalConfidence: 0.9,
+});
+
+// Stats and health
+const stats = await adapter.statsAsync();
+const health = await adapter.healthAsync();
+
+// Decision traces
+const traces = await adapter.listTracesAsync({
+  entityPath: "checkout-service",
+  outcomeType: "success",
+  limit: 5,
+});
+const trace = await adapter.getTraceAsync(traces[0].id);
+console.log(trace?.causalEntries, trace?.externalContexts, trace?.sessionDurationMs);
+```
+
+Requests that fail are thrown as `Error("AMFS API <status>: <body>")`, so a wrong key surfaces as a `401` on the first call rather than as silently missing data.
+
+### Direct REST calls
+
+```typescript
+const response = await fetch("https://amfs-login.sense-lab.ai/api/v1/entries", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-AMFS-API-Key": process.env.AMFS_API_KEY!,
+  },
+  body: JSON.stringify({
+    entity_path: "checkout-service",
+    key: "retry-pattern",
+    value: { maxRetries: 3 },
+  }),
+});
+```
+
+See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide, [MCP server](/amfs/guides/mcp), and [REST API reference](/amfs/guides/http-server) for details.
+
+---
+
+## Quick start: in memory
+
+The sections from here through [Stats](#stats) describe the synchronous API, which runs on the in-memory adapter. Use it in unit tests and prototypes; in an agent, use the `*Async` methods above.
 
 ```typescript
 import { AgentMemory, OutcomeType } from "@senselab-ai/amfs";
@@ -142,7 +236,7 @@ interface AgentMemoryOptions {
 }
 ```
 
-By default, the SDK uses an in-memory adapter. Pass an `HttpAdapter` to connect to a remote SenseLab server, or implement `AmfsAdapter` for custom storage.
+Pass the `HttpAdapter` to reach your SenseLab account. Without `adapter`, the SDK uses the in-memory adapter and nothing leaves the process.
 
 ---
 
@@ -360,96 +454,6 @@ console.log(stats.outcomeLinkedCount);
 console.log(stats.agents);   // Record<string, number>
 console.log(stats.entities); // Record<string, number>
 ```
-
----
-
-## Connecting to SenseLab
-
-### Using the HttpAdapter
-
-```typescript
-import { AgentMemory, HttpAdapter } from "@senselab-ai/amfs";
-
-const adapter = new HttpAdapter({
-  url: "https://amfs-login.sense-lab.ai",
-  apiKey: process.env.AMFS_API_KEY,
-  agentId: "review-agent",          // stamped on outcomes committed through this adapter
-  headers: { "X-Team": "payments" }, // optional extra headers on every request
-});
-
-const mem = new AgentMemory("review-agent", { adapter });
-```
-
-The `HttpAdapter` provides async methods for remote operations:
-
-```typescript
-// Read and write
-const entry = await adapter.readAsync("checkout-service", "retry-pattern");
-const written = await adapter.writeAsync({
-  entityPath: "checkout-service",
-  key: "retry-pattern",
-  value: { maxRetries: 3 },
-  confidence: 0.9,
-  memoryType: "fact",        // "fact" | "belief" | "experience"
-  patternRefs: ["retry"],
-});
-
-// Search and list
-const results = await adapter.searchAsync({
-  query: "retry strategy",
-  entityPath: "checkout-service",
-  minConfidence: 0.7,
-  sortBy: "confidence",
-  limit: 10,
-});
-const entries = await adapter.listAsync("checkout-service");
-
-// Briefing — compiled, ranked knowledge about an entity
-const briefing = await adapter.briefingAsync({ entityPath: "checkout-service", limit: 5 });
-
-// Outcomes — this is where learning happens
-const result = await adapter.commitOutcomeAsync({
-  outcomeRef: "DEP-500",
-  outcomeType: "success",   // "success" | "minor_failure" | "failure" | "critical_failure"
-  entityPath: "checkout-service",
-  causalEntryKeys: ["checkout-service/retry-pattern"],
-  causalConfidence: 0.9,
-});
-
-// Stats and health
-const stats = await adapter.statsAsync();
-const health = await adapter.healthAsync();
-
-// Decision traces
-const traces = await adapter.listTracesAsync({
-  entityPath: "checkout-service",
-  outcomeType: "success",
-  limit: 5,
-});
-const trace = await adapter.getTraceAsync(traces[0].id);
-console.log(trace?.causalEntries, trace?.externalContexts, trace?.sessionDurationMs);
-```
-
-Requests that fail are thrown as `Error("AMFS API <status>: <body>")`, so a wrong key surfaces as a `401` on the first call rather than as silently missing data.
-
-### Direct REST calls
-
-```typescript
-const response = await fetch("https://amfs-login.sense-lab.ai/api/v1/entries", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-AMFS-API-Key": process.env.AMFS_API_KEY!,
-  },
-  body: JSON.stringify({
-    entity_path: "checkout-service",
-    key: "retry-pattern",
-    value: { maxRetries: 3 },
-  }),
-});
-```
-
-See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide, [MCP server](/amfs/guides/mcp), and [REST API reference](/amfs/guides/http-server) for details.
 
 ---
 
