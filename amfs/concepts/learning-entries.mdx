@@ -1,0 +1,210 @@
+---
+title: "Learning Entries"
+description: "The unit of what an agent has learned in SenseLab."
+icon: "file-lines"
+---
+
+A learning entry is the unit of what an agent has learned in SenseLab: one thing it found out, decided, did, or now believes, recorded so that it — and every other agent on your account — can act on it next time instead of working it out again. In the SDK it is a `MemoryEntry`.
+
+---
+
+## Structure
+
+Every learning entry has these fields:
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `entity_path` | `str` | Hierarchical scope — what the learning is about (e.g., `"checkout-service"` or `"myapp/auth"`) |
+| `key` | `str` | Unique identifier within the entity (e.g., `"retry-pattern"`) |
+| `value` | `Any` | What was learned — any JSON-serializable data |
+| `version` | `int` | Version number, incremented on each write |
+| `confidence` | `float` | How far this learning can be trusted, `0.0`–`1.0`. Raised and lowered by the outcomes of tasks that relied on it (default: `1.0`) |
+| `provenance` | `Provenance` | Who learned it, when, in which session, and any `pattern_refs` |
+| `shared` | `bool` | Whether other agents can learn from it (default: `True`). Private entries are visible only to the author |
+| `outcome_count` | `int` | Number of task outcomes that have affected this entry |
+| `recall_count` | `int` | How many times this entry has been read (updated in place, no new version) |
+| `ttl_at` | `datetime?` | Optional expiration timestamp |
+| `memory_type` | `MemoryType` | Kind of learning: `fact` (default), `belief`, `experience`, or `procedure` |
+| `is_artifact` | `bool` | Marks stored working files and code blobs rather than things learned, so they rank below real findings |
+| `branch` | `str` | Branch this version lives on (default: `"main"`) |
+| `tier` | `int` | Retrieval tier: `1`=Hot, `2`=Warm, `3`=Archive (default) |
+| `priority_score` | `float?` | Composite priority used for tier assignment |
+| `importance_score` | `float?` | Multi-dimensional importance (0.0–1.0), set by `ImportanceEvaluator` |
+| `importance_dimensions` | `dict?` | Per-dimension breakdown (e.g. `{"behavioral_alignment": 0.8}`) |
+| `embedding` | `list[float]?` | Optional vector embedding for semantic search |
+| `amfs_version` | `str` | Protocol version (currently `"0.3.0"`) |
+
+---
+
+## Entity Paths and Keys
+
+Learning is organized in a two-level hierarchy:
+
+```
+entity_path / key
+```
+
+- **Entity path** — Groups related learning. Think of it as the "subject" or "scope." Can be hierarchical with `/` separators (e.g., `myapp/checkout-service`).
+- **Key** — Identifies one thing learned within that entity. Typically descriptive (e.g., `retry-pattern`, `risk-race-condition`, `decision-auth-strategy`).
+
+### Naming Conventions
+
+| Prefix | Use Case | Example |
+|:-------|:---------|:--------|
+| `pattern-` | Reusable patterns | `pattern-exponential-backoff` |
+| `risk-` | Known risks or bugs | `risk-race-condition` |
+| `decision-` | Architectural decisions | `decision-auth-jwt` |
+| `task-summary-` | What was done and why | `task-summary-refactor-checkout` |
+
+---
+
+## Entry Key (Canonical Reference)
+
+The combination of `entity_path/key` forms the **entry key** — the canonical way to reference an entry across SenseLab:
+
+```
+checkout-service/retry-pattern
+myapp/auth/decision-jwt-strategy
+```
+
+Entry keys are used in `causal_entry_keys` when recording outcomes — naming the learning a task relied on, so the outcome can credit or discredit it — and in `pattern_refs` for cross-referencing.
+
+---
+
+## Kinds of Learning
+
+Every entry has a `memory_type` that says what kind of learning it is. The kind affects how fast confidence decays when nothing confirms it, how outcomes are applied, and where the briefing lists it:
+
+| Type | What it is | Decay |
+|:-----|:-----------|:------|
+| `fact` | Something objective and stable the agent found out (default) | Normal |
+| `belief` | An inference that may turn out wrong and should be revisited | 2× faster |
+| `experience` | A record of something the agent did — an action and its result | 1.5× slower |
+| `procedure` | How to do a task: ordered steps, what to check before acting, and what to do when a step fails | 2× slower |
+
+Procedures are what the repair loop ships when a failure was about method rather than fact — see [Behavior](/amfs/guides/behavior). The briefing lists them in their own section, scoped to the environment the agent is running in.
+
+```python
+from amfs import MemoryType
+
+# A belief: decays faster, and signals it may be revised
+mem.write(
+    "checkout-service",
+    "hypothesis-latency-source",
+    "Latency is likely caused by N+1 queries in order listing",
+    memory_type=MemoryType.BELIEF,
+    confidence=0.7,
+)
+
+# An experience: what was done, decays slower
+mem.write(
+    "checkout-service",
+    "action-added-index",
+    "Added database index on orders.user_id to fix N+1 query",
+    memory_type=MemoryType.EXPERIENCE,
+)
+
+# A procedure: how to do the task next time
+mem.write(
+    "checkout-service",
+    "procedure-rollback",
+    {
+        "goal": "Roll back a bad checkout deploy",
+        "steps": ["Pause the queue", "Redeploy the previous tag", "Run the smoke test"],
+        "verify": "Checkout success rate back above 99% within five minutes",
+    },
+    memory_type=MemoryType.PROCEDURE,
+)
+```
+
+---
+
+## Provenance Tiers
+
+Every entry has a computed `provenance_tier` that reflects how much weight its learning carries, based on how it was created and whether real outcomes have validated it:
+
+| Tier | Value | Meaning |
+|:-----|:------|:--------|
+| `PRODUCTION_VALIDATED` | 1 | Learned by a production agent and confirmed by task outcomes |
+| `PRODUCTION_OBSERVED` | 2 | Learned by a production agent, no outcomes yet |
+| `DEVELOPMENT` | 3 | Learned in a dev/staging environment |
+| `MANUAL` | 4 | Seeded by people or scripts rather than learned |
+
+The tier is computed from `provenance.agent_id` prefix and `outcome_count` — not stored separately. Production agents are identified by `agent/`, `prod/`, or `prod-` prefixes.
+
+```python
+entry = mem.read("checkout-service", "retry-pattern")
+print(entry.provenance_tier)  # ProvenanceTier.PRODUCTION_VALIDATED
+```
+
+---
+
+## Values
+
+The `value` field holds what was learned, as any JSON-serializable data:
+
+```python
+# String
+mem.write("svc", "note", "Use connection pooling")
+
+# Dict
+mem.write("svc", "config", {"pool_size": 10, "timeout": 30})
+
+# List
+mem.write("svc", "endpoints", ["/api/v1/orders", "/api/v1/users"])
+
+# Nested structures
+mem.write("svc", "analysis", {
+    "finding": "N+1 query in order listing",
+    "impact": "high",
+    "suggested_fix": "Add prefetch_related('items')",
+})
+```
+
+---
+
+## Hot, Warm and Archive Tiers
+
+Entries are assigned to retrieval tiers based on a composite priority score (recency, confidence, how often they are recalled, importance), so the learning an agent is most likely to need is the first thing searched:
+
+| Tier | Value | Description |
+|:-----|:------|:------------|
+| Hot | `1` | High-priority entries — searched first with `depth=1` |
+| Warm | `2` | Mid-priority — included with `depth=2` |
+| Archive | `3` | Low-priority (default) — included with `depth=3` |
+
+Use progressive retrieval to control search scope:
+
+```python
+results = mem.search(depth=1)  # hot-tier only — fast, high-signal
+results = mem.search(depth=2)  # hot + warm
+results = mem.search()         # all tiers (default depth=3)
+```
+
+<Note>
+  Entries are written at tier `3` and promoted from there. Scoring runs
+  continuously in the background — there is nothing to schedule or tune.
+</Note>
+
+---
+
+## Lifecycle
+
+A learning entry goes through these states:
+
+```
+Created (v1, current)
+    │
+    ▼ write same key
+Superseded (v1, superseded)  ←  preserved in history
+    │
+New version created (v2, current)
+    │
+    ▼ outcome committed
+Confidence updated (v2 superseded → v3 current, new confidence)
+    │
+    ▼ TTL expires
+Archived (confidence → 0.0)
+```
+
+Every state transition creates a new version. Nothing an agent learned is ever deleted — only superseded, which is what makes [rollback](/amfs/guides/learning-as-git#rolling-back) and the version history possible.

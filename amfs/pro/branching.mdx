@@ -1,38 +1,41 @@
 ---
-title: "Memory Branching"
-description: "Git-like branching for agent memory — branches, merge, pull requests, tags, rollback, and fork."
+title: "Learning Branching"
+description: "Git-like branching for what your agents learn — branches, merge, pull requests, tags, rollback, and fork."
 icon: "code-branch"
 ---
 
-# Memory Branching — Git for Agent Memory
-
-Every plan records an agent's memory as a [timeline](/amfs/concepts/git-timeline)
-of events on `main`. Branching adds the rest of the model on top: work an agent
-does on a branch, review it before it lands, tag a known-good state, and roll
-back to it when something goes wrong.
+SenseLab records what an agent learns as a [timeline](/amfs/concepts/git-timeline)
+of events on `main`. Branching adds the rest of the Git model on top: learning an
+agent does on a branch, review before it lands, a tag on a known-good state, and
+rollback to it when something goes wrong.
 
 <Note>
 Branching is available on Pro, Teams, and Enterprise. You will find it under the
-**Git Repository** section of any agent's detail page in the dashboard.
+**Git Repository** section of any agent's page in the dashboard;
+[Learning as Git](/amfs/guides/learning-as-git) walks through that section tab
+by tab.
 </Note>
 
 ## Branches
 
-Create a branch from an agent's `main` memory and let the agent write to it
+Create a branch from an agent's `main` learning and let the agent write to it
 without touching what everyone else reads. Diff the branch against `main` to see
 exactly what changed, then merge it or throw it away.
 
 This is what makes risky work safe. An agent trying a new approach can build up
 a whole set of beliefs on a branch, and if the approach turns out to be wrong,
-none of it ever reaches the memory other agents rely on.
+none of it ever reaches the learning other agents rely on. It is also how
+SenseLab itself works: a [fix](/amfs/guides/behavior#fixes) is drafted and
+tested on its own branch and only merged into `main` when it ships.
 
-Merges default to fast-forward. Where the same key changed on both sides, the
-merge reports the conflict and you choose which value wins.
+Merges default to fast-forward. Where the same entry changed on both sides, the
+merge reports the conflict and you choose which version wins — per entry, or
+for the whole merge with *Branch Wins* or *Main Wins*.
 
 ## Pull Requests
 
-A branch can be opened as a pull request so a human or another agent reviews the
-change before it lands on `main`. Reviews come in three kinds:
+A branch can be opened as a pull request so a person or another agent reviews
+what was learned before it lands on `main`. Reviews come in three kinds:
 
 | Review | Meaning |
 |:-------|:--------|
@@ -42,26 +45,28 @@ change before it lands on `main`. Reviews come in three kinds:
 
 <Note>
 The dashboard lists pull requests and their reviews, and lets you create, merge,
-and close them. Submitting a review is currently API-only.
+and close them. Submitting a review is done by agents through the API.
 </Note>
 
 ## Branch Access Control
 
 Grant read or read/write access to a branch, so a branch of sensitive or
-in-progress memory is not readable by every agent on the account. Grants are
+in-progress learning is not readable by every agent on the account. Grants are
 made to an API key or a team, and each grant is either `read` or `read_write`.
 
-Access is enforced by the server on API-key traffic to the entry and search
+Access is enforced by SenseLab on API-key traffic to the entry and search
 endpoints: a request targeting a non-`main` branch is checked against that
 branch's grants and refused with a 403 if it does not have them. Writes require
 `read_write` — a `read` grant can see the branch but not change it.
 
 ## Tags & Rollback
 
-Tag a point on the timeline with a name, then roll the agent's memory back to
-either a tag or a specific timestamp. This is the recovery path when an agent
+Tag a point on the timeline with a name, then roll the agent's learning back to
+either a tag or a specific moment. This is the recovery path when an agent
 learns something wrong and acts on it repeatedly: instead of hunting down each
-bad entry, return the brain to a state you know was good.
+bad entry, return what the agent knows to a state you know was good. Nothing is
+deleted by a rollback — the superseded versions stay in the history — but there
+is no undo, so tag the current state first.
 
 ## Cherry-pick & Fork
 
@@ -69,13 +74,14 @@ bad entry, return the brain to a state you know was good.
 thing from a branch you are otherwise discarding. It is available through the
 API.
 
-**Fork** clones an entire agent's memory to a new agent — the fast way to stand
-up a second agent that should start out knowing everything the first one does.
+**Fork** copies everything an agent has learned to a new agent — the fast way to
+stand up a second agent that should start out knowing everything the first one
+does.
 
 ## Sacred Timeline
 
 The default view in the Git Repository section is an interactive 3D
-visualisation of how the agent's memory evolved: event nodes along the timeline,
-forks where branches split off, and a detail panel for any event you click.
-Next to it, **Event Log** shows the same history as a chronological list, which
-is usually the faster way to find a specific write.
+visualisation of how the agent's learning evolved: event nodes along the
+timeline, forks where branches split off, and a detail panel for any event you
+click. Next to it, **Event Log** shows the same history as a chronological list,
+which is usually the faster way to find a specific entry.
