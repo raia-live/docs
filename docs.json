@@ -30,15 +30,7 @@
                 "pages": [
                   "amfs/getting-started/saas-connection",
                   "amfs/getting-started/quickstart",
-                  "amfs/getting-started/configuration",
-                  {
-                    "group": "Agent Control",
-                    "icon": "sliders",
-                    "pages": [
-                      "amfs/guides/instrument-your-agent",
-                      "amfs/guides/behavior"
-                    ]
-                  }
+                  "amfs/getting-started/configuration"
                 ]
               },
               {
@@ -52,6 +44,15 @@
                   "amfs/guides/typescript",
                   "amfs/guides/connectors",
                   "amfs/guides/integrations",
+                  {
+                    "group": "Agent Control",
+                    "icon": "sliders",
+                    "pages": [
+                      "amfs/guides/instrument-your-agent",
+                      "amfs/guides/behavior",
+                      "amfs/guides/learning-as-git"
+                    ]
+                  },
                   {
                     "group": "Rooms",
                     "icon": "users",
@@ -90,7 +91,7 @@
                 "icon": "brain",
                 "pages": [
                   "amfs/concepts/overview",
-                  "amfs/concepts/memory-entries",
+                  "amfs/concepts/learning-entries",
                   "amfs/concepts/copy-on-write",
                   "amfs/concepts/confidence",
                   "amfs/concepts/provenance",
@@ -146,6 +147,10 @@
     {
       "source": "/behavior/instrument",
       "destination": "/amfs/guides/instrument-your-agent"
+    },
+    {
+      "source": "/amfs/concepts/memory-entries",
+      "destination": "/amfs/concepts/learning-entries"
     }
   ],
   "logo": {

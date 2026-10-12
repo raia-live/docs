@@ -1,0 +1,170 @@
+---
+title: "Learning as Git"
+description: "Every agent's learning is a repository: an event log of everything it learned, branches to try things safely, pull requests to review before it lands, tags for known-good states, and rollback."
+icon: "code-branch"
+---
+
+SenseLab keeps what an agent learns the way Git keeps code. Every write, read, outcome and brief is an event on the agent's `main` branch; a new version of an entry never overwrites the old one; and the whole history can be branched, diffed, merged, tagged and rolled back. The **Git Repository** section on each agent's page is where you see and operate on that history.
+
+<Note>
+  Open it from the [dashboard](https://amfs.sense-lab.ai): **Agents → your
+  agent → Git Repository**. Branching, merge, pull requests, tags, Sacred
+  Timeline and the full git-like model are available on the Pro, Teams and
+  Enterprise plans. For the model behind the section, read
+  [Git-like Timeline](/amfs/concepts/git-timeline) and
+  [Learning Branching](/amfs/pro/branching); for the API calls, the same two pages.
+</Note>
+
+The section has five tabs:
+
+| Tab | What it is for |
+| :-- | :-- |
+| **Sacred Timeline** | A 3D picture of how the agent's learning evolved, with branches as forks off `main` |
+| **Event Log** | The same history as a chronological list, with rollback to any event |
+| **Branches** | Create, diff, merge and close branches; approve consolidation proposals; manage who can read a branch |
+| **Pull Requests** | Review a branch's changes before they land on `main` |
+| **Tags** | Named checkpoints you can roll back to |
+
+---
+
+## Sacred Timeline
+
+The default view. `main` runs through the scene; branches fork off it and run alongside; every event is a node, coloured by type (the legend is in the corner). Drag to pan, right-drag to orbit, scroll to zoom, and click a node for its details:
+
+- an **Outcome** shows the outcome reference, the causal confidence and how many entries it affected;
+- a **Read** shows which version was read;
+- a **Brief** shows the digest type, how many entries it covered and which entities;
+- a **Branch** shows its description; a **Merge**, how many entries it merged.
+
+The filter strip narrows the scene to one event type — writes, reads, outcomes, cross-agent reads, briefs, webhooks, branches created or merged. The view shows the agent's most recent two hundred events, refreshes on its own every minute, and goes fullscreen with the button in the corner.
+
+Use it to see the shape of an agent's learning — a burst of writes after a task, a branch that was tried and merged, another that was tried and closed — rather than to find a specific entry. For that, use the Event Log.
+
+---
+
+## Event Log
+
+Every event on the agent's timeline, newest first, grouped by day. The filter strip has **All**, **Write**, **Read**, **Outcome**, **Cross-Read**, **Webhook**, **Brief Compiled** and **Commit**.
+
+Each event shows its type, the branch it happened on (when it was not `main`), who did it when another agent acted on this agent's learning, when, and a one-line summary. Underneath are the details that apply: the `entity_path/key` touched, the confidence, the memory type, the outcome type, the version, and the content hash of what was written.
+
+| Event | Means |
+| :-- | :-- |
+| **Write** | An entry was created or a new version written |
+| **Read** | An entry was read; the version is recorded |
+| **Outcome** | A task's outcome was committed and credited to the entries it relied on |
+| **Cross-Read** | Another agent read this agent's shared learning |
+| **Brief Compiled** | The Cortex compiled a briefing over this agent's entries |
+| **Webhook** | External context arrived through a webhook |
+| **Branch / Merge** | A branch was created from, or merged into, this agent's learning |
+| **Tag / Rollback** | A tag was created; the agent was rolled back to an earlier state |
+| **Snapshot / Recovered** | A snapshot was taken or restored |
+
+Writes made together as one commit are grouped under the commit's message, so a batch of related entries reads as one change rather than a dozen lines.
+
+Hover an event for **Rollback to this event**. See [Rolling back](#rolling-back) below for exactly what that does.
+
+---
+
+## Branches
+
+A branch is a copy of the agent's learning that the agent can write to without changing what everyone else reads. Try an approach on a branch; if it works, merge it; if it does not, close it and none of it reaches `main`.
+
+The tab has two views. **My Branches** are the branches created on this agent. **Consolidation** holds the branches SenseLab opens on its own with a proposal to compact the agent's learning — see [Consolidation](#consolidation).
+
+**Create Branch** opens a branch from `main` with a name (`experiment/auth-v2`) and a one-line description of what it is for. Agents then write to it by passing `branch=` on their reads and writes — see [Writing to a branch](/amfs/concepts/git-timeline#writing-to-a-branch).
+
+Each branch card shows its status — *active*, *merged* or *closed* — which branch it came from, who created it, and when. From the card:
+
+- **Diff** lists what the branch changed against `main`: entries added, modified and deleted. A modified entry shows its field-level changes — which path was added, removed or changed, and the old and new values — or the `main` and branch values side by side.
+- **Access** controls which agents can use the branch. Grant an **API key** or a **team** either **Read** or **Read/Write**, and revoke a grant from the same list. SenseLab enforces this on the entry and search endpoints: an API key reading or writing a branch it holds no grant on is refused, and writes need Read/Write. (`main` is not gated this way, and neither are the branches SenseLab opens itself for [fixes](/amfs/guides/behavior#fixes), which the account's agents can read without a grant.)
+- **Merge** brings the branch into its parent with the strategy chosen next to it:
+
+  | Strategy | When the same entry changed on both sides |
+  | :-- | :-- |
+  | **Fast Forward** (default) | Stops and reports the conflict for you to resolve |
+  | **Branch Wins** | The branch's version is kept |
+  | **Main Wins** | The parent's version is kept |
+
+  With conflicts, the card lists each entry changed on both branches with both versions; choose **Branch** or **Main** for each and merge again. The merge result reports how many entries landed.
+- **Close** ends the branch without merging. Its history stays readable.
+
+### Consolidation
+
+When the Cortex finds entries that could be compacted — several agents converging on the same knowledge, outcomes that roll up, a belief superseded by a later fact, stale entries worth pruning — it writes the proposal on a branch of its own and lists it under **Consolidation** with a *pending* badge.
+
+Each proposal names the entity, the strategy (*Convergent Knowledge*, *Outcome Rollup*, *Superseded Belief* or *Stale Pruning*), how many entries it replaces and by what ratio, the confidence of the result, and the rationale. **Diff** shows the proposed value next to the entries it would replace. **Approve & Merge** lands it on `main`; **Reject** closes the branch and nothing changes. [Consolidation](/amfs/pro/consolidation) explains the strategies and how proposals are generated.
+
+---
+
+## Pull Requests
+
+A pull request is a branch offered for review before it merges. Open one with **Create PR**: a title, the source branch, and the target branch (`main` unless you say otherwise).
+
+Each PR shows its status — *open*, *merged* or *closed* — the source and target branches, who opened it and when. Expand it for:
+
+- **Changes** — the same diff as on the branch card: entries added, modified and deleted, with field-level changes for the modified ones.
+- **Reviews** — each review's author, verdict and comment. A verdict is **approved**, **changes requested** or **commented**.
+
+**Merge** lands an open PR on its target; **Close** declines it. Reviews are submitted by agents through the API — a reviewing agent reads the diff and posts its verdict — so a team can require an agent's approval before anything lands. See [Pull Requests](/amfs/concepts/git-timeline#pull-requests) for the calls.
+
+---
+
+## Tags
+
+A tag is a named checkpoint on `main`: *pre-migration*, *v1.0-stable*, *before-retry-change*. **Create Tag** asks for a name and a description, and optionally links the tag to a specific event from the Event Log so the checkpoint is a precise point rather than "now".
+
+Each tag card offers **Rollback to this tag** and **Delete tag**. Deleting a tag removes the bookmark only; the history it pointed at is untouched.
+
+<Tip>
+  Tag before you let an agent loose on something risky, and before you roll
+  back. Rolling back has no undo button, so a tag of the current state is how
+  you get back to it.
+</Tip>
+
+---
+
+## Rolling back
+
+Rollback restores the agent's learning on a branch to the state it had at a point in time — a tag, or any event in the Event Log. Entries written after that point are superseded, and for each entry the version that was current at that moment becomes current again. The confirmation tells you how many entries were restored, and the rollback is itself recorded as an event, so the history shows that it happened and when.
+
+Nothing is deleted: the superseded versions stay in each entry's history for audit. But the dashboard cannot un-roll a rollback, which is why the confirmation says it cannot be undone. The same operation is available to agents and scripts by tag or by timestamp — see [Rollback](/amfs/concepts/git-timeline#rollback).
+
+---
+
+## From your agent
+
+Everything on these tabs is also available to agents through the Python SDK and the HTTP API. The [Git-like Timeline](/amfs/concepts/git-timeline) page has the calls: [creating a branch](/amfs/concepts/git-timeline#creating-a-branch), [writing to one](/amfs/concepts/git-timeline#writing-to-a-branch), [access control](/amfs/concepts/git-timeline#access-control), [diff](/amfs/concepts/git-timeline#viewing-the-diff) and [merge](/amfs/concepts/git-timeline#merging), [pull requests](/amfs/concepts/git-timeline#pull-requests), [tags](/amfs/concepts/git-timeline#tags), [rollback](/amfs/concepts/git-timeline#rollback) and [fork](/amfs/concepts/git-timeline#fork-pro), which copies an agent's whole learning to a new agent.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause |
+| :-- | :-- |
+| "Git Repository requires Pro" | The account is on a plan without branching. Event logging on `main` still happens; the section unlocks on Pro, Teams or Enterprise. |
+| Merge reports conflicts | The same entry changed on the branch and on its parent. Choose which version to keep for each, then merge again — or pick *Branch Wins* / *Main Wins* up front. |
+| Rollback restored 0 entries | Nothing was written on that branch after the point you chose, or the tag is on a different branch. |
+| The Sacred Timeline is empty | Events appear as the agent writes, reads and commits outcomes. An agent that has only been configured has no history yet. |
+
+---
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Learning Branching" icon="code-branch" href="/amfs/pro/branching">
+    The model behind branches, pull requests, tags, rollback, cherry-pick and fork.
+  </Card>
+
+  <Card title="Git-like Timeline" icon="timeline" href="/amfs/concepts/git-timeline">
+    Every event type, and the SDK and HTTP calls for each operation.
+  </Card>
+
+  <Card title="Behavior" icon="scale-balanced" href="/amfs/guides/behavior">
+    Fixes are staged on their own branch and merged into `main` when they ship.
+  </Card>
+
+  <Card title="Consolidation" icon="layer-group" href="/amfs/pro/consolidation">
+    How the Cortex proposes compacting an agent's learning, and what each strategy does.
+  </Card>
+</CardGroup>

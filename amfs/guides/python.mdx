@@ -766,7 +766,7 @@ mem.checkout("main")                                            # back to main
 entry = mem.read("acme/ci", "retry-pattern", branch="experiment-1")   # one call, another branch
 ```
 
-Outcomes committed off `main` carry a `memory_branch` attribute, so a trace says which memory it read. See [Memory Branching](/amfs/pro/branching).
+Outcomes committed off `main` carry a `memory_branch` attribute, so a trace says which memory it read. See [Learning Branching](/amfs/pro/branching).
 
 ***
 
@@ -1110,5 +1110,5 @@ from amfs import (
 - [Instrument your agent](/amfs/guides/instrument-your-agent) — steps, LLM calls and cost on every run
 - [TypeScript SDK](/amfs/guides/typescript)
 - [MCP server](/amfs/guides/mcp) — the same memory from Cursor, Claude Code and Codex
-- [Confidence](/amfs/concepts/confidence) and [Memory Entries](/amfs/concepts/memory-entries)
+- [Confidence](/amfs/concepts/confidence) and [Learning Entries](/amfs/concepts/learning-entries)
 - [Environment Variables](/amfs/reference/environment-variables)

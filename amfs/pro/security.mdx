@@ -1,16 +1,16 @@
 ---
-title: "Memory Security"
-description: "Find secrets, PII, poisoning, and contamination in your agents' memory — and do something about them."
+title: "Learning Security"
+description: "Find secrets, PII, poisoning, and contamination in what your agents have learned — and do something about them."
 icon: "shield-halved"
 ---
 
-Agents write whatever they read. Over months, a memory store accumulates things
-nobody meant to put there: an API key pasted into a debugging note, a customer
+Agents learn whatever they read. Over months, what they have learned accumulates
+things nobody meant to keep: an API key pasted into a debugging note, a customer
 email in an incident summary, a confident-sounding fact that one agent quietly
 overwrote with something wrong.
 
-SenseLab scans your memory for these and raises **findings** you can triage, the
-same way you would triage alerts.
+SenseLab scans what your agents have learned for these and raises **findings**
+you can triage, the same way you would triage alerts.
 
 ## What gets detected
 
@@ -18,8 +18,8 @@ Three detectors run over your entries, plus any policy rules you define.
 
 ### Secrets and credentials
 
-Pattern and entropy matching for the kinds of strings that should never be at
-rest in memory.
+Pattern and entropy matching for the kinds of strings that should never be part
+of what an agent has learned.
 
 | Detected | Severity |
 | :-- | :-- |
@@ -34,11 +34,11 @@ rest in memory.
 Email addresses (info), IPv4 addresses (info), US Social Security numbers
 (high), and credit card numbers validated with a Luhn check (high).
 
-### Memory poisoning
+### Poisoned learning
 
 Poisoning detection is what a general-purpose secret scanner cannot do, because
 it needs version history and authorship. It only considers edits made by a
-*different* agent than the original author.
+*different* agent than the one that learned the entry.
 
 | Signal | What it means |
 | :-- | :-- |
@@ -50,7 +50,7 @@ it needs version history and authorship. It only considers edits made by a
 
 ### Contamination
 
-Flags low-trust memory that is spreading. When an entry with confidence at or
+Flags low-trust learning that is spreading. When an entry with confidence at or
 below 0.4 has been read by several agents, it is shaping decisions it was never
 reliable enough to shape. Reads by five or more agents raise the severity.
 
@@ -93,9 +93,9 @@ re-detecting the same problem updates the existing record rather than making a
 new one. A finding that stops appearing in a scan resolves itself.
 
 For any finding you can inspect the redacted entry and its version history, and
-view its **blast radius** — which agents read the entry and what they did next.
-For contamination this is the important view, because it tells you how far a bad
-entry travelled.
+view its **blast radius** — which agents learned from the entry and what they
+did next. For contamination this is the important view, because it tells you how
+far a bad entry travelled.
 
 ### Remediation
 
@@ -103,8 +103,8 @@ Two actions are available, both of which write a new version rather than erasing
 anything:
 
 **Quarantine** writes a new version with confidence set to zero and sharing
-turned off. The entry stops appearing in recall and briefings but remains in
-history.
+turned off. The entry stops appearing in recall and briefings — no agent learns
+from it again — but it remains in history.
 
 **Revert** restores the previous version's value and confidence — the fix for a
 poisoned entry, where a good value already exists further back in the timeline.
@@ -118,7 +118,7 @@ visible in provenance.
 
 Beyond the built-in detectors, you can write rules for what *your* organisation
 considers a problem — an internal hostname convention, a project codename that
-should never be in shared memory.
+should never be part of shared learning.
 
 Four kinds of rule are available: `regex`, `keyword`, `entropy`, and
 `condition`. A condition rule is a structured predicate over entry metadata,
@@ -173,10 +173,9 @@ curl -X POST https://amfs-login.sense-lab.ai/api/v1/pro/security/scan \
 ```
 
 <Warning>
-  Treat scanning as something you run, not something that runs itself. A
-  continuous background scanner exists in the codebase but is not part of the
-  hosted deployment today, so a secret written just now will not surface until
-  the next scan.
+  Treat scanning as something you run, not something that runs itself. SenseLab
+  does not scan continuously in the background today, so a secret an agent
+  learned just now will not surface until the next scan.
 </Warning>
 
 ---
@@ -194,13 +193,13 @@ API. Admins grant the role under **Security → Access**.
 Worth being clear about the boundary, because the name invites assumptions.
 
 **It does not block writes.** The scanner runs after the fact. An agent writing a
-live AWS key will succeed, and the key sits in memory until a scan finds it.
-There is a write-time safety gate in SenseLab, but it currently guards decision
-trace capture and the LLM proxy — not `amfs_write`.
+live AWS key will succeed, and the key sits in what the agent learned until a
+scan finds it. There is a write-time safety gate in SenseLab, but it currently
+guards decision trace capture and the LLM proxy — not `amfs_write`.
 
 **It does not scan documents.** Room documents are not covered by these
 detectors.
 
 **It is not a substitute for secret hygiene.** The right fix for a leaked
-credential is rotating it at the source. Quarantining the memory entry stops it
+credential is rotating it at the source. Quarantining the entry stops it
 spreading to your agents; it does nothing about the key itself.

@@ -55,7 +55,7 @@ There is a free tier with no card, so the honest way to decide is to point an ag
 | Branch-aware read/write/list/search (`branch` parameter) | Yes | Yes |
 | Timeline API endpoint per agent | Yes | Yes |
 | MCP `amfs_timeline` tool | Yes | Yes |
-| **Memory Branching** |  |  |
+| **Learning Branching** |  |  |
 | Create / close / list branches | — | Yes |
 | Diff branch vs. main | — | Yes |
 | Merge branches (fast-forward, ours, theirs) | — | Yes |
@@ -264,11 +264,11 @@ An agent joining a room is handed what the room already knows before it starts �
 
 Membership is collaborator or viewer, a viewer's writes are refused below the interface, and every write is attributed in the room's activity.
 
-### Memory Branching — Git for Agent Memory
+### Learning Branching — Git for what agents learn
 
 While SenseLab Open Source provides the git-like timeline engine (event logging on `main`), SenseLab adds the full branching model — branches, merges, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
 
-<Card title="Memory Branching Deep Dive" icon="code-branch" href="/amfs/pro/branching">
+<Card title="Learning Branching" icon="code-branch" href="/amfs/pro/branching">
   Full documentation on branches, merge strategies, pull requests, access control, tags, rollback, cherry-pick, fork, and the Sacred Timeline visualization.
 </Card>
 
