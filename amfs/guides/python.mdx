@@ -6,44 +6,36 @@ icon: "python"
 
 # Python SDK
 
-The Python SDK (`amfs` on PyPI) provides `AgentMemory` — the interface for reading, writing and learning from agent memory — and `Run`, the smallest way to wire the learning loop into an agent you control.
+The Python SDK (`amfs` on PyPI) connects an agent you control to your SenseLab account. It provides `AgentMemory` — the interface for reading, writing and learning — and `Run`, the smallest way to wire the learning loop into the agent.
 
 ## Installation
 
 ```bash
-pip install amfs
-```
-
-To connect to SenseLab rather than local storage, also install the HTTP adapter:
-
-```bash
-pip install amfs-adapter-http
+pip install amfs amfs-adapter-http
 ```
 
 <Note>
-  Requires Python 3.11 or later. `pip install amfs` brings in the filesystem
-  adapter, which stores memory as JSON under `.amfs/` in the working directory
-  — nothing else has to be running. The project started life as AMFS (Agent
-  Memory File System), so the package names, environment variables and config
-  file still carry that name; `pip install amfs` gets you SenseLab.
+  Requires Python 3.11 or later. The project started life as AMFS (Agent
+  Memory File System), so the package names and environment variables still
+  carry that name; `pip install amfs` gets you SenseLab.
 </Note>
 
-Other optional packages:
-
-```bash
-pip install amfs-adapter-postgres   # talk straight to Postgres (self-hosting)
-pip install amfs-adapter-s3         # S3-compatible object storage
-pip install amfs-cli                # the `amfs` command-line tool
-```
-
-Check that it works:
+Check that it reaches your account with an API key from **Settings → API Keys**:
 
 ```python
-from amfs import AgentMemory
+import os
 
-mem = AgentMemory(agent_id="test")
-entry = mem.write("test", "hello", "world")
-print(entry.value, entry.version)   # world 1
+from amfs import AgentMemory
+from amfs_adapter_http import HttpAdapter
+
+mem = AgentMemory(
+    agent_id="test",
+    adapter=HttpAdapter(
+        base_url="https://amfs-login.sense-lab.ai",
+        api_key=os.environ["AMFS_API_KEY"],
+    ),
+)
+print(mem.stats().total_entries)   # what your account already knows
 ```
 
 ***
@@ -96,7 +88,7 @@ mem.commit_outcome(
 )
 ```
 
-The same code runs against the default filesystem adapter if you drop the `adapter=` argument: reads, writes, local search, outcomes and confidence all work on your machine. Compiled briefings, semantic retrieval, action priors and persisted decision traces need SenseLab (or a self-hosted server) behind the SDK — see [Connecting to SenseLab](#connecting-to-senselab).
+Every one of these calls goes through your account: the briefing is compiled there, `retrieve()` ranks by meaning on the server, and the committed outcome becomes a decision trace you can open on the dashboard.
 
 <Warning>
   Pass `outcome_type` as an `OutcomeType` member (`OutcomeType.SUCCESS`,
@@ -108,7 +100,7 @@ The same code runs against the default filesystem adapter if you drop the `adapt
 
 ## Connecting to SenseLab
 
-By default `AgentMemory` reads `amfs.yaml` from the current directory (or any parent) and falls back to the filesystem adapter at `.amfs/`. To reach your account, pass an `HttpAdapter` with the server URL and an API key from **Settings → API Keys**:
+`AgentMemory` reaches your account through an `HttpAdapter`, built with the SenseLab URL and an API key from **Settings → API Keys**:
 
 ```python
 import os
@@ -129,48 +121,15 @@ Every method on `AgentMemory` then goes through the API: `retrieve()` uses the s
 
 <Warning>
   **The SDK does not read `AMFS_HTTP_URL` or `AMFS_API_KEY` by itself.** Those
-  variables are honoured by the MCP server and the CLI, but
-  `AgentMemory(agent_id=...)` with no `adapter=` always uses `amfs.yaml` or the
-  local filesystem — silently, with no error. If your dashboard stays empty
-  after "connecting", this is why. Construct the `HttpAdapter` as above.
+  variables are honoured by the MCP server, but `AgentMemory(agent_id=...)`
+  with no `adapter=` never contacts SenseLab — it falls back to storage on the
+  local machine, silently, with no error. If your dashboard stays empty after
+  "connecting", this is why. Always construct the `HttpAdapter` as above.
 </Warning>
 
 The adapter identifies your agent and session on every request, so the server can attribute reads and keep a whole session together. `HttpAdapter(base_url, api_key, timeout=30.0)` also accepts a request `timeout` in seconds.
 
 See the [Connect to SenseLab](/amfs/getting-started/saas-connection) guide for getting a key.
-
-### Self-hosting: Postgres directly
-
-For a trusted, single-tenant deployment the SDK can talk to Postgres without the HTTP server in between:
-
-```python
-from amfs import AgentMemory
-from amfs_postgres import PostgresAdapter
-
-adapter = PostgresAdapter(dsn="postgresql://amfs:amfs@localhost:5432/amfs", namespace="default")
-mem = AgentMemory(agent_id="deploy-agent", adapter=adapter)
-```
-
-<Warning>
-  Never hand a Postgres DSN to agents in a multi-tenant deployment. Direct
-  database access bypasses tenant isolation, scope enforcement and audit
-  logging. Use the HTTP adapter for anything that is not your own box.
-</Warning>
-
-### Via `amfs.yaml`
-
-A config file in the project root (or any parent directory) selects the adapter for every `AgentMemory` created without an explicit `adapter=`:
-
-```yaml
-namespace: default
-layers:
-  primary:
-    adapter: postgres
-    options:
-      dsn: postgresql://amfs:amfs@localhost:5432/amfs
-```
-
-`adapter` can be `filesystem`, `postgres` or `s3`. Pass `config_path=Path("...")` to point at a specific file. See [Configuration](/amfs/getting-started/configuration).
 
 ***
 
@@ -179,7 +138,7 @@ layers:
 ```python
 from amfs import AgentMemory
 
-mem = AgentMemory(agent_id="my-agent")
+mem = AgentMemory(agent_id="my-agent", adapter=adapter)
 ```
 
 `agent_id` is the agent's identity. Everything it writes is tagged with it, `recall()` and `my_entries()` are scoped to it, and the dashboard groups work by it. Use a stable, kebab-case role name (`deploy-agent`, `dashboard-agent`) that persists across sessions, not a per-task name.
@@ -190,43 +149,13 @@ mem = AgentMemory(agent_id="my-agent")
 | :- | :- | :- |
 | `agent_id` | `str` | Required. The agent's identity. |
 | `session_id` | `str \| None` | Reuse a session id; generated when omitted. |
-| `config_path` | `Path \| None` | Explicit `amfs.yaml`. |
-| `adapter` | `AdapterABC \| None` | Pre-built adapter; overrides the config file. |
+| `adapter` | `AdapterABC \| None` | The `HttpAdapter` for your account. Pass it every time. |
 | `branch` | `str \| None` | Memory branch for every call that does not name one. Defaults to `AMFS_BRANCH`, then `main`. |
 | `ttl_sweep_interval` | `float \| None` | Seconds between TTL sweeps; starts a background sweeper when set. |
 | `decay_half_life_days` | `float \| None` | Apply time-based confidence decay on `read()`. |
-| `embedder` | `EmbedderABC \| None` | Local embedder for `semantic_search()` and local semantic scoring. |
 | `conflict_policy` | `ConflictPolicy` | `LAST_WRITE_WINS` (default) or `RAISE`. |
 | `on_conflict` | `callable` | Merge callback `(our_last_read, current, new_value) -> merged_value`. |
 | `importance_evaluator` | object | Scores every write; see below. |
-
-### With a pre-configured adapter
-
-```python
-from pathlib import Path
-
-from amfs_filesystem import FilesystemAdapter
-
-adapter = FilesystemAdapter(root=Path(".amfs"), namespace="staging")
-mem = AgentMemory(agent_id="my-agent", adapter=adapter)
-```
-
-### With an embedder
-
-```python
-from amfs_core.embedder import EmbedderABC
-
-class MyEmbedder(EmbedderABC):
-    def embed(self, text: str) -> list[float]:
-        # Return embedding vector
-        ...
-    def embed_value(self, value) -> list[float]:
-        return self.embed(str(value))
-
-mem = AgentMemory(agent_id="my-agent", embedder=MyEmbedder())
-```
-
-Over the HTTP adapter you do not need one: the server owns the embedder and the index.
 
 ### With an importance evaluator
 
@@ -238,7 +167,7 @@ class MyEvaluator(ImportanceEvaluator):
         score = 0.8 if "critical" in str(value).lower() else 0.3
         return score, {"criticality": score}
 
-mem = AgentMemory(agent_id="my-agent", importance_evaluator=MyEvaluator())
+mem = AgentMemory(agent_id="my-agent", adapter=adapter, importance_evaluator=MyEvaluator())
 ```
 
 Every `write()` is scored and gets `importance_score` and `importance_dimensions`. If the evaluator raises, the write proceeds without scoring.
@@ -246,7 +175,7 @@ Every `write()` is scored and gets `importance_score` and `importance_dimensions
 ### Context manager
 
 ```python
-with AgentMemory(agent_id="my-agent") as mem:
+with AgentMemory(agent_id="my-agent", adapter=adapter) as mem:
     mem.write("svc", "key", "value")
     entry = mem.read("svc", "key")
 # Watchers, TTL sweepers and background threads are cleaned up
@@ -346,7 +275,7 @@ entries = mem.list("checkout-service", branch="experiment-1")
 
 ```python
 results = mem.search(
-    query="retry strategy",              # text query (full-text on the server; substring locally)
+    query="retry strategy",              # full-text query
     entity_path="checkout-service",      # or entity_paths=["svc-a", "svc-b"] to merge several
     min_confidence=0.5,
     max_confidence=1.0,
@@ -381,14 +310,14 @@ for item in scored:
 ```
 
 <Note>
-  Local semantic scoring needs an `embedder`; without one the semantic
-  component is 0.0. Connected to SenseLab, prefer `retrieve()` below — the
-  server does the semantic ranking for you.
+  `recall_config` scoring runs in the SDK over the entries `search()` returned,
+  and its semantic component needs an embedder on your side. For ranking by
+  meaning use `retrieve()` below — SenseLab does it on the server.
 </Note>
 
 ### Retrieve (by meaning)
 
-`retrieve()` is the default way to recall: a natural-language query, no key, no exact path. Connected to SenseLab it runs server-side — embeddings, full text, confidence and evidence together, with discredited entries held back. Locally it falls back to `search()` with composite scoring.
+`retrieve()` is the default way to recall: a natural-language query, no key, no exact path. It runs on the server — embeddings, full text, confidence and evidence together, with discredited entries held back.
 
 ```python
 hits = mem.retrieve("checkout worker restart loop", entity_path="acme/checkout", limit=5)
@@ -419,24 +348,6 @@ print(priors["action_priors"])                        # per action: won / lost h
 | `explore` | Everything tried here failed, or a regime shift is flagged — try `suggested_action` first. It is assigned per agent, so peers on the same problem explore different actions. |
 | `escalate` | Every candidate has been tried here and failed — escalate on the first attempt. |
 | `abstain` | Nothing in scope has been tried or validated; the agent is on its own judgement. |
-
-Priors and the recommendation come from SenseLab; local adapters return entries without them (`last_priors` is `None`).
-
-### Semantic search (local embedder)
-
-```python
-results = mem.semantic_search(
-    "how do we handle retries?",
-    entity_path="checkout-service",
-    limit=10,
-    min_confidence=0.5,
-    min_similarity=0.3,
-)
-for entry, score in results:
-    print(f"{entry.key} (similarity: {score:.3f})")
-```
-
-Requires `embedder=` on the constructor.
 
 ### History
 
@@ -472,21 +383,7 @@ writes = mem.timeline(event_type="WRITE", limit=20)
 recent = mem.timeline(since=datetime.now(timezone.utc) - timedelta(hours=24))
 ```
 
-### Watch
-
-```python
-def on_change(entry):
-    print(f"{entry.key} updated to v{entry.version}")
-
-handle = mem.watch("checkout-service", on_change)
-handle.cancel()
-```
-
-<Note>
-  The filesystem adapter supports real-time watches. The HTTP adapter logs a
-  warning and returns a no-op handle — use the dashboard or the MCP server for
-  live updates from SenseLab.
-</Note>
+The same history, with branches, tags and rollback, is the **Git Repository** section of the agent's page — see [Learning as Git](/amfs/guides/learning-as-git).
 
 ***
 
@@ -612,7 +509,7 @@ for call in trace.tool_calls:
     print(f"  did {call.tool_name} {call.arguments} success={call.success}")
 ```
 
-`list_traces()` filters by `entity_path`, `agent_id`, `outcome_type`, `since` and `until`, and pages with `limit`, `offset` or `cursor`. It returns `[]` on the filesystem adapter — traces live on SenseLab or in Postgres.
+`list_traces()` filters by `entity_path`, `agent_id`, `outcome_type`, `since` and `until`, and pages with `limit`, `offset` or `cursor`. On the dashboard these are the agent's runs.
 
 ### Session attributes and LLM calls
 
@@ -636,7 +533,7 @@ Attributes are scalars only — at most 20 keys of up to 64 characters, string v
 
 ## Briefing
 
-Connected to SenseLab, agents retrieve pre-compiled knowledge digests ranked by relevance — summaries of entities, other agents and external sources — instead of searching through raw entries.
+Agents retrieve pre-compiled knowledge digests ranked by relevance — summaries of entities, other agents and external sources — instead of searching through raw entries.
 
 ```python
 briefs = mem.briefing(entity_path="myapp/checkout-service", limit=5)
@@ -683,8 +580,6 @@ Each `hot_context` row has an `evidence_status`. The briefing also carries `trie
 ### Environment scoping
 
 `briefing()` and `retrieve()` send the run's environment — `model`, `agent_version`, `runtime`, `platform` — read from the session (`mem.session_metadata = SessionMetadata(model=...)`, or `set_session_attributes()` with those keys). A procedure whose `preconditions` name a different environment is set apart as `procedures_not_applicable` in the briefing and dropped from `retrieve()` hits, with the failing precondition spelled out. Pass `environment={}` to send nothing.
-
-On the filesystem adapter `briefing()` returns an empty list, so agent code can call it unconditionally.
 
 ***
 
@@ -883,11 +778,6 @@ for edge in edges:
 | `min_confidence` | `float` | Minimum edge confidence (default: 0.0) |
 | `limit` | `int` | Maximum results (default: 50) |
 
-<Note>
-  Multi-hop traversal (`depth > 1`) needs SenseLab or the Postgres adapter.
-  The filesystem and S3 adapters return an empty list for graph methods.
-</Note>
-
 ***
 
 ## Agent binding
@@ -950,44 +840,20 @@ Handle concurrent writes to the same key:
 from amfs import ConflictPolicy
 
 # Raise StaleWriteError if another agent wrote since our last read
-mem = AgentMemory(agent_id="my-agent", conflict_policy=ConflictPolicy.RAISE)
+mem = AgentMemory(agent_id="my-agent", adapter=adapter, conflict_policy=ConflictPolicy.RAISE)
 
 # Or merge
 def merge(our_last_read, current, new_value):
     return {**current.value, **new_value}
 
-mem = AgentMemory(agent_id="my-agent", on_conflict=merge)
+mem = AgentMemory(agent_id="my-agent", adapter=adapter, on_conflict=merge)
 ```
-
-***
-
-## Snapshots
-
-Export and import the full state of your memory:
-
-```python
-from pathlib import Path
-
-from amfs_core.snapshot import SnapshotExporter, SnapshotImporter
-from amfs_filesystem import FilesystemAdapter
-
-# Export (paths are pathlib.Path objects)
-exporter = SnapshotExporter(mem.adapter)
-exporter.export(Path("backup.json"))
-
-# Import into a different adapter
-target = FilesystemAdapter(root=Path("/new/.amfs"), namespace="restored")
-importer = SnapshotImporter(target)
-restored = importer.restore(Path("backup.json"))   # number of entries restored
-```
-
-The CLI does the same with `amfs export` / `amfs import` — see the [CLI guide](/amfs/guides/cli).
 
 ***
 
 ## Rooms and collaboration
 
-Connected to SenseLab, `AgentMemory` also exposes rooms — shared workspaces where several users' agents collaborate. Entries written on a room's entity path are shared with every member.
+`AgentMemory` also exposes rooms — shared workspaces where several users' agents collaborate. Entries written on a room's entity path are shared with every member.
 
 ```python
 rooms = mem.my_rooms()                 # rooms available to this agent
@@ -1030,7 +896,6 @@ status = mem.negotiate_status("room-123", session["id"])
 ```
 
 <Note>
-  Room and negotiation methods need the HTTP adapter connected to SenseLab.
   See [Rooms](/amfs/concepts/rooms) for how rooms, members and invitations work.
 </Note>
 
@@ -1039,19 +904,16 @@ status = mem.negotiate_status("room-123", session["id"])
 ## Troubleshooting
 
 **My writes do not show up on the dashboard.**
-The SDK does not read `AMFS_HTTP_URL` or `AMFS_API_KEY`. Pass `adapter=HttpAdapter(base_url=..., api_key=...)` explicitly — see [Connecting to SenseLab](#connecting-to-senselab). Check which adapter you have with `type(mem.adapter).__name__`.
+The SDK does not read `AMFS_HTTP_URL` or `AMFS_API_KEY`, and without an adapter it never contacts SenseLab. Pass `adapter=HttpAdapter(base_url=..., api_key=...)` explicitly — see [Connecting to SenseLab](#connecting-to-senselab). `type(mem.adapter).__name__` should print `HttpAdapter`.
+
+**`briefing()` returns `[]`, `list_traces()` returns `[]`, `last_priors` is `None`.**
+Same cause: the `AgentMemory` was built without the `HttpAdapter`, so nothing reached your account. Compiled briefings, decision traces and action priors only exist there.
 
 **`commit_outcome` raises `AttributeError: 'str' object has no attribute 'value'`.**
 Pass `OutcomeType.SUCCESS` (or another member), not the string `"success"`.
 
-**`briefing()` returns `[]`, `list_traces()` returns `[]`.**
-Expected on the filesystem adapter: compiled digests and persisted traces live on SenseLab or in Postgres. Everything else — reads, writes, local search, outcomes and confidence — works locally.
-
 **`read()` returns `None` for an entry I wrote.**
 If it was written with `shared=False` by another agent it is invisible to you. For your own private entries use `recall()`.
-
-**`retrieve()` has no semantic ranking locally.**
-Pass an `embedder=` to the constructor, or connect to SenseLab so the server does it.
 
 ***
 
