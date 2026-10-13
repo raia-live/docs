@@ -14,22 +14,9 @@ This is what lets the loop change shared knowledge safely. A fix to what agents 
 
 When an agent is created in SenseLab, it implicitly gets a **repository** with a `main` branch. Every operation the agent performs is logged as an **event** on that branch:
 
-```
-Agent A creates its first memory
-  └── main branch is created automatically
-
-Agent A writes "checkout-service/retry-pattern"
-  └── Event: write (entity_path, key, version, confidence)
-
-Agent B reads Agent A's shared memory
-  └── Event: cross_agent_read (reader_agent, entity, key)
-
-Brain brief compiles
-  └── Event: brief_compiled (digest_type, entry_count, entities)
-
-Agent A commits an outcome
-  └── Event: outcome (outcome_ref, outcome_type, causal_confidence)
-```
+<Frame>
+  ![Events on an agent's main branch: branch created, write, cross_agent_read, brief_compiled, outcome — each with the fields it records](/images/concept-timeline-events.png)
+</Frame>
 
 ---
 
@@ -262,18 +249,9 @@ print(f"Forked {count} entries to deploy-agent-v2")
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    Agent Brain                       │
-│                                                     │
-│  main ──●──●──●──●──●──●──●──●──●─── (current)    │
-│              │                                      │
-│              └── experiment/retry-v3 ──●──●──●      │
-│                                                     │
-│  Events: write, outcome, read, brief, webhook       │
-│  Each event = a "commit" on the timeline            │
-└─────────────────────────────────────────────────────┘
-```
+<Frame>
+  ![An agent repository: a main timeline of events with an experiment/retry-v3 branch forking from one of them](/images/concept-timeline-branches.png)
+</Frame>
 
 The timeline records everything on `main` from your first write, with nothing to
 turn on. Branching, merging, tags, rollback, cherry-pick, fork, and branch
