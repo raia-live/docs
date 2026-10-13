@@ -10,6 +10,8 @@ Three loops run on one record. The **fast loop** credits every outcome back to t
 
 Mem0 and Zep are retrieval layers: they improve what the model reads. Letta is an agent runtime with git-backed memory. None of them has an outcome, a judge, an incident or a fine-tune in its model, so none of them can tell a rule that stopped working from a rule that never worked — and in production, that is the question that comes up constantly.
 
+This page covers the memory layers. For the observability and evaluation stack — where an engineer fixes the prompt between releases — see [SenseLab vs Braintrust](/amfs/vs-braintrust).
+
 <Frame>
   ![Where each system stops: Mem0 and Zep at retrieval, Letta at offline evals, SenseLab through outcomes, repair and the model](/images/vs-where-each-stops.png)
 </Frame>
