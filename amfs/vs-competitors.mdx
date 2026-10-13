@@ -1,128 +1,213 @@
 ---
 title: "SenseLab vs Competitors"
-description: "How SenseLab compares to Mem0, Zep / Graphiti, and Letta / MemGPT."
+description: "A recursive self-improvement engine against memory layers — Mem0, Zep / Graphiti and Letta. What each one does after the agent acts, and what we measured."
 icon: "chart-bar"
 ---
 
-Every other memory system is a smarter store. SenseLab is the only one that treats agent memory like code — with version control, branching, pull requests, and rollbacks.
+SenseLab is not a memory layer. It is a **recursive self-improvement engine** for agents, and memory is only where it starts.
+
+Three loops run on one record. The **fast loop** credits every outcome back to the entries and actions the run relied on, so the next agent is briefed on what held up and warned off what did not. The **repair loop** turns a failure that keeps recurring into a tested, shipped and verified change to what the agent does. The **model loop** trains a model on the validated part of that record. Each loop's output is the next loop's input — the system that fixes the agent produces the data that trains the agent — and no human edits a prompt or a store for any of it to happen.
+
+Mem0 and Zep are retrieval layers: they improve what the model reads. Letta is an agent runtime with git-backed memory. None of them has an outcome, a judge, an incident or a fine-tune in its model, so none of them can tell a rule that stopped working from a rule that never worked — and in production, that is the question that comes up constantly.
+
+<Frame>
+  ![Where each system stops: Mem0 and Zep at retrieval, Letta at offline evals, SenseLab through outcomes, repair and the model](/images/vs-where-each-stops.png)
+</Frame>
 
 ---
 
 ## Feature Matrix
 
+<Note>
+  The SenseLab column describes the hosted product; see [Editions](/amfs/editions) for what the open-source core includes. Competitor columns reflect their public documentation as of October 2026. Text in a cell means a partial or different answer to the same need.
+</Note>
+
 | Feature | SenseLab | Mem0 | Zep / Graphiti | Letta |
 | :-- | :-: | :-: | :-: | :-: |
-| **Git-like collaboration** |  |  |  |  |
-| Branching (isolated experiments) | Pro | No | No | No |
-| Pull requests (review before merge) | Pro | No | No | No |
-| Diff, merge, rollback | Pro | No | No | No |
-| Tags / named snapshots | Pro | No | No | No |
-| Branch-level access control | Pro | No | No | No |
-| Fork (clone brain to new agent) | Pro | No | No | No |
-| Git-like timeline (event log) | Yes | No | No | No |
-| **Team collaboration** |  |  |  |  |
-| Shared workspace for several people's agents | Pro | Partial | No | Partial |
-| One topic shared across Claude, ChatGPT and Cursor | Pro | No | No | No |
-| Joining briefing for a new agent | Pro | No | No | No |
-| Collaborator and viewer roles | Pro | Project-level | No | No |
-| Viewer writes blocked by a SenseLab policy | Pro | No | No | No |
-| Agent-to-agent discussion in the workspace | Pro | No | No | Messaging |
-| Structured negotiation between agents | Pro | No | No | No |
-| Cross-agent reads, logged on both sides | Yes | No | No | No |
-| **Learning from your own traces** |  |  |  |  |
-| Model fine-tuned on your decision traces | Pro | No | No | No |
-| Training run and hosting managed for you | Pro | No | No | No |
-| Served behind an OpenAI-compatible endpoint | Pro | No | No | No |
-| **Memory fundamentals** |  |  |  |  |
-| Persistent memory | Yes | Yes | Yes | Yes |
-| Versioning (full history) | CoW | Change log | Temporal | No |
-| Read, diff or roll back a prior version | Yes | Manual | No | No |
-| Provenance (who wrote, when) | Yes | No | Partial | No |
-| Confidence scoring | Yes | No | No | No |
-| Outcome back-propagation | Yes | No | No | No |
-| Memory types (fact/belief/experience) | Yes | No | No | 3 stores |
-| Causal explainability | Yes | No | No | No |
-| Knowledge graph | Auto | Optional | Yes | No |
-| Semantic search | Yes | Yes | Yes | Yes |
-| Multi-agent native | Yes | Partial | Partial | Partial |
-| Conflict surfacing (on-demand) | Yes | No | No | No |
-| Tiered memory (hot/warm/archive) | Yes | No | No | 3-tier |
-| Frequency-modulated decay | Yes | No | No | No |
-| Progressive retrieval (depth) | Yes | No | No | No |
-| Importance scoring (multi-dim) | Pro | No | No | No |
-| Cortex drift gate | Yes | No | No | No |
-| MCP server | Yes | Yes | Yes | Yes |
-| Self-hosted / OSS | Apache 2.0 | OSS\+Cloud | OSS\+Cloud | OSS |
-| Multi-tenant with RLS | Pro | Cloud | Cloud | No |
-| Enterprise dashboard | Pro | Cloud | Cloud | No |
-| Learned ranking from outcomes | Pro | No | No | No |
+| **The fast loop — learning from outcomes** |  |  |  |  |
+| Confidence moved by the outcome of acting on an entry | <Icon icon="check" iconType="solid" color="#16a34a" /> | Feedback endpoint | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Evidence status on every entry: untested, validated, contested, discredited | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Outcome credited per attempt: a failed attempt is charged before the next is tried | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| First-strike tolerance for rules with a long validated history | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Regime shift flagged when a validated rule starts failing | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Briefing compiled per entity, with validated and discredited sections | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Root files in the prompt |
+| Discredited entries returned as an avoid list, not a lower-ranked hit | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Action priors with an act / explore / escalate recommendation | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Procedures with preconditions, set aside when they do not apply | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Skills files |
+| Decision trace per task: reads, actions, attempts, every LLM call, verdict | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| A fleet learns as one: outcomes credited to the shared entry, not to the agent | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| **The repair loop — Behavior** |  |  |  |  |
+| Judges grade production runs | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Offline suites |
+| Starter judge pack, plus judges defined in plain language | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Graders in YAML |
+| Behaviors discovered from traces, not only defined up front | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| A recurring failure opens an incident, segmented by model, agent version and tool | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Fix to the learning — entry, procedure or code handoff — staged on a branch with a prediction | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Replay against the failing and passing runs before it ships | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Canary on live runs | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Verify sweep after shipping, prevention rate, one-click rollback | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Repair policy: review, auto after replay, auto after canary | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Alerts, weekly digest and Investigate across runs | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| **The model loop — Managed Models** |  |  |  |  |
+| Model fine-tuned on your own decision traces | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Readiness gate per agent and holdout scoring before promotion | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Training run and hosting managed for you | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| OpenAI-compatible and Anthropic-dialect endpoints with automatic fallback | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Retraining on the model's own traces | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| **Git-like learning** |  |  |  |  |
+| Copy-on-write versioning of every entry | <Icon icon="check" iconType="solid" color="#16a34a" /> | Append-only | Validity windows | Git commits |
+| Branching | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Git worktrees |
+| Pull requests: review before merge | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Diff, merge, rollback, cherry-pick | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Via git |
+| Tags / named snapshots | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Via git |
+| Branch-level access control | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Fork a brain to a new agent | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Agent file export |
+| Timeline of events: writes, reads, outcomes, briefings | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Commit log |
+| **Team collaboration — Rooms** |  |  |  |  |
+| Shared workspace for several people's agents | <Icon icon="check" iconType="solid" color="#16a34a" /> | Org / project scopes | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Letta agents only |
+| One topic across Claude, ChatGPT, Cursor and Claude Code | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Joining briefing for a new agent | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Collaborator and viewer roles, enforced at the storage layer | <Icon icon="check" iconType="solid" color="#16a34a" /> | Project-level | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Agent-to-agent discussion, addressed and threaded | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Messaging |
+| Structured negotiation between agents | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Room Hub: publish a room, subscribe to one | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Documents searchable in the room, cited by page | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Files in the repo |
+| Cross-agent reads logged on both sides | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| **Learning fundamentals** |  |  |  |  |
+| Persistent memory | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> |
+| Provenance: agent, session and time on every version | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Source episode | Commit author |
+| Memory types: fact, belief, experience, procedure | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Knowledge graph materialized from reads, writes and outcomes | <Icon icon="check" iconType="solid" color="#16a34a" /> | Entity graph | Temporal graph | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Semantic and keyword search | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> |
+| Ranking learned from your outcomes | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Decay weighing time, kind of learning, outcomes and recall | <Icon icon="check" iconType="solid" color="#16a34a" /> | Recency | Validity windows | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Tiered memory (Hot / Warm / Archive) with progressive retrieval | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | In-context vs on-disk |
+| Importance scoring, multi-dimensional | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Disagreement kept: both versions stand with their authors | <Icon icon="check" iconType="solid" color="#16a34a" /> | Both accumulate | Old fact invalidated | Git conflict |
+| Pattern scan across every agent: conflicts, stale knowledge, single points of knowledge, recurring failures | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | Memory doctor, per agent |
+| Deploys, incidents and reviews land in the record as outcomes, over webhooks | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Import what your agents already know from mem0 or Zep | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| MCP server (SenseLab: 90\+ tools covering every loop) | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> |
+| Python and TypeScript SDKs | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> |
+| **Platform** |  |  |  |  |
+| Immutable, signed decision traces; verify, replay, compare | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Learning security: secret and PII findings, poisoning checks, SIEM forwarding | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> | <Icon icon="xmark" iconType="solid" color="#d14343" /> |
+| Isolation per account, roles and teams, scoped API keys, audit log | <Icon icon="check" iconType="solid" color="#16a34a" /> | Cloud | Cloud | Cloud |
+| Dashboard: agents, runs, incidents, fixes, models, rooms, traces, patterns, knowledge graph | <Icon icon="check" iconType="solid" color="#16a34a" /> | Cloud | Cloud | ADE |
+| Open-source core (Apache 2.0) | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> | <Icon icon="check" iconType="solid" color="#16a34a" /> |
+
+---
+
+## What we measured
+
+A feature list says what a system has. We also measured what the loop is worth, on a benchmark built to resemble production: tasks that are new every time, domains with hidden quirks where the textbook answer is wrong, a rule change at episode 20 that turns a learned fix into a wrong one, fleets of six agents on one shared store, and newcomers joining mid-stream. Six scenarios, two frontier models, about 35,000 agent episodes. The arms were no memory, Mem0's hosted memory with its feedback API called on every retrieved memory at outcome time, SenseLab with the outcome loop switched off, and SenseLab.
+
+| First-attempt success | No memory | Mem0 | SenseLab, loop off | SenseLab |
+| :-- | :-: | :-: | :-: | :-: |
+| Before the rules change (episodes 15–19) | 0.51 | 0.51 | 0.81 | 0.84 |
+| After the change, changed tasks (episodes 20–59) | 0.38 | 0.38 | 0.41 | 0.54 |
+| Last twenty episodes after the change | 0.31 | 0.40 | 0.47 | 0.69 |
+| Escalated to a human after the change | 37% | 34% | 32% | 23% |
+| Fleet of six on one store, after the change | 0.37 | 0.36 | 0.42 | 0.57 |
+| Newcomer arriving after the change, first exposures | 0.20 | 0.22 | — | 0.62 |
+| Followers joining an agent that learned alone, first exposures | 0.46 | 0.67 | — | 0.84 |
+| Escalations per 1,000 tasks, whole horizon | 110 | 110 | 90 | 70 |
+
+Three things in that table matter for a buyer:
+
+- **Memory alone stops helping when the rules change.** Before the change, memory raises first-attempt success from the low fifties to above 0.8. After it, Mem0 and no memory both sit at 0.38, and the memory arms apply the stale fix on twice as many first attempts as the agent with no memory — the store is doing its job on a rule that is no longer true, with the same confidence it had when it was right.
+- **The outcome loop is what recovers.** The same platform, retrieval and notes with the loop on rather than off is worth 18 points of first-attempt success in the last twenty episodes after the change (95% interval [0.10, 0.25]), 28 points over Mem0, and a quarter to a third fewer escalations. It halves its own stale-pick rate over the forty episodes; nobody else's moves.
+- **The recovery is inherited.** A fleet of six sharing one store matches the single agent. A newcomer that arrives after the change solves 0.62 of its first exposures on a SenseLab store against 0.22 on Mem0, because the store it inherits has already discredited the old fix and named what replaced it. Followers joining a pioneer are productive from their first task — 0.84 against 0.67 — because they are reading notes that twenty outcomes have confirmed or discredited.
+
+We built one of the arms, which is why every comparison includes SenseLab with its loop switched off: where that control matches the full arm, the loop is not doing the work. Zep and Letta were not in this benchmark. Mem0's flat pre-change curve is a finding about its fit to this workload — operational lessons needed on the very next task, rather than facts about a user accumulated across conversations — and not about memory in general. Source: SenseLab Research, *From memory to recursive self-improvement*, preprint, September 2026.
 
 ---
 
 ## SenseLab vs Mem0
 
-[Mem0](https://mem0.ai) extracts facts from conversations and stores them with ADD/UPDATE/DELETE/NOOP operations against a vector store.
+[Mem0](https://mem0.ai) extracts facts from conversations in a single ADD-only pass, links the entities across memories in a built-in graph, and ranks results by semantic, keyword, entity and time signals. Since its 2026 algorithm, memories accumulate rather than being updated or deleted. It has a feedback endpoint; in our benchmark we called it on every retrieved memory at outcome time.
 
-**The difference in one sentence:** SenseLab gives a team one body of knowledge, records who learned what and whether it held up, and turns the result into a model. Mem0 stops at a per-user store of extracted facts.
+**The difference in one sentence:** SenseLab finds out whether acting on a memory worked and repairs what did not. Mem0 stops at retrieving the right memory.
 
 **Where SenseLab is stronger:**
 
-- **Rooms: a shared place to work, not an isolated scope** — A room covers a set of topics, and every member's agent reads and writes the same entries under them: Claude, ChatGPT, Cursor and Claude Code side by side. Nobody holds a copy, so nobody drifts. Mem0's nearest equivalents solve different problems — organizations and projects are isolation boundaries with OWNER and READER access, and OpenMemory shares context between one person's own MCP clients on one machine. Neither gives six people's agents a common surface with topics, attribution and an activity trail.
-- **A joining briefing** — An agent that joins a room is handed what the room already knows before it starts: up to fifty entries across the topics, plus recent activity, automatically on join. In Mem0 a new agent gets whatever it thinks to search for.
-- **Agents that talk to each other in the room** — Members' agents post to a room discussion, address a specific agent, and reply in a thread; structured negotiations let them propose, counter and settle on a position. Mem0 has no equivalent surface.
-- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted, up on success and down on failure, with outcome-validated entries then decaying at half the rate. Mem0 stores facts without any signal for whether acting on them worked.
-- **Decision traces** — `record_context()` and `commit_outcome()` capture the whole causal chain behind an action: what was read, at what confidence, what arrived from outside, what was decided. Pro persists traces with integrity checking. Mem0 records the memory, never the reasoning that used it.
-- **Models tuned on your traces** — Those same traces train a model on how your agents actually work, and we run the training and host it for serving. Mem0 improves what the model reads and stops there.
-- **Versions you can act on** — SenseLab keeps every version as a first-class entry: read it, diff it, roll back to it, or branch from it. A write supersedes rather than replaces, so two agents disagreeing leaves both positions standing with their authors instead of one silently winning. Mem0 gives you a change log to read, and nothing to do with it.
+- **Outcomes reach the ranking** — Commit an outcome and every entry the run relied on is re-weighed: a fresh entry at `0.7` drops to about `0.26` on its first failure and lifts to about `0.82` on its first success, and each entry carries a label — `validated`, `contested`, `discredited` — that the next briefing reads instead of the raw number. Mem0's feedback endpoint accepts the signal; what it does not do is change what the next agent is shown. After a rule change in our benchmark, Mem0 sat at 0.38 first-attempt success on the affected tasks for forty episodes; SenseLab went from 0.36 to 0.69.
+- **A repair loop** — Judges grade every run. A failure that keeps recurring becomes a named behavior and opens an incident, segmented by model, agent version and tool; the fix to the learning is staged on a branch, replayed against the failing and passing runs, shipped, and verified a week later. Mem0 has no judge, no incident and nothing that changes after a bad outcome.
+- **Decision traces** — `record_action()`, `record_attempt()` and `commit_outcome()` capture the whole causal chain behind an action: what was read at what confidence, what arrived from outside, what was tried and failed, what was decided. Traces are immutable and signed. Mem0 records the memory, never the reasoning that used it.
+- **Models tuned on your traces** — Those traces train a model on how your agents actually work, and we run the training and host it for serving. Mem0 improves what the model reads and stops there.
+- **Rooms: a shared place to work, not an isolated scope** — A room covers a set of topics, and every member's agent reads and writes the same entries under them: Claude, ChatGPT, Cursor and Claude Code side by side. Mem0's organizations and projects are isolation boundaries with owner and reader access, and OpenMemory shares context between one person's own MCP clients on one machine. Neither gives six people's agents a common surface with topics, attribution and an activity trail.
+- **A newcomer inherits the recovery** — An agent that joins a room is handed what the room already knows before it starts: up to fifty entries across the topics, plus recent activity, with their evidence attached. In our benchmark a newcomer arriving after a rule change solved 0.62 of its first exposures on a SenseLab store against 0.22 on Mem0, where the inherited store still ranked the old fix first — and the Mem0 newcomer applied it.
+- **Versions you can act on** — Mem0 no longer overwrites, which is an improvement, but a pile of accumulated facts is still a log. SenseLab keeps every version as a first-class entry you can read, diff, roll back to or branch from, and when two agents disagree both positions stand with their authors instead of one silently winning on retrieval rank.
 - **Review before shared knowledge changes** — Branching, pull requests, tags, merge and cherry-pick. Mem0 writes straight through.
-- **Four-signal decay and tiered memory** — Time, type, outcomes and access frequency drive decay; Hot/Warm/Archive with progressive retrieval decides what is searched. Mem0 has no decay model and searches everything.
+- **Decay that knows about outcomes** — Mem0's Memory Decay is recency: recently used memories rise, idle ones fade. In SenseLab, outcomes are what change stored confidence; decay, when you enable it, weighs time, the kind of learning, whether an outcome ever validated the entry, and how often it is read.
+- **Nothing to start over** — Migrate imports what your agents already know from Mem0, so the record starts with history rather than from zero.
 
 ---
 
 ## SenseLab vs Zep / Graphiti
 
-[Zep](https://getzep.com) builds temporal knowledge graphs via [Graphiti](https://github.com/getzep/graphiti): an LLM extracts entities and relationships from each episode, and the resulting edges carry validity ranges.
+[Zep](https://getzep.com) builds temporal context graphs via [Graphiti](https://github.com/getzep/graphiti): an LLM extracts entities and relationships from each episode, the edges carry validity windows, and retrieval combines vector, BM25 and graph traversal in one call. Every fact traces back to the episode that produced it.
 
-**The difference in one sentence:** SenseLab records *who learned it, whether it turned out to be right, and how a team shares it.* Graphiti stops at what the graph says.
+**The difference in one sentence:** Graphiti records when a fact was true. SenseLab records whether acting on it worked, who learned it, and what to do when it stops working.
 
 **Where SenseLab is stronger:**
 
-- **Rooms: a team, not a tenant** — This is the largest gap between the two products. A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side on one body of knowledge. Nothing is copied to anyone, so no member ends up holding a private version that drifts. Membership is collaborator or viewer, and a viewer's writes are refused by a SenseLab policy at the storage layer rather than only by the interface, so a stray API call cannot get around it. Every write is logged with its author to the room's activity. Graphiti's `group_id` is the nearest thing and it is a different idea: it partitions one system's graphs so they do not mix. It does not give six people's agents a shared place to work, and there is no notion of who may write to it.
-- **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity, delivered automatically on join and re-runnable on demand. A new hire's agent starts where the team is instead of at the README. Graphiti has no equivalent — a new consumer of the graph must know what to query for.
-- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it has its confidence adjusted: successes multiply it up, failures down, and outcome-validated entries then decay at half the rate. Graphiti tracks when a fact was valid, but nothing flows back from what happened after an agent acted on it.
-- **Per-agent provenance** — Every version records the agent, session and timestamp that produced it, and one agent reading another's memory is logged on both timelines. A Graphiti edge does not record which agent asserted it.
-- **Decision traces** — `record_context()` and `commit_outcome()` capture the full causal chain behind an action: what was read, at what confidence, what external input arrived, what was decided. Pro persists traces with integrity checking. There is no Graphiti equivalent.
-- **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key, both versions survive with their authors, and the disagreement surfaces in history or an on-demand scan. This is the opposite of Graphiti's edge invalidation, deliberately: nothing decides for you which agent was right.
-- **Git-like history and review** — Diff, full version history and merge-base are in SenseLab Open Source; branching, pull requests, tags, fork and cherry-pick are in SenseLab. Graphiti has bi-temporal versioning but no branching or review model.
-- **Models tuned on your traces** — The same traces behind the outcome loop are training data. We spin up the run, fine-tune on your successful decisions, and host the result for serving. Graphiti improves what the model reads; it does not touch the model. See [models tuned on your own decision traces](#models-tuned-on-your-own-decision-traces).
+- **Outcomes move confidence** — Graphiti knows when a fact became valid and when it was invalidated by a newer one. Nothing flows back from what happened after an agent acted on it. In SenseLab every outcome is evidence on the entries the run relied on, a validated rule that suddenly fails is flagged as a regime shift, and guidance for that scope switches to `explore` so agents try something other than the rule that just broke.
+- **A repair loop** — A recurring failure in your agents' runs opens an incident with a fix that is replay-tested before it ships and verified afterwards. Graphiti maintains the graph; it has no view of the runs that used it.
+- **Rooms: a team, not a tenant** — A room covers a set of topics, and every member's agent reads and writes the same entries under them — Claude, ChatGPT, Cursor and Claude Code side by side. Membership is collaborator or viewer, and a viewer's writes are refused at the storage layer, so a stray API call cannot get around it. Graphiti's `group_id` partitions one system's graphs so they do not mix; it does not give six people's agents a shared place to work, and there is no notion of who may write to it.
+- **Joining briefings** — An agent that joins a room is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity. A new consumer of a Graphiti graph must know what to query for.
+- **Per-agent provenance** — Graphiti's provenance runs from a fact back to its source episode. SenseLab's runs to the agent, session and time that produced each version, and one agent reading another's learning is logged on both timelines.
+- **Decision traces** — The full causal chain behind an action — what was read, at what confidence, what external input arrived, what was tried, what was decided — persisted, signed and replayable. There is no Graphiti equivalent.
+- **Disagreement is kept, not resolved** — A write never overwrites; it supersedes. When two agents write the same key both versions survive with their authors, and the disagreement surfaces in history or in a pattern scan. This is the opposite of edge invalidation, deliberately: nothing decides for you which agent was right.
+- **Git-like history and review** — Diff, version history, branching, pull requests, tags, fork and cherry-pick. Graphiti has bi-temporal versioning but no branching or review model.
+- **Models tuned on your traces** — The same traces behind the outcome loop are training data. We spin up the run, fine-tune on your successful decisions, and host the result for serving. Graphiti improves what the model reads; it does not touch the model.
+- **Nothing to start over** — Migrate imports what your agents already know from Zep.
 
 ---
 
-## SenseLab vs Letta / MemGPT
+## SenseLab vs Letta
 
-[Letta](https://letta.com) (formerly MemGPT) treats the LLM as an OS managing its own memory: main context (RAM), recall store (recent history), and archival store (long-term).
+[Letta](https://letta.com) (formerly MemGPT) is an agent runtime whose memory is a git repository. MemFS projects it onto the machine as Markdown files the agent edits and commits; background "dreaming" subagents consolidate it; shared memory repositories give several cloud-hosted Letta agents the same files; and Letta Evals grades agents against a dataset with a pass/fail gate, in CI.
 
-**The difference in one sentence:** SenseLab shares knowledge between a team's people, records whether it held up, and trains a model on the result. Letta stops at shared state between one developer's agents.
+**The difference in one sentence:** Letta versions what an agent wrote. SenseLab versions what an agent learned, and knows whether it held up.
 
 **Where SenseLab is stronger:**
 
-- **Rooms are for people, not just agents** — A room is a workspace several people join, each bringing whichever assistant they use — Claude, ChatGPT, Cursor, Claude Code — with collaborator and viewer roles, where a viewer's writes are refused by a SenseLab policy at the storage layer rather than only by the interface. Letta's shared blocks stay inside one deployment that one developer wired together; there is no colleague in the model.
-- **Concurrent writes that do not overwrite each other** — SenseLab writes supersede rather than replace, every version keeps its author, and two agents disagreeing leaves both positions standing. A Letta block is a bounded piece of text with a character cap: updates replace its contents, and the guidance is to nominate a single owner agent for heavy edits to avoid races.
-- **A joining briefing** — A new member's agent is handed what the room already knows before it starts work: up to fifty entries across the topics, plus recent activity. Attaching a block gives an agent the text but no sense of what the team has recently learned or decided.
-- **Structured discussion and negotiation** — SenseLab agents debate inside the shared workspace, addressed and threaded, and can run a structured negotiation that ends in a recorded position rather than a conversation someone has to summarise. Letta agents can pass messages; nothing settles into the shared record.
-- **Outcome back-propagation** — Commit an outcome and every entry read on the way to it moves: confidence up on success, down on failure, and outcome-validated entries then decay at half the rate. Letta does not connect memory to what happened after the agent acted.
-- **Decision traces** — The full causal chain behind an action is captured and persisted, with integrity checking on Pro. Letta shows you the context window; it does not keep the reasoning that produced a decision months ago.
+- **Git on learning, not on files** — Letta's git tracks Markdown text: history, diffs, conflict resolution, worktrees for concurrent subagents. SenseLab's git-like model is on learning entries that carry confidence, evidence status and outcomes. A branch carries a prediction, a pull request is reviewed before the team's knowledge changes, and a merged fix is replay-tested first and verified a week later. Git tells you a file changed; SenseLab tells you whether the change worked.
+- **Outcomes** — Letta has no outcome. Dreaming reorganizes memory on a step count or on context compaction, not on whether the agent's actions succeeded. In SenseLab the outcome is what moves confidence, and the briefing an agent starts from reflects it.
+- **Grading production runs, not test suites** — Letta Evals runs an agent against a dataset with graders and a gate — a CI tool, run before deployment. Behavior grades the runs your agents actually make, discovers behaviors you did not think to define, opens incidents when one recurs, repairs the learning, and verifies the repair against live runs.
+- **Rooms are for people** — Letta's shared memory repositories share files between Letta agents in one organization. A SenseLab room is a workspace several people join, each bringing whichever assistant they use — Claude, ChatGPT, Cursor, Claude Code — with collaborator and viewer roles enforced at the storage layer, a joining briefing for every new agent, and Room Hub to publish a room or subscribe to one. There is no colleague in Letta's model.
+- **Concurrent writes that do not conflict** — Letta resolves concurrent edits with git: worktrees, merges and automatic conflict repair. SenseLab writes supersede rather than replace, every version keeps its author, and two agents disagreeing leaves both positions standing — there is no merge conflict on a key.
+- **Decision traces** — The full causal chain behind an action is captured, signed and replayable. Letta keeps the conversation and the files; it does not keep the reasoning that produced a decision months ago.
 - **Models tuned on your traces** — Those traces train a model on how your agents actually work, with the training run and the hosting handled for you. Letta manages what goes into the context window; the model underneath stays a general one.
-- **CoW versioning and review** — Full version history, diff, rollback, branching and pull requests. Letta's archival store does not version, and there is no review step before shared state changes.
-- **Data-driven tiering** — Hot/Warm/Archive tiers are assigned by priority scoring across confidence, recency, recall frequency and importance, rather than by an LLM deciding what to page in and out. That removes the latency and token cost of asking a model to manage its own memory.
+- **Data-driven tiering** — Hot / Warm / Archive tiers are assigned by priority scoring across confidence, recency, recall frequency and importance, with progressive retrieval deciding how deep a search goes. Letta's root files sit in the prompt every turn and the agent reads the rest on demand, which spends the model's attention on memory management.
+
+---
+
+## The repair loop nobody else runs
+
+The largest gap on this page is not a feature. It is what happens after a bad run.
+
+In every other system the answer is nothing: the same memory comes back next time, and someone edits a prompt. SenseLab's Behavior layer treats the bad run as a signal:
+
+1. **Judges grade the run.** A starter pack covers ungrounded claims, missing required tools, retry storms, tool-error cascades and unresolved user repetition; you define more in plain language, and Behavior discovers behaviors you did not think to name.
+2. **A recurring failure opens an incident**, segmented by model, agent version and tool, so you see whether it is one model, one release or one integration.
+3. **A fix is staged to the learning** — a knowledge entry, a procedure, or a code handoff — on its own branch, with a prediction of which past failures it would have fixed and which past successes it must not break.
+4. **The fix is replay-tested** against the failing and the passing runs before it ships, and optionally canaried on live runs.
+5. **It ships, then it is verified** a week later. A fix that did not hold is rolled back in one click, and its prevention rate — how often the behavior recurred before and after — stays on the fix.
+
+A repair policy decides how much of this runs on its own: review every fix, ship automatically after replay, or ship automatically after canary. Every proven repair is also a labelled example — situation, wrong action, right action, outcome — for the model loop below. That is the recursive part.
+
+<Card title="Behavior" icon="stethoscope" href="/amfs/guides/behavior">
+  Judges, behaviors, incidents, fixes, replay, canary, verify and rollback — the loop in full, with the repair policy and the weekly digest.
+</Card>
 
 ---
 
 ## Models tuned on your own decision traces
 
-This is the largest single difference on this page. Every other memory system here stops at retrieval — it decides what the model gets to see. SenseLab uses the same record to improve the model itself.
+Every other memory system here stops at retrieval — it decides what the model gets to see. SenseLab uses the same record to improve the model itself.
 
-A decision trace already holds what an agent read, what it decided, which tool it called and whether that turned out well. That is supervised training data, and your agents produce it as a by-product of working. Nothing extra to instrument, nothing to label.
+A decision trace already holds what an agent read with its evidence status, what it decided, which tool it called and whether that turned out well. That is supervised training data, and your agents produce it as a by-product of working. Nothing extra to instrument, nothing to label.
 
 **We run the entire pipeline for you.** No ML engineers, no GPUs to procure, no training infrastructure to maintain:
 
@@ -130,40 +215,36 @@ A decision trace already holds what an agent read, what it decided, which tool i
 2. **We run the fine-tune**, score the candidate, and decide whether it is good enough to promote.
 3. **We host it and serve it**, on our infrastructure, behind an endpoint your existing code already knows how to call.
 
-The result is a model that has seen how your agents actually work — which tools they reach for, in what order, on your systems — rather than a general model prompted to guess.
-
 How it works:
 
 - **Positive outcomes only.** Training pairs come from decisions recorded as successful. Failures are deliberately withheld into a holdout so there is something honest to score against.
 - **A readiness gate before anything trains.** Ninety days of history, a floor of 100 and a target of 200 eligible decisions, at least three distinct primary tools, and at least 60% positive outcomes. Below the gate, no run starts.
 - **Scored before promotion.** Candidates are evaluated on a temporal holdout against a tool-agreement threshold, and only promoted automatically when the gate passes, the subscription is active, and the account is under its live model limit.
-- **Served behind the API you already use.** OpenAI-compatible at `/api/v1/chat/completions` and the Anthropic dialect at `/api/v1/messages`, with the model field naming your model — `senselab-s1` or `senselab-s1-pro`.
+- **Served behind the API you already use.** OpenAI-compatible at `/api/v1/chat/completions` and the Anthropic dialect at `/api/v1/messages`, with the model field naming your model.
 - **Fallback is automatic.** An unparseable action, a tool outside the agent's recent set, a safety block or an upstream error falls back to a general model rather than failing the call.
 - **Plan limits.** One live model on Pro, three on Teams, one hundred on Enterprise.
+
+**What a tuned model inherits.** In our companion study, a small model trained on a frontier agent's sealed traces and served with the same memory solved 0.94 and 0.92 of tasks on two scenarios, under the rule change its teacher lived through, where the frontier agent on the same memory solved 0.84 and 0.82 — at about one fortieth of the list price per solved task. Under a second rule change no training trace contained, it matched the frontier on success within noise. The memory keeps working after the experience is in the weights: switching it off cost the tuned model 0.26 first-try success after the change, and serving the same entries *without* their outcome record cost 0.24 — most of what memory does for a tuned model is the evidence. A third generation trained on the second generation's own traces improved on its parent.
 
 On cost and accuracy, the figures that matter are yours, not ours. Every candidate is scored on a temporal holdout built from your own traces, so what you get is a number for your model on your traffic rather than a benchmark run on somebody else's workload.
 
 No competitor on this page closes this loop. Mem0, Zep and Letta all improve what the model reads. None of them improve the model.
 
-<Card title="Get a model trained on your traces" icon="envelope" href="mailto:hello@sense-lab.ai?subject=A%20model%20tuned%20on%20our%20decision%20traces">
-  Tell us which tools your agents call and we will tell you where you stand
-  against the readiness gate. Worth starting the conversation early: the gate
-  needs ninety days of history and at least 100 eligible decisions, so the
-  sooner your agents are recording outcomes, the sooner there is enough to
-  train on.
+<Card title="Managed Models" icon="microchip" href="/amfs/guides/managed-models">
+  Readiness per agent, the training run, holdout scoring, the endpoints and the fallback rules.
 </Card>
 
 ---
 
 ## What Makes SenseLab Unique
 
-1. **GitHub for agent memory** — No other system treats agent knowledge like code. SenseLab gives every agent a brain (repo), with branching, pull requests, diff, merge, rollback, access control, and fork. The mental model is already in every developer's head. No competitor has any of this.
-2. **Memory that learns from production** — Confidence scoring evolves from incidents, deployments, and regressions. No other system connects memory to real-world outcomes.
-3. **Models tuned on your own traces, trained and hosted by us** — Every other system stops at improving what the model reads. SenseLab turns the same decision traces into a fine-tuned model: we spin up the training job, run the fine-tune, score it against a holdout of your own decisions, and host it behind an OpenAI-compatible endpoint. No ML team required.
-4. **Self-organizing memory** — Tiered memory (Hot/Warm/Archive), frequency-modulated decay, multi-dimensional importance scoring, and progressive retrieval. Not just a retrieval layer — a memory system that reorganizes itself based on what matters.
-5. **Copy-on-Write versioning** — Every write is immutable. Replay history, compare versions, and audit decisions. Most competitors overwrite.
-6. **Complete decision traces** — `explain()` \+ `record_context()` capture the full causal chain. Pro persists traces permanently with cryptographic integrity.
-7. **Multi-agent native** — Provenance tracking, auto-causal linking, per-agent identity, and tracked cross-agent reads. Not bolted on.
-8. **Cross-system context** — Operational events flow into the same memory store over webhooks. PagerDuty ships as a connector; anything else can post to the generic webhook endpoint. No competitor unifies agent memory with operational events.
-9. **Framework and infrastructure agnostic** — Any framework, any IDE via MCP, any storage backend via adapters.
-10. **Enterprise-grade** — Postgres RLS, RBAC, scoped API keys, audit logging, rate limiting, usage quotas. Purpose-built for multi-tenant SaaS.
+1. **It closes the loop after the model acts** — Every outcome is evidence on the learning the run relied on. Confidence moves, entries carry a label the next briefing reads, failed attempts are charged before the next one is tried, and a rule that just stopped working is flagged. No other system connects memory to what happened next — and in our benchmark that loop alone was worth 18 points of first-attempt success after a rule change.
+2. **It repairs itself** — Judges grade production runs, recurring failures open incidents, and the fix to the learning is replay-tested before it ships and verified after. No prompt edit, no redeploy.
+3. **It trains a model on its own record** — The same decision traces become a fine-tuned model: we spin up the job, score it against a holdout of your own decisions, and host it behind an OpenAI-compatible endpoint. No ML team required.
+4. **Each loop feeds the next** — Outcomes improve the memory, failures become tested repairs, the validated record becomes the model, and the model's own traces train its successor. That arrangement is what makes the improvement recursive.
+5. **Git for learning, not for files** — Branching, pull requests, diff, merge, rollback, tags and fork on entries that carry confidence and outcomes — so a review can ask whether a change worked, not only whether it was made.
+6. **Rooms are for people** — Several people's agents on one topic, whichever assistant each person uses, with roles enforced at the storage layer, a joining briefing, discussions, negotiations, page-cited documents and a hub to publish or subscribe.
+7. **Complete decision traces** — What was read, done, attempted and every LLM call, immutable and signed, with verify, replay and compare.
+8. **Cross-system context** — Deploys, incidents and reviews land in the record over webhooks, with PagerDuty as a ready-made connector, so outcomes come from the systems that know. Migrate brings in what your agents already learned in Mem0 or Zep.
+9. **Works with what you already run** — Any framework, any IDE or assistant through MCP, SDKs for Python and TypeScript, and nothing to operate. The store outlives any single model choice: in our benchmark a newcomer on a different model read the fleet's store as well as the model that wrote it.
+10. **Enterprise-grade** — Isolation per account, roles and teams, scoped API keys, audit logging, learning security with SIEM forwarding, usage quotas.
