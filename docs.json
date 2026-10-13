@@ -24,6 +24,7 @@
                   {
                     "group": "Competitor Analysis",
                     "icon": "scale-balanced",
+                    "expanded": false,
                     "pages": [
                       "amfs/vs-memory",
                       "amfs/vs-observability",
