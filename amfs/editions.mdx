@@ -1,17 +1,17 @@
 ---
 title: "Editions"
-description: "What's in SenseLab Open Source vs. SenseLab — and when you need which."
+description: "What's in the open-source core vs. SenseLab — and which parts of the self-improvement loop each one closes."
 icon: "scale-balanced"
 ---
 
-SenseLab Open Source is the memory engine: versioning, confidence, outcomes, causal traces, a knowledge graph and a git-like timeline, all Apache 2.0 and yours to run. It is built for one agent, or one developer's agents, on infrastructure you maintain.
+The open-source core is the **fast loop** for one developer's agents: versioned entries, confidence that moves with outcomes, compiled briefings, a knowledge graph and a git-like timeline, all Apache 2.0 and yours to run on infrastructure you maintain.
 
-SenseLab is what you want the moment a second person is involved. Shared rooms where several people's agents work on one topic, a briefing that catches a new agent up on join, branching and review before shared knowledge changes, immutable traces you can still query in a year, pattern scans that run without being asked, governance, a dashboard for the people on your team who do not read Python, and models fine-tuned on your own decision traces that we train and host for you.
+SenseLab is the **whole loop, run for you**. The repair loop — judges grading runs, repeated failures becoming incidents, fixes to the learning replayed against the failing runs before they ship. The model loop — a private model tuned on your own decisions, trained and hosted by us. And everything that makes the loop a team's rather than one person's: rooms, branching with review before shared knowledge changes, immutable traces you can still query in a year, security scanning, and a dashboard for the people on your team who do not read Python.
 
 There is a free tier with no card, so the honest way to decide is to point an agent at it for an afternoon rather than read this page twice.
 
 <Card title="Start free" icon="rocket" href="/amfs/getting-started/saas-connection">
-  1,000 ops a month, two seats and a room, no credit card. Nothing to install and no Postgres to run.
+  1,000 ops a month, two seats and a room, no credit card. Nothing to install and nothing to run.
 </Card>
 
 ---
@@ -19,192 +19,175 @@ There is a free tier with no card, so the honest way to decide is to point an ag
 ## At a Glance
 
 <Frame>
-  ![What SenseLab Open Source includes and what SenseLab adds on top of it](/images/editions-at-a-glance.png)
+  ![What the open-source core includes and what SenseLab adds on top of it: Behavior, models tuned on your traces, rooms, learning branching, immutable traces, pattern detection, learning security, the intelligence layer, and the dashboard](/images/editions-at-a-glance.png)
 </Frame>
+
+---
+
+## Which loop each edition closes
+
+| Loop | Open-source core | SenseLab |
+| :-- | :-- | :-- |
+| **Fast loop** — every run moves what the agent knows | Yes. Outcomes move confidence on everything the run read; briefings rank by evidence. | Yes, plus evidence-weighted retrieval with learned ranking, calibration from your own outcome history, and briefings compiled and kept current for you. |
+| **Repair loop** — every incident becomes a tested fix to the learning | — | **Behavior**: judges, named behaviors, incidents, fixes replayed before they ship, canary, verify sweep, rollback. |
+| **Model loop** — every few months the model itself improves | — | **Managed Models**: tuned on your traces, scored against your holdout, served behind one model string. |
+| **The team** — several people's agents on one body of learning | — | Rooms and Room Hub, branching with pull requests, teams, roles and scoped keys. |
+| **The record that survives** | `explain()` within the session | Immutable, signed traces: search by what happened, verify, replay, compare. |
 
 ---
 
 ## Feature Comparison
 
-| Capability | SenseLab Open Source | SenseLab |
+| Capability | Open-source core | SenseLab |
 | :-- | :-: | :-: |
-| **Core Memory Primitives** |  |  |
-| Copy-on-Write versioning | Yes | Yes |
-| Confidence scoring with outcome back-propagation | Yes | Yes |
-| Memory types (fact, belief, experience) | Yes | Yes |
-| Type-specific confidence decay | Yes | Yes |
+| **Learning Primitives** | | |
+| Copy-on-write versioning | Yes | Yes |
+| Memory types (fact, belief, experience, procedure) | Yes | Yes |
+| Confidence moved by outcome evidence (weighted by severity, credit and surprise) | Yes | Yes |
+| Evidence status (untested / validated / contested / discredited), first-strike tolerance, regime shift | Yes | Yes |
+| Compiled briefings with `validated`, `discredited`, `regime_shift` and `tried_here` sections | Yes | Yes |
+| Guidance: action priors and act / explore / escalate recommendations | Yes | Yes |
+| Failed-attempt attribution (`record_attempt`) | Yes | Yes |
+| Optional time decay with type-specific half-lives | Yes | Yes |
 | Provenance tiers (production-validated → manual) | Yes | Yes |
 | Temporal queries (`history`) | Yes | Yes |
 | Session-level causal explainability (`explain`) | Yes | Yes |
 | Enriched decision traces (query events, error events, state diff) | Yes | Yes |
-| Session timing and per-operation latency tracking | Yes | Yes |
 | Per-agent memory graph and activity timeline | Yes | Yes |
-| Composite recall scoring | Yes | Yes |
-| Multi-scope search | Yes | Yes |
-| Knowledge graph (auto-materialized from writes/outcomes) | Yes | Yes |
-| Hybrid search (full-text \+ semantic \+ composite scoring) | Yes | Yes |
-| Frequency-modulated decay (4-signal model) | Yes | Yes |
-| Tiered memory (Hot / Warm / Archive) | Yes | Yes |
-| Progressive retrieval (`depth`) | Yes | Yes |
+| Knowledge graph (auto-materialized from writes and outcomes) | Yes | Yes |
+| Hybrid search (full-text + semantic + composite scoring) | Yes | Yes |
+| Tiered memory (Hot / Warm / Archive) with progressive retrieval | Yes | Yes |
 | Importance evaluator hook (`ImportanceEvaluator` ABC) | Yes | Yes |
-| Cortex drift gate (skip-redundant recompilations) | Yes | Yes |
+| Cortex drift gate (skip redundant recompilations) | Yes | Yes |
 | LLM importance scoring (3-dimension) | — | Yes |
-| Background tier recomputation (`TierWorker`) | — | Yes |
-| **Git-like Timeline** |  |  |
-| Event logging (writes, outcomes, reads, briefs) on main | Yes | Yes |
-| Branch-aware read/write/list/search (`branch` parameter) | Yes | Yes |
-| Timeline API endpoint per agent | Yes | Yes |
-| MCP `amfs_timeline` tool | Yes | Yes |
-| **Learning Branching** |  |  |
-| Create / close / list branches | — | Yes |
-| Diff branch vs. main | — | Yes |
-| Merge branches (fast-forward, ours, theirs) | — | Yes |
-| Branch access control (grant/revoke per user/team/API key) | — | Yes |
-| Access enforcement on non-main read/write | — | Yes |
-| Pull Requests with review workflow | — | Yes |
-| Tags / named snapshots | — | Yes |
-| Rollback to a timestamp | Yes | Yes |
-| Rollback to a named tag | — | Yes |
-| Cherry-pick entries across branches | — | Yes |
-| Fork agent memory to a new agent | — | Yes |
-| Sacred Timeline (3D interactive visualization) | — | Yes |
-| **Connectors** |  |  |
-| Connector framework (`ConnectorABC`) | Yes | Yes |
-| Webhook receiver (`/api/v1/webhooks/{name}`) | Yes | Yes |
-| Direct event ingestion (`/api/v1/events`) | Yes | Yes |
-| **Adapters & Infrastructure** |  |  |
-| Filesystem adapter | Yes | Yes |
-| Postgres adapter (triggers, LISTEN/NOTIFY) | Yes | Yes |
-| S3 adapter | Yes | Yes |
-| HTTP/REST API server | Yes | Yes |
-| Docker \+ Docker Compose \+ Helm charts | Yes | Yes |
-| MCP server (36 tools) | Yes | Yes |
-| **SDKs & Clients** |  |  |
-| Python SDK (full parity) | Yes | Yes |
-| TypeScript SDK (full parity) | Yes | Yes |
-| CLI tools | Yes | Yes |
-| Framework integrations (CrewAI, LangGraph, etc.) | Yes | Yes |
-| Bundled lightweight embedder | Yes | Yes |
-| **Accounts and Access** |  |  |
-| Account-level tenant isolation (RLS) | — | Yes |
-| RBAC (Admin, Developer, User) | — | Yes |
-| Scoped API keys with entity-path permissions | — | Yes |
-| Permissioned inference (scope-filtered search/explain) | — | Yes |
-| OAuth 2.0 / OIDC for dashboard users | — | Yes |
-| Append-only audit logging | — | Yes |
-| Usage quotas \+ sliding-window rate limiting | — | Yes |
-| **Immutable Decision Trace Store** |  |  |
-| Durable causal chains across sessions | — | Yes |
-| Cryptographic signing (HMAC-SHA256) and Merkle chain linking | — | Yes |
-| LLM call span tracking (model, tokens, cost, latency) | — | Yes |
-| Write events, tool calls, and agent interaction recording | — | Yes |
-| OpenTelemetry export (GenAI semantic conventions) | — | Yes |
-| Historical `explain(outcome_ref)` | — | Yes |
-| `search_traces` / precedent search API | — | Yes |
-| Cross-agent, cross-session trace queries | — | Yes |
-| **Cross-System Ingestion** |  |  |
-| Generic webhook endpoint with HMAC verification | Yes | Yes |
-| Payload deduplication (idempotency) | Yes | Yes |
-| Pluggable transform pipeline with pattern matching | Yes | Yes |
-| Extensible connector framework (`ConnectorABC`) | Yes | Yes |
-| **Pattern Detection** |  |  |
-| Recurring failure detection across causal chains | Yes | Yes |
-| Stale knowledge detection (unvalidated entries) | Yes | Yes |
-| Knowledge conflict, redundant write, single-point-of-knowledge detection | Yes | Yes |
-| Configurable alert rules with cooldown suppression | Yes | Yes |
-| Alert callbacks for routing to your own systems | Yes | Yes |
-| Hot entity detection (disproportionate activity) | — | Yes |
-| Confidence drift detection (outlier entries) | — | Yes |
-| Scheduled scanning, severity triage and resolution tracking | — | Yes |
-| **Intelligence Layer** |  |  |
-| LLM-driven memory extraction | — | Yes |
-| Auto entity/relationship extraction from traces | — | Yes |
-| Automated memory critic | — | Yes |
-| Memory distillation & bootstrap sets | — | Yes |
-| Memory safety validation | — | Yes |
-| Multi-strategy retrieval with learned ranking (RRF \+ ML) | — | Yes |
-| Learned retrieval ranking from outcome data | — | Yes |
-| Adaptive confidence calibration | — | Yes |
-| Training data export (SFT, DPO, reward model) | — | Yes |
-| **Models Tuned on Your Traces** |  |  |
-| Fine-tuned model trained on your own decision traces | — | Yes |
-| Training run spun up and managed for you | — | Yes |
-| Candidate scored against a holdout of your decisions | — | Yes |
-| Hosted and served on our infrastructure | — | Yes |
-| OpenAI-compatible and Anthropic-dialect endpoints | — | Yes |
+| Background tier recomputation | — | Yes |
+| **Behavior — the repair loop** | | |
+| Judges grading runs (starter set, your own, sampling share) | — | Yes |
+| Verdicts with reasons, per run | — | Yes |
+| Named behaviors: authored, and discovered from the failures | — | Yes |
+| Incidents, with segmentation by model, agent version, tool or attribute | — | Yes |
+| Fixes by lever: knowledge, procedure, or a code handoff | — | Yes |
+| Replay test against the failing and the passing runs | — | Yes |
+| Your own agent's replay via signed webhook | — | Yes |
+| Canary: fix live for a share of sessions | — | Teams+ |
+| Repair policy: review / auto after replay / auto after canary | — | Yes |
+| Verify sweep a week after shipping; one-click rollback | — | Yes |
+| Suites and proof (rate before and after, against the prediction) | — | Yes |
+| Alerts, weekly digest, incident sharing into a room or as a public report | — | Yes |
+| Investigate: ask a question of an agent's runs in your own words | — | Yes |
+| **Models Tuned on Your Traces** | | |
+| Readiness tracked per agent over a rolling window | — | Yes |
+| Fine-tune on your own decision traces, run and managed for you | — | Yes |
+| Candidate scored against a holdout of your own decisions | — | Yes |
+| Hosted, OpenAI-compatible and Anthropic-dialect endpoints | — | Yes |
 | Automatic fallback to a general model | — | Yes |
-| **Dashboard** |  |  |
-| Memory explorer with interactive causal graph | — | Yes |
-| Decision trace explorer with enriched context and causal graph | — | Yes |
-| Per-agent memory graph and activity timeline | — | Yes |
-| Pattern detection dashboard with severity indicators | — | Yes |
-| Team & user management with roles | — | Yes |
-| API key management console with scopes | — | Yes |
-| Audit log viewer with search/filter | — | Yes |
-| Usage analytics & quota monitoring | — | Yes |
-| Snapshot capture, compare, and export | — | Yes |
-| Memory Tiers dashboard (distribution, entry browser) | — | Yes |
-| Knowledge Graph explorer and "Who Knows What" expertise map | — | Yes |
-| Extended MCP server (`amfs-mcp-server-pro`) | — | Yes |
-| **Rooms** |  |  |
+| Retraining as traces accumulate | — | Yes |
+| Live models at once | — | Pro 1 · Teams 3 · Enterprise 100 |
+| **Git-like Timeline** | | |
+| Event logging (writes, outcomes, reads, briefs) on `main` | Yes | Yes |
+| Branch-aware read / write / list / search (`branch` parameter) | Yes | Yes |
+| Timeline API endpoint per agent and MCP `amfs_timeline` | Yes | Yes |
+| Rollback to a timestamp | Yes | Yes |
+| **Learning Branching** | | |
+| Create / close / list branches; diff against `main` | — | Yes |
+| Merge branches (fast-forward, ours, theirs) | — | Yes |
+| Branch access control (grant / revoke per user, team or API key) | — | Yes |
+| Pull requests with review workflow | — | Yes |
+| Tags, rollback to a tag, cherry-pick, fork to a new agent | — | Yes |
+| Repair-loop fixes staged on their own branch | — | Yes |
+| Sacred Timeline (3D interactive visualization) | — | Yes |
+| **Rooms** | | |
 | Shared rooms over selected entity paths | — | Yes |
 | Email invitations and shareable join links | — | Yes |
-| Member and viewer roles with per-room enforcement | — | Yes |
+| Collaborator and viewer roles with per-room enforcement | — | Yes |
 | Agent-to-agent discussions with mentions and threading | — | Yes |
 | Structured negotiations with proposals and consensus | — | Yes |
 | Room documents (PDF, DOCX, Markdown, text) with page-cited search | — | Yes |
-| **Hosted Connectors** |  |  |
-| OAuth connector for Claude and ChatGPT (`mcp.sense-lab.ai`) | — | Yes |
-| Browser extension for saving pages to memory | — | Yes |
-| **Memory Governance** |  |  |
-| Security findings: secrets, credentials, PII, poisoning, contamination | — | Yes |
+| Room Hub: publish a room, or subscribe read-only to another account's | — | Yes |
+| **Immutable Decision Trace Store** | | |
+| Durable causal chains across sessions | — | Yes |
+| Cryptographic signing (HMAC-SHA256) and Merkle chain linking | — | Yes |
+| LLM call span tracking (model, tokens, cost, latency) | — | Yes |
+| Write events, tool calls, attempts and agent interaction recording | — | Yes |
+| OpenTelemetry export (GenAI semantic conventions) | — | Yes |
+| Historical `explain(outcome_ref)`; search traces by what happened in them | — | Yes |
+| Verify integrity, replay the learning at decision time, compare two runs | — | Yes |
+| **Accounts and Access** | | |
+| Account-level tenant isolation (RLS) | — | Yes |
+| Roles (admin, developer, user, security) and teams | — | Yes |
+| Scoped API keys with entity-path permissions | — | Yes |
+| Permissioned inference (scope-filtered search / explain) | — | Yes |
+| OAuth 2.0 / OIDC for dashboard users | — | Yes |
+| Append-only audit logging | — | Yes |
+| Usage quotas and sliding-window rate limiting | — | Yes |
+| **Pattern Detection** | | |
+| Recurring failure, stale knowledge, knowledge conflict, redundant write, single-point-of-knowledge, orphaned branch, passive consumer and unreviewed-change detectors | Yes | Yes |
+| In-process alert rules with cooldown and Python callbacks | Yes | — |
+| One-click scan across every agent, severity triage, resolution tracking, **Do next** panel | — | Yes |
+| Alerts on behaviors, incidents, drift and regressed fixes (Behavior) | — | Yes |
+| **Intelligence Layer** | | |
+| LLM-driven memory extraction; entity and relationship extraction from traces | — | Yes |
+| Automated memory critic; distillation and bootstrap sets; pre-write safety validation | — | Yes |
+| Multi-strategy retrieval (semantic, keyword, recency, confidence, evidence) with learned ranking | — | Yes |
+| Calibration of outcome weights from your own history | — | Yes |
+| Training data export (SFT, DPO, reward model) | — | Yes |
+| **Learning Security** | | |
+| Findings: secrets, credentials, PII, poisoning, contamination | — | Yes |
 | Custom policy rules with dry-run preview | — | Yes |
 | SIEM forwarding (webhook, Datadog, Splunk, Microsoft Sentinel) | — | Yes |
-| Memory consolidation with reviewable proposals | — | Yes |
+| Learning consolidation with reviewable proposals | — | Yes |
+| **Getting Data In** | | |
+| Connector framework, webhook receiver with HMAC verification, events API | Yes | Yes |
+| Payload deduplication and pluggable transforms | Yes | Yes |
+| OAuth connector for Claude and ChatGPT (`mcp.sense-lab.ai`) | — | Yes |
+| Browser extension for saving pages | — | Yes |
+| Migrate from mem0 or Zep, reviewed before anything is written | — | Yes |
+| **SDKs, Clients and Running It** | | |
+| Python and TypeScript SDKs (full parity) | Yes | Yes |
+| Framework integrations (CrewAI, LangGraph, LangChain, AutoGen) | Yes | Yes |
+| MCP server | 40 tools | `amfs-mcp-server-pro`, 90+ tools |
+| Dashboard | — | Yes |
+| Storage, HTTP server, workers, upgrades | You run them | Hosted |
 
 ---
 
 ## SenseLab Tiers
 
-Self-serve tiers are summarized below:
-
-| Tier | Indicative price | Included ops/month | Notes |
+| Tier | Price | Included ops / month | What it unlocks |
 | :-- | :-- | :-- | :-- |
-| **Free** | \$0 | 1K | 2 seats, 1 room, 10 guests; hard cap |
-| **Starter** | \$29 | 25K | Entry tier; auto top-up near limit (paid) |
-| **Pro** | \$149 | 50K | Production agent teams |
-| **Teams** | \$449 | 300K | Org scale; lower overage unit / 10K ops |
-| **Enterprise** | Custom | Custom | SSO, committed volume, SLA |
+| **Free** | $0 | 1K | The fast loop. 2 seats, 1 room, 10 guests; hard cap |
+| **Starter** | $29 | 25K | 3 seats, 10 API keys; overage packs |
+| **Pro** | $149 | 50K | **Behavior** with fixes proposed automatically, Learning Branching, Managed Models (1 live model), the Pro dashboard pages. 5 seats, 50 keys |
+| **Teams** | $449 | 300K | Fixes **shipped automatically** after a passing replay or canary, 3 live models. 10 seats, 200 keys; cheapest overage |
+| **Enterprise** | Custom | Custom | SSO, committed volume, SLA, 100 live models |
 
-**Ops =** read-like calls typically **1 op**, writes **2 ops**, `commit_outcome` **0 ops**.
+**Ops =** reads **1 op**, writes **2 ops**, `commit_outcome` **0 ops**. Overage comes in packs of 10,000 ops: $25 on Starter, $20 on Pro, $15 on Teams. Managed Models bill on their own subscription. [Billing & Metering](/amfs/pro/billing) has the full accounting.
 
-Committing an outcome is free on purpose. It is the call that makes every memory an agent read on the way there worth more or less, and we would rather you never had a reason to skip it.
+Committing an outcome is free on purpose. It is the call that makes every memory an agent read on the way there worth more or less — and the call every other loop runs off — so we would rather you never had a reason to skip it.
 
 The free tier includes a room and ten guests, which is enough to put your agent and a colleague's on the same topic and see whether it changes anything before you pay for it.
 
 ---
 
-## SenseLab Open Source — What's Included
+## The Open-Source Core — What's Included
 
-SenseLab Open Source ([github.com/raia-live/amfs](https://github.com/raia-live/amfs)) provides the full memory primitive: read, write, version, search, and learn from outcomes. It includes a git-like timeline engine, branch-aware operations, a connector framework, composite recall scoring, multi-scope search, a knowledge graph auto-materialized from writes and outcomes, hybrid search (full-text \+ semantic \+ composite scoring), tiered memory (Hot/Warm/Archive with progressive retrieval), frequency-modulated decay (4-signal model), and a Cortex drift gate that avoids redundant digest recompilations.
+The core ([github.com/raia-live/amfs](https://github.com/raia-live/amfs)) is the full fast loop: read, write, version, retrieve, and learn from outcomes. It includes the evidence model that moves confidence, the briefing compiler, a git-like timeline engine with branch-aware operations, a connector framework, a knowledge graph auto-materialized from writes and outcomes, hybrid search, tiered memory with progressive retrieval, and the pattern detectors.
 
 ### Packages
 
 | Package | Description |
 | :-- | :-- |
-| `amfs-core` | CoW engine, models, read tracking, causal tagging, default embedder, `tiering` (PriorityScorer, TierAssigner), `importance` (ImportanceEvaluator ABC) |
-| `amfs` (SDK) | `AgentMemory` class — `read`, `write`, `list`, `search`, `history`, `timeline`, `explain`, `commit_outcome`, `record_context` |
-| `amfs-adapter-filesystem` | JSON-file-based adapter for local development |
-| `amfs-adapter-postgres` | PostgreSQL adapter with PL/pgSQL triggers for outcome propagation and `LISTEN/NOTIFY` for watch |
-| `amfs-adapter-s3` | Amazon S3 / S3-compatible adapter for cloud-native storage |
-| `amfs-http-server` | REST API server (FastAPI/Uvicorn) for remote access, branch-aware endpoints |
-| `amfs-mcp-server` | MCP server exposing 36 tools, including `amfs_read`, `amfs_write`, `amfs_search`, `amfs_retrieve`, `amfs_briefing`, `amfs_recall`, `amfs_list`, `amfs_stats`, `amfs_commit_outcome`, `amfs_record_context`, `amfs_history`, `amfs_explain`, `amfs_graph_neighbors`, and `amfs_timeline`. Set `AMFS_TOOLSET=core` to expose only the 16 essential tools |
-| `amfs-cli` | Terminal tools for inspecting, diffing, snapshotting, and restoring memory |
-| `@senselab-ai/amfs` | TypeScript SDK (full parity with Python: ReadTracker, search, stats, history, explain, recordContext) |
+| `amfs-core` | Copy-on-write engine, models, evidence model, read tracking, causal tagging, default embedder, tiering and importance hooks |
+| `amfs` (SDK) | `AgentMemory` — `read`, `write`, `retrieve`, `briefing`, `history`, `timeline`, `explain`, `record_context`, `record_action`, `record_attempt`, `commit_outcome` |
+| `amfs-adapter-filesystem` / `amfs-adapter-postgres` / `amfs-adapter-s3` | Storage adapters for running the core yourself |
+| `amfs-http-server` | REST API server with branch-aware endpoints |
+| `amfs-mcp-server` | MCP server exposing 40 tools; `AMFS_TOOLSET=core` exposes the 15 essential ones |
+| `amfs-cli` | Terminal tools for inspecting, diffing, snapshotting and restoring |
+| `@senselab-ai/amfs` | TypeScript SDK, at parity with Python |
 
 ### Key Primitives
 
-**Memory Types** — Every entry is classified as `fact`, `belief`, or `experience`, each with its own decay rate:
+**Memory Types** — Every entry is `fact`, `belief`, `experience` or `procedure`. Procedures are *how to do a task*: ordered steps, what to check before acting, what to do when a step fails — and they are what the repair loop writes when the agent knew the facts but did the task the wrong way.
 
 ```python
 from amfs import AgentMemory, MemoryType
@@ -216,14 +199,13 @@ mem.write("svc", "hypothesis", "Likely N+1", memory_type=MemoryType.BELIEF)
 mem.write("svc", "action-log", "Added index", memory_type=MemoryType.EXPERIENCE)
 ```
 
-**Provenance Tiers** — Entries are automatically ranked by quality based on how they were created:
+**Evidence** — Confidence is moved by outcomes, not by hand. Each entry carries what the outcomes have shown so far:
 
 ```python
-from amfs import ProvenanceTier
-
-entry = mem.read("svc", "pattern")
-if entry.provenance_tier == ProvenanceTier.PRODUCTION_VALIDATED:
-    print("Validated by production outcomes")
+entry = mem.read("svc", "retry-pattern")
+entry.confidence        # 0.85
+entry.evidence_status   # "validated" — or untested / contested / discredited
+entry.success_count, entry.failure_count
 ```
 
 **Temporal Queries** — Retrieve the full version history of any entry:
@@ -244,229 +226,185 @@ Worth knowing before you choose, because it rarely appears in the comparison and
 
 - A Postgres you own, with the migrations applied on every upgrade and a backup story you have tested rather than assumed.
 - The embedder, and the memory and cold-start time it wants, on every machine that runs a search.
-- Background work that has to actually run: tier recomputation, decay, digest compilation. On your schedule, with your alerting when it stops.
+- Background work that has to actually run: tier recomputation, digest compilation, consolidation. On your schedule, with your alerting when it stops.
 - Version skew across the SDK, the HTTP server, the MCP server and the adapter, once more than one service is talking to the same store.
 - Access control, which you build, because the single-writer model does not have any.
+- No repair loop and no model loop. The core records outcomes; nothing in it grades runs, proposes fixes or trains on the record.
 
-None of it is hard. All of it is yours, forever, and none of it is your product. On SenseLab it is a connection string.
+None of it is hard. All of it is yours, forever, and none of it is your product. On SenseLab it is an API key.
 
 ---
 
 ## SenseLab — What's Added
 
-SenseLab wraps SenseLab Open Source — it never replaces it. Everything it adds reads from and writes to the same memory store using the same adapters and SDK.
+SenseLab wraps the core — it never replaces it. Everything it adds reads from and writes to the same entries through the same SDK and the same MCP tools. The additions are the parts of the loop the core cannot close on its own.
 
-### Rooms — Where a Team's Agents Work Together
+### Behavior — the repair loop
 
-The reason most teams move off SenseLab Open Source. A room covers a set of topics, and every member's agent reads and writes the same entries under them, whether that person uses Claude, ChatGPT, Cursor or Claude Code. Nobody holds a private copy, so nobody quietly drifts.
+Judges grade your agent's runs. Runs that fail the same way become a named behavior; a behavior that keeps recurring opens an incident, segmented by model, agent version and tool so you can see where it concentrates. From any failed run — or automatically when an incident opens — SenseLab proposes a fix to the learning itself: a corrective entry, a procedure, or a handoff to whoever changes the code. The fix is staged on its own branch with a prediction, replayed against the failing runs and the passing ones, shipped when it passes, checked a week later, and rolled back in one click if it regressed. A repair policy decides whether a person ships each fix or the loop ships on its own.
 
-An agent joining a room is handed what the room already knows before it starts — the highest-value entries across the room's topics, plus what has happened there recently, delivered automatically rather than in response to a question it would have to know to ask. Members' agents post discussions in the room, address each other directly, reply in threads, and can run a structured negotiation that ends in a recorded position. Team documents can be uploaded and searched with page citations alongside everything the team has learned.
-
-Membership is collaborator or viewer, a viewer's writes are refused below the interface, and every write is attributed in the room's activity.
-
-### Learning Branching — Git for what agents learn
-
-While SenseLab Open Source provides the git-like timeline engine (event logging on `main`), SenseLab adds the full branching model — branches, merges, pull requests, access control, tags, rollback, cherry-pick, and fork. Agents create isolated branches to experiment, then merge changes back into main after review.
-
-<Card title="Learning Branching" icon="code-branch" href="/amfs/pro/branching">
-  Full documentation on branches, merge strategies, pull requests, access control, tags, rollback, cherry-pick, fork, and the Sacred Timeline visualization.
-</Card>
-
-### Accounts and Access
-
-Every API request is authenticated, authorized, scoped, and audited. Includes account-level Postgres RLS isolation, three-role RBAC (Admin/Developer/User), scoped API keys with entity-path permissions, and sliding-window rate limiting.
-
-<Card title="Accounts and Access" icon="building" href="/amfs/pro/multi-tenant">
-  Account isolation, RBAC, scoped API keys, OAuth/OIDC, audit logging, rate limiting, and usage quotas.
-</Card>
-
-### Immutable Decision Trace Store
-
-The `explain()` in SenseLab Open Source works within the active session and captures enriched trace data (query events, error events, session timing, state diffs). SenseLab builds on this with persistent, cryptographically signed, immutable traces — the full causal chain is queryable forever. Includes LLM call span tracking with token/cost analytics and OpenTelemetry export.
-
-<Card title="Decision Trace Store" icon="fingerprint" href="/amfs/pro/immutable-traces">
-  Durable causal chains, cryptographic integrity, LLM call spans, precedent search, and OpenTelemetry export.
-</Card>
-
-### Cross-System Ingestion
-
-Ingest events from your own systems into SenseLab memory. The connector framework transforms raw payloads into SenseLab `write()` operations, with HMAC verification, deduplication, and pluggable transforms.
-
-<Card title="Cross-System Ingestion" icon="webhook" href="/amfs/guides/connectors">
-  Webhook ingester, the connector framework, and direct event ingestion.
-</Card>
-
-### Automated Pattern Detection
-
-The detectors themselves are open source: recurring failures, knowledge conflicts, stale knowledge, redundant writes, single points of knowledge, with alert rules, cooldown suppression and callbacks. What SenseLab adds is that the scan runs whether or not anyone remembers to trigger it, hot entities and confidence drift are detected as well, and findings arrive as triaged severities with resolution tracking on a dashboard rather than as a payload you have to route somewhere.
-
-<Card title="Pattern Detection" icon="magnifying-glass-chart" href="/amfs/pro/pattern-detection">
-  Pattern types, severity levels, alert rules, cooldown suppression, and callback routing.
-</Card>
-
-### Intelligence Layer
-
-LLM-powered tools for memory quality and retrieval: extraction (raw text → structured operations), memory critic (toxic/stale/contradictory detection), distiller (compact stores into bootstrap sets), safety validator (pre-write guardrails), multi-strategy retrieval with learned ranking, adaptive confidence calibration, and training data export (SFT, DPO, reward model).
-
-<Card title="Intelligence Layer" icon="brain-circuit" href="/amfs/pro/intelligence">
-  Extraction, critic, distiller, safety, retrieval, ML ranking, calibration, and training data export.
+<Card title="Behavior" icon="stethoscope" href="/amfs/guides/behavior">
+  Judges, verdicts, behaviors, incidents, fixes, replay, canary, the repair policy, suites and Investigate.
 </Card>
 
 ### Models Tuned on Your Own Decision Traces
 
 Every trace records what an agent was asked, what it read, what it decided and how that turned out. That is a training set nobody else has, and SenseLab turns it into a model rather than an export you have to find an ML engineer for.
 
-We spin up the training run, fine-tune on your traces, score the candidate against a holdout of your own decisions so you can see whether it actually beat the base model, and host the result. You point at it with an OpenAI-compatible or Anthropic-dialect endpoint, and it falls back to a general model if the tuned one is unavailable. Retraining as more traces accumulate is the same pipeline.
+SenseLab tracks when an agent has enough outcome-labelled decisions, runs the fine-tune, scores the candidate against a holdout of your own history so you can see whether it actually beat the general model, and hosts the result behind an OpenAI-compatible or Anthropic-dialect endpoint with fallback to a general model. The tuned model's runs are recorded like any other, so the next tune starts from a better baseline.
 
-SenseLab Open Source has no equivalent, and neither export nor training is something the training-data export alone gets you.
+<Card title="Managed Models" icon="microchip" href="/amfs/guides/managed-models">
+  Readiness, training, evaluation against your holdout, calling the model, keeping it current, and what it costs.
+</Card>
+
+### Rooms — Where a Team's Agents Learn Together
+
+A room covers a set of topics, and every member's agent reads and writes the same entries under them, whether that person uses Claude, ChatGPT, Cursor or Claude Code. Nobody holds a private copy, so nobody quietly drifts — and an outcome on one person's agent moves what everybody's agents trust.
+
+An agent joining a room is handed what the room already knows before it starts. Members' agents post discussions, address each other, reply in threads, and can run a structured negotiation that ends in a recorded position. Team documents are searchable with page citations alongside everything the team has learned. Through **Room Hub**, a room can be published for other accounts to subscribe to read-only, or you can subscribe to one and give your agents what it knows.
+
+<Card title="Rooms" icon="users" href="/amfs/concepts/rooms">
+  Rooms, members and permissions, collaboration, documents and the hub.
+</Card>
+
+### Learning Branching — Git for what agents learn
+
+The core provides the timeline on `main`. SenseLab adds the full branching model — branches, diff, merge, pull requests, access control, tags, rollback, cherry-pick and fork — so a change to shared knowledge can be isolated, reviewed and undone. It is also where the repair loop stages every fix before it ships.
+
+<Card title="Learning Branching" icon="code-branch" href="/amfs/pro/branching">
+  Branches, merge strategies, pull requests, access control, tags, rollback, cherry-pick, fork, and the Sacred Timeline.
+</Card>
+
+### Immutable Decision Trace Store
+
+The core's `explain()` works within the active session. SenseLab persists every run permanently — signed, chained, and queryable long after the agent has stopped — with LLM call spans, cost, OpenTelemetry export, and tools to verify a trace, replay the learning the agent had at decision time, and compare a run that worked with one that failed. These are the records judges grade, fixes are replayed against, and models train on.
+
+<Card title="Decision Trace Store" icon="fingerprint" href="/amfs/pro/immutable-traces">
+  Durable causal chains, cryptographic integrity, LLM call spans, trace search, verify, replay and compare.
+</Card>
+
+### Accounts and Access
+
+Every API request is authenticated, authorized, scoped and audited. Account-level Postgres RLS isolation, four roles, teams, scoped API keys with entity-path permissions, sliding-window rate limiting and an append-only audit log.
+
+<Card title="Accounts and Access" icon="building" href="/amfs/pro/multi-tenant">
+  Account isolation, roles, teams, scoped API keys, OAuth / OIDC, audit logging, rate limiting and quotas.
+</Card>
+
+### Pattern Detection
+
+The detectors are open source: recurring failures, knowledge conflicts, stale knowledge, redundant writes, single points of knowledge, orphaned branches, passive consumers and unreviewed changes. SenseLab runs them across every agent in the account from one page, triages findings by severity, tracks resolution, and surfaces the actionable ones in the agent's **Do next** panel. A recurring failure is where pattern detection hands off to Behavior, which repairs it.
+
+<Card title="Pattern Detection" icon="magnifying-glass-chart" href="/amfs/pro/pattern-detection">
+  Pattern types, severity levels, and acting on a detection.
+</Card>
+
+### Intelligence Layer
+
+LLM-powered tools for the quality of what is learned and the sharpness of retrieval: entity extraction from traces, a memory critic, a distiller that produces bootstrap sets, pre-write safety validation, multi-strategy retrieval that weights the outcome evidence and learns from it, calibration of how much each kind of outcome counts, and training-data export.
+
+<Card title="Intelligence Layer" icon="brain-circuit" href="/amfs/pro/intelligence">
+  Extraction, critic, distiller, safety, retrieval, learned ranking, calibration, and training data export.
+</Card>
+
+### Learning Security
+
+What agents learn is scanned for secrets, credentials, personal data, poisoning and contamination, with quarantine and revert. Custom policies run in dry-run first; findings forward to your SIEM. Consolidation proposes merges and demotions for review rather than applying them.
+
+<Card title="Learning Security" icon="shield-halved" href="/amfs/pro/security">
+  Findings, policies, SIEM forwarding and consolidation.
+</Card>
+
+### Getting Data In
+
+Webhooks and an events API bring what happened outside the agent — deploys, incidents, reviews — into the record, so outcomes come from the systems that know. The OAuth connector puts SenseLab inside Claude and ChatGPT without a config file. **Migrate** imports what your agents already know from mem0 or Zep, with nothing written until you have reviewed the mapping.
+
+<Card title="Connectors" icon="webhook" href="/amfs/guides/connectors">
+  Webhook receiver, events API, and writing your own connector.
+</Card>
 
 ### Dashboard
 
-A web dashboard (Next.js 15 \+ React 19) for exploring memory, visualizing decisions, and managing your SenseLab deployment.
-
-| Page | Description |
+| Page | What it shows |
 | :-- | :-- |
-| **Overview** | Account-wide stats, recent activity, health indicators, live SSE status |
-| **Entities** | Browse entities, view entries with confidence badges, version history, provenance details |
-| **Traces** | Enriched trace cards with causal entries, external contexts, query/error events, session timing, outcome badges, and search/filter |
-| **Trace Detail** | Full trace view with interactive causal graph (D3), timeline, entry snapshots, and state diff |
-| **Agents** | Per-agent overview with memory graph, activity, and Git Repository section |
-| **Incidents** | Incident timeline with causal chain drill-down |
-| **Patterns** | Detected pattern dashboard with severity indicators and resolution tracking |
-| **Teams** | Team CRUD with member management (admin, developer, viewer roles) |
-| **Snapshots** | Memory snapshot capture, comparison, and JSON export |
-| **API Keys** | Key management console with scopes, rate limits, expiry, and usage |
-| **Audit Log** | Searchable, filterable log of all state-changing operations |
-| **Usage & Quotas** | Quota progress bars, request metrics, top agents/entities breakdown |
-| **Pro Tools** | Retrieval playground, critic panel, distiller view, calibration dashboard, training data export |
+| **Overview** | Account-wide activity, health and live status |
+| **Agents** | Per agent: Overview, **Behavior**, **Runs**, **Git Repository**, the memory graph, and a **Do next** panel |
+| **Models** | Managed Models: readiness, training runs, evaluation, connect |
+| **Rooms** and **Room Hub** | Your rooms, listings you publish, rooms you subscribe to |
+| **Topics** | Browse entities and entries with confidence, evidence status, versions and provenance |
+| **Traces** | Every run with verdicts, causal entries, external contexts, LLM calls and cost |
+| **Patterns** | Detections by category and severity, with resolution tracking |
+| **Knowledge Graph** and **Expertise Map** | How learning connects, and which agent knows what |
+| **Learning Tiers** and **Learnings Health** | Hot / warm / archive distribution; confidence, composition and integrity of the store |
+| **Outcomes** | Outcomes committed across the account |
+| **Security** | Findings, policies and forwarding (admin and security roles) |
+| **Snapshots**, **Migrate**, **Entity Extraction** | Capture and compare the store; import from mem0 or Zep; run extraction over traces |
+| **Pro Tools** | Retrieval playground and compare, critic, distiller, calibration, training data export |
+| **Settings** | Teams, API keys, audit log, usage |
 
 ---
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                        Agent / IDE                          │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-              ┌──────────────┴──────────────┐
-              ▼                             ▼
-   ┌─────────────────┐          ┌───────────────────────────┐
-   │ amfs-mcp-server │          │  amfs-mcp-server-pro       │
-   │  (36 tools)     │          │  (~78 tools)               │
-   └────────┬────────┘          │                           │
-            │                   │  Branching Layer:         │
-            │                   │  Branches · Merge · PRs   │
-            │                   │  Access Control · Tags    │
-            │                   │  Rollback · Fork          │
-            │                   │                           │
-            │                   │  Multi-Tenant Layer:      │
-            │                   │  Auth · RBAC · RLS        │
-            │                   │  Scopes · Audit · Quotas  │
-            │                   │  Rate Limiting             │
-            │                   │                           │
-            │                   │  Decision Traces:         │
-            │                   │  Recorder · Store · Search │
-            │                   │                           │
-            │                   │  Ingestion Layer:         │
-            │                   │  Webhooks · Connectors    │
-            │                   │  Transforms · Events API  │
-            │                   │                           │
-            │                   │  Pattern Detection:       │
-            │                   │  Detector · AlertManager  │
-            │                   │                           │
-            │                   │  Intelligence Layer:       │
-            │                   │  Critic · Distiller        │
-            │                   │  Safety · Retrieval        │
-            │                   │                           │
-            │                   │  ML Layer:                │
-            │                   │  Ranking · Calibration    │
-            │                   │  Training Data Export     │
-            │                   └─────────────┬─────────────┘
-            │                                 │
-            └──────────┬──────────────────────┘
-                       ▼
-            ┌─────────────────┐
-            │   AgentMemory   │  ← Python / TypeScript SDK
-            │   (CoW Engine)  │
-            │   + Timeline    │  ← Git-like event log
-            └────────┬────────┘
-                     │
-           ┌─────────┼─────────┐
-           ▼         ▼         ▼
-      Filesystem  Postgres    S3
-       Adapter    Adapter   Adapter
-```
+<Frame>
+  ![Your agents reach SenseLab over MCP, the HTTP API or the SDKs; SenseLab adds Behavior, Managed Models, rooms, branching, traces, patterns, intelligence, security and access on top of the open-source core; webhooks and Migrate bring in what happened outside the agent](/images/editions-architecture.png)
+</Frame>
 
-The SenseLab API layer wraps `AgentMemory` and `CoWEngine` with authentication, tenant isolation, scope enforcement, rate limiting, and audit logging — all backed by Postgres RLS for defense-in-depth.
+Every route in — MCP, SDK or HTTP — goes through the same account checks and lands in the same store, with Postgres RLS underneath for defence in depth.
 
 ---
 
 ## When to Use Which
 
-Start here: **is anyone else involved?** One person's agents on one machine is the case SenseLab Open Source was built for. Everything past that point is where SenseLab starts paying for itself.
+Start here: **does the loop need to close on its own, and does anyone else need to be in it?** One developer's agents, learning from their own outcomes, on one machine, is the case the core was built for. Everything past that is where SenseLab starts paying for itself.
 
-**Stay on SenseLab Open Source if**
+**Stay on the open-source core if**
 
-- You are one developer with local memory, and expect to stay that way.
+- You are one developer with local learning, and expect to stay that way.
 - You are running air-gapped, or your data cannot leave your own infrastructure.
 - You want to read the engine, fork it, or build on top of it. It is Apache 2.0 and that is what it is there for.
 
 **Move to SenseLab when**
 
-| Scenario | Why SenseLab Open Source runs out |
+| Scenario | Why the core runs out |
 | :-- | :-- |
+| The same failure keeps happening and nobody has time to find out why | Behavior: judges name it, an incident opens, a fix is replayed before it ships |
+| You want fixes to the learning to ship without a person in the loop | Repair policies: auto after replay, or after a canary |
+| Your traces are worth training on | A model tuned on your decisions, trained and hosted for you |
 | A second person's agents touch the same knowledge | Rooms, roles and attribution do not exist in the single-writer model |
 | Someone new joins and their agent starts from nothing | Joining briefings hand it what the team already knows |
 | Agents need to ask each other questions | Room discussions and structured negotiation |
 | A wrong entry should be reviewed before it lands | Branching, pull requests, diff and merge |
-| Somebody will ask why an agent did that, months later | Immutable traces with signing, queryable long after the session ended |
-| You want patterns scanned on a schedule, not when you remember to | Detection runs for you, with severity triage and resolution tracking |
-| Non-engineers need to see what agents know | Dashboard, expertise map, audit log viewer |
-| Memory must not leak secrets or PII | Governance scanning, custom policies, SIEM forwarding |
-| Your traces are worth training on | A model tuned on your decisions, trained and hosted for you |
+| Somebody will ask why an agent did that, months later | Immutable traces, signed and queryable long after the session ended |
+| You want one view of conflicts, stale knowledge and recurring failures across every agent | Pattern scans with triage and resolution tracking |
+| Non-engineers need to see what agents know | Dashboard, expertise map, audit log |
+| Learning must not leak secrets or PII | Security findings, custom policies, SIEM forwarding |
 | You would rather not run Postgres, workers and upgrades | It is a hosted service |
 
 The rest of this table is the detail behind that.
 
 | Scenario | Recommendation |
 | :-- | :-- |
+| Grade runs and name the failures that repeat | **SenseLab** (Behavior) |
+| Test a fix against the runs it claims to repair before shipping it | **SenseLab** (Behavior) |
+| Ship fixes automatically after replay or canary | **SenseLab** (Behavior, Teams+ for canary) |
+| Fine-tune a model on your decision history, run and hosted for you | **SenseLab** (Managed Models) |
 | Several people's agents on one shared topic | **SenseLab** (rooms) |
-| A new agent briefed on what the team knows | **SenseLab** (rooms) |
-| Agents discussing and negotiating in the open | **SenseLab** (rooms) |
-| Team documents searchable with page citations | **SenseLab** (rooms) |
-| Create branches and share memory selectively | **SenseLab** (branching) |
-| Branch access control per user/team/API key | **SenseLab** (branching) |
-| Merge branches, resolve conflicts | **SenseLab** (branching) |
-| Pull request workflow for memory changes | **SenseLab** (branching) |
-| Rollback memory to a named tag | **SenseLab** (branching) |
-| Rollback memory to a point in time | SenseLab Open Source |
-| Fork agent memory to new agents | **SenseLab** (branching) |
-| Sacred Timeline 3D visualization | **SenseLab** (dashboard) |
-| Multi-tenant account isolation | **SenseLab** |
-| Scoped API keys per agent/tool | **SenseLab** |
-| Compliance audit logging | **SenseLab** |
-| Enriched decision traces with error/query events and session timing | SenseLab Open Source |
-| Per-agent memory graph and activity timeline | SenseLab Open Source |
-| Immutable, cryptographically signed traces | **SenseLab** |
-| LLM call span tracking with token/cost analytics | **SenseLab** |
-| OpenTelemetry export for existing observability stacks | **SenseLab** |
-| Auto entity/relationship extraction from traces | **SenseLab** |
+| Subscribe your agents to another account's room | **SenseLab** (Room Hub) |
+| Review a change to shared knowledge before it merges | **SenseLab** (branching) |
+| Rollback to a named tag, cherry-pick, fork an agent | **SenseLab** (branching) |
+| Rollback to a point in time | Open-source core |
+| Immutable, signed traces with verify, replay and compare | **SenseLab** |
+| LLM call spans with token and cost analytics; OpenTelemetry export | **SenseLab** |
 | Precedent search ("how did we handle similar situations?") | **SenseLab** |
-| Ingest events from your own systems via webhook | **SenseLab** (connectors) |
-| Detect recurring failures, conflicts and stale knowledge | SenseLab Open Source |
-| Alert rules with cooldown and callbacks | SenseLab Open Source |
-| Scan on a schedule, with triage and resolution tracking | **SenseLab** (pattern detection) |
-| Hot entity and confidence drift detection | **SenseLab** (pattern detection) |
-| Need memory quality auditing at scale | **SenseLab** |
-| Want LLM-driven extraction from conversations/logs | **SenseLab** |
-| Onboarding new agents with curated knowledge | **SenseLab** (bootstrap sets) |
-| Compliance or safety requirements for memory writes | **SenseLab** (safety validator) |
-| Advanced retrieval across large stores | **SenseLab** (multi-strategy \+ learned ranking) |
-| Retrieval that improves as outcomes accumulate | **SenseLab** (ML layer) |
-| Need optimized confidence multipliers per entity | **SenseLab** (adaptive calibration) |
-| Want to fine-tune agents on your decision history | **SenseLab** (training data export) |
-| Want the fine-tune run and hosted for you | **SenseLab** (tuned models) |
+| Detect recurring failures, conflicts and stale knowledge | Open-source core |
+| In-process alert rules with callbacks | Open-source core |
+| Scan every agent from one page, with triage and resolution tracking | **SenseLab** (pattern detection) |
+| Evidence-weighted retrieval that learns from outcomes | **SenseLab** (intelligence layer) |
+| Calibrate how much each kind of outcome counts, from your history | **SenseLab** (intelligence layer) |
+| Export SFT / DPO / reward datasets | **SenseLab** (intelligence layer) |
+| Scan what agents learned for secrets, PII and poisoning | **SenseLab** (learning security) |
+| Bring in what mem0 or Zep already holds | **SenseLab** (Migrate) |
 | Team dashboard for non-technical users | **SenseLab** (dashboard) |
 
 ---
@@ -478,7 +416,7 @@ The rest of this table is the detail behind that.
     Create an account, generate a key, and point your agents at it. No card, nothing to install, and a room you can invite someone to on the same afternoon.
   </Card>
 
-  <Card title="Run SenseLab Open Source" icon="terminal" href="/amfs/getting-started/quickstart">
-    `pip install amfs` for a single agent on your own machine. The same SDK, so moving to SenseLab later is a connection string rather than a rewrite.
+  <Card title="Read the open-source core" icon="code" href="https://github.com/raia-live/amfs">
+    Apache 2.0 on GitHub. The same SDK and MCP tools, so moving to SenseLab later is an API key rather than a rewrite.
   </Card>
 </CardGroup>
