@@ -8,20 +8,9 @@ SenseLab makes agents improve recursively: the output of every run — what was 
 
 ## The loop
 
-```
-   ┌──────────────────────────────────────────────────────────────┐
-   │                                                              │
-   ▼                                                              │
- Brief ──► Act ──► Record ──► Outcome ──► Update ──► (next run) ──┘
-   │        │        │           │           │
-   │        │        │           │           └─ confidence moves on everything
-   │        │        │           │              the run relied on; discredited
-   │        │        │           │              learning drops out of the next brief
-   │        │        │           └─ success / failure, who verified it, the proof
-   │        │        └─ the decision trace: reads, actions, attempts, LLM calls
-   │        └─ the agent works; failed approaches are marked before the next
-   └─ compiled knowledge, evidence-ranked, with priors on what to try
-```
+<Frame>
+  ![The loop: Brief, Act, Record, Outcome, Update — and on every run the next brief starts from what this one proved](/images/concept-loop.png)
+</Frame>
 
 The **fast loop** closes on every run. An agent is briefed on what the account already knows, works, and reports how it went. Confidence moves on everything it read, so the next agent to touch the same subject is ranked into what has worked and away from what has not — without anyone editing a prompt.
 
@@ -41,25 +30,9 @@ Two slower loops run off the same record. **Behavior** grades runs with judges, 
 
 ## What an entry looks like
 
-```
-Agent writes →  MemoryEntry created
-                  ├── entity_path: "checkout-service"
-                  ├── key: "retry-pattern"
-                  ├── value: { ... }
-                  ├── memory_type: procedure   ← fact / belief / experience / procedure
-                  ├── version: 3               ← copy-on-write versioning
-                  ├── confidence: 0.85         ← moved by outcomes
-                  ├── evidence_status: validated   ← untested / validated / contested / discredited
-                  ├── branch: "main"
-                  └── provenance:
-                      ├── agent_id: "review-agent"
-                      ├── session_id: "abc-123"
-                      └── written_at: 2026-06-15T10:30:00Z
-
-              →  Event logged on the agent's timeline
-                  ├── event_type: "write"
-                  └── summary: "Wrote checkout-service/retry-pattern v3"
-```
+<Frame>
+  ![Anatomy of a learning entry: entity_path, key, value, memory_type, version, confidence, evidence_status, branch and provenance, with the write event it logs on the agent's timeline](/images/concept-entry-anatomy.png)
+</Frame>
 
 Learning is private to your account by default. **Rooms** are how you pool it, so several people's agents — on Claude, ChatGPT, Cursor or your own code — run the loop over the same knowledge.
 

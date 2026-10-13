@@ -161,22 +161,9 @@ Prefer reading `evidence_status` to picking a threshold. An untested `0.9` and a
 
 ## The feedback loop
 
-```
-Agent writes a belief at 0.7
-        │
-        ▼
-Run relies on it → fails → confidence ~0.26, status discredited
-        │
-        ▼
-Next briefing lists it under `discredited`; retrieve() holds it back
-        │
-        ▼
-Another run tries a different approach → succeeds → that entry rises,
-the discredited one gains `replaced_by`
-        │
-        ▼
-Every agent on the account inherits the correction
-```
+<Frame>
+  ![The feedback loop: a belief written at 0.70 is discredited at 0.26 by a failed run, held back from the next briefing, replaced by an approach that succeeds at 0.82, and every agent inherits the correction](/images/concept-confidence-loop.png)
+</Frame>
 
 This is what separates learning from storage. Storage gives back what was put in. A record with outcomes attached gives back what has been shown to work — and keeps revising the answer as the evidence changes.
 

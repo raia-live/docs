@@ -196,19 +196,8 @@ results = mem.search()         # all tiers (default depth=3)
 
 A learning entry goes through these states:
 
-```
-Created (v1, current)
-    │
-    ▼ write same key
-Superseded (v1, superseded)  ←  preserved in history
-    │
-New version created (v2, current)
-    │
-    ▼ outcome committed
-Confidence updated (v2 superseded → v3 current, new confidence)
-    │
-    ▼ TTL expires
-Archived (confidence → 0.0)
-```
+<Frame>
+  ![Lifecycle of a learning entry: created as v1, superseded by v2 on a write to the same key, re-weighed as v3 when an outcome is committed, archived when its TTL expires — every version kept](/images/concept-entry-lifecycle.png)
+</Frame>
 
 Every state transition creates a new version. Nothing an agent learned is ever deleted — only superseded, which is what makes [rollback](/amfs/guides/learning-as-git#rolling-back) and the version history possible.

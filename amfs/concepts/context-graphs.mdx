@@ -24,22 +24,9 @@ Traditional systems of record (CRMs, ERPs, ticketing systems) store the **final 
 
 A **decision trace** is a structured record of how an agent turned context into action:
 
-```
-Agent reads SenseLab entries:
-  checkout-service/retry-pattern (v3, confidence: 0.92)
-  checkout-service/risk-race-condition (v1, confidence: 0.78)
-
-Agent consults external sources:
-  incident tracker → 3 SEV-1 incidents in last 24h
-  git log → 15 commits since last deploy, 3 touching retry logic
-
-Agent writes decision:
-  checkout-service/decision-rollback-retry → "Rolling back retry changes due to
-  incident correlation and high-risk signal from prior agent"
-
-Outcome recorded:
-  DEP-500 → success → confidence on causal entries adjusted
-```
+<Frame>
+  ![A decision trace in four layers: what the agent knew, what it consulted, what it decided, and what happened](/images/concept-decision-trace.png)
+</Frame>
 
 This trace is queryable. The next agent — or a human auditor — can replay exactly what happened and why.
 
@@ -146,21 +133,9 @@ Returns:
 
 Individual decision traces accumulate into a **context graph**: entities connected by decision events with "why" links.
 
-```
-checkout-service/retry-pattern
-    ├── read by deploy-agent (sess-a1b2)
-    │   ├── also consulted: incident tracker, git log
-    │   ├── wrote: decision-rollback-retry
-    │   └── outcome: DEP-500 (success) → confidence reinforced
-    │
-    ├── read by review-agent (sess-e5f6)
-    │   ├── also consulted: error tracker
-    │   ├── wrote: risk-timeout-regression
-    │   └── outcome: INC-1042 (critical_failure) → confidence eroded
-    │
-    └── read by onboard-agent (sess-g7h8)
-        └── wrote: task-summary-retry-review
-```
+<Frame>
+  ![A context graph: one entry read by three agent sessions, each with what else it consulted, what it wrote, and how its outcome fed back into confidence](/images/concept-context-graph.png)
+</Frame>
 
 Over time, this graph captures institutional knowledge that no single agent or person holds:
 
@@ -229,21 +204,9 @@ The Memory Cortex also compiles `CONNECTION_MAP` digests from graph edges, surfa
 
 Decision traces compound through SenseLab's outcome system:
 
-```
-Agent makes decision → writes entry + records trace
-                           │
-                           ▼
-                   Outcome occurs (deploy, incident)
-                           │
-                           ▼
-                   Confidence adjusts on causal entries
-                           │
-                           ▼
-                   Next agent sees high-confidence precedent
-                           │
-                           ▼
-                   Agent makes better decision → new trace
-```
+<Frame>
+  ![The feedback loop: an agent decides, the outcome lands, confidence adjusts on the causal entries, the next agent sees the precedent and makes a better decision](/images/concept-trace-feedback-loop.png)
+</Frame>
 
 Entries that led to good outcomes are reinforced and decay slower; entries correlated with failures lose confidence and sink out of results. The system learns which decisions lead to good outcomes without any explicit training.
 

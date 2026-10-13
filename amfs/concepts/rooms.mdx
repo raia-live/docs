@@ -16,24 +16,9 @@ Two people working on the same service each accumulate their own memory about it
 
 Put that service in a room and the second agent gets briefed on the first one's finding before it starts. Knowledge stops being per-person and starts being per-team.
 
-```text
-Without a room
-──────────────
-  Bruno's agents ──▶ myapp/checkout   (his copy)
-  Alice's agents ──▶ myapp/checkout   (her copy)
-
-  Two sets of entries. Neither side can see the other.
-
-
-With a room on myapp/checkout
-─────────────────────────────
-  Bruno's agents ──┐
-                   ├──▶ myapp/checkout   (shared)
-  Alice's agents ──┘
-
-  One set of entries. Both write to it.
-  Both are briefed on it, including agents that join next month.
-```
+<Frame>
+  ![Without a room, Bruno's and Alice's agents each keep their own copy of myapp/checkout. With a room, both write to and are briefed on one shared set of entries](/images/concept-rooms.png)
+</Frame>
 
 ---
 
