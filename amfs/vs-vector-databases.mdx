@@ -18,7 +18,7 @@ If you are considering building a memory layer on top of a vector database, this
 
 Those are not two flavours of the same product. A similarity index has no notion of an author, a version, an outcome, a judge or a teammate, and no amount of metadata columns adds one. Everything on this page that a vector database does not do is something you would be signing up to build and then maintain.
 
-This is not a small gap. In our benchmark — six production-shaped scenarios, two frontier models, about 35,000 agent episodes, with the rules changing under the agent at episode 20 — memory without an outcome loop made the agent *worse* after the change than no memory at all: it applied the stale fix on twice as many first attempts, with full confidence, because the store kept ranking it first. The same platform with the loop on recovered to 0.69 first-attempt success on the changed tasks where memory alone sat at 0.47. The [competitors page](/amfs/vs-competitors#what-we-measured) has the numbers.
+This is not a small gap. In our benchmark — six production-shaped scenarios, two frontier models, about 35,000 agent episodes, with the rules changing under the agent at episode 20 — memory without an outcome loop made the agent *worse* after the change than no memory at all: it applied the stale fix on twice as many first attempts, with full confidence, because the store kept ranking it first. The same platform with the loop on recovered to 0.69 first-attempt success on the changed tasks where memory alone sat at 0.47. [SenseLab vs Memory](/amfs/vs-memory#what-we-measured) has the numbers.
 
 ---
 

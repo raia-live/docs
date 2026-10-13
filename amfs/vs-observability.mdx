@@ -1,36 +1,40 @@
 ---
-title: "SenseLab vs Braintrust"
-description: "The release loop against the run loop. Braintrust shows you what your agents did; SenseLab is the engine the agent learns from between runs."
+title: "SenseLab vs Observability"
+description: "Observability tells you what your agents did. Recursive self-improvement changes what they do next, and nobody has to be in the loop for it to happen."
 icon: "microscope"
 ---
 
-Braintrust shows you what your agents did. SenseLab is the engine the agent learns from between runs: it decides what to trust, writes and proves its own fixes, and turns the record into a model you own.
+Observability answers one question: *what did my agents do?* Traces, scores, dashboards, alerts. It is the microscope on the run.
+
+SenseLab answers the questions that come after it: what should the agent trust next time, who fixes it when it is wrong, and what does a year of its work add up to. It is a **recursive self-improvement engine**: it decides what to trust, writes and proves its own fixes, and turns the record into a model you own.
+
+Braintrust is the observability and evaluation platform most teams run, and it is the one this page compares against.
 
 ---
 
-## What Braintrust does
+## Observability stops at the dashboard
 
-Braintrust runs one loop. The agent produces traces. Software reads the traces and finds failures. An engineer changes a prompt or the code. The fix ships in the next release.
+Observability runs one loop. The agent produces traces. Software reads the traces and finds failures. An engineer changes a prompt or the code. The fix ships in the next release.
 
-Braintrust is the observability and evaluation platform for that loop: trace storage, evals, and, since September, an agent that investigates traces and suggests changes for a human to approve.
+Braintrust is the platform for that loop: trace storage, evals, and, since September, an agent that investigates traces and suggests changes for a human to approve.
 
 In that loop the agent is write-only. It produces data and reads nothing back. Learning happens per release, at the speed of a review queue, and what improves is the scaffolding around the agent. The agent itself finishes its thousandth run exactly as capable as its first, and when a rule changes in production it keeps applying the old one, with full confidence, until a person notices.
 
 <Frame>
-  ![The release loop on Braintrust — traces, a failure found, an engineer edits, ships next release — against SenseLab's run loop: brief, act, outcome, credit, next run](/images/vs-braintrust-two-loops.png)
+  ![The release loop on an observability platform — traces, a failure found, an engineer edits, ships next release — against SenseLab's run loop: brief, act, outcome, credit, next run](/images/vs-observability-two-loops.png)
 </Frame>
 
 ---
 
-## What SenseLab does
+## What recursive self-improvement adds
 
-SenseLab is a self-improvement engine that agents run on. It closes three loops, each one feeding the next.
+SenseLab closes three loops on one record, each one feeding the next. Observability records the run. These loops act on it.
 
-**Outcomes decide what agents act on.** Before a task, the agent is briefed on what is already known: what has held up, what has been discredited, what started failing this week, and which action has the best record here. After the task, it reports how things ended, and credits that result to the exact knowledge and actions it used. A rule that kept working and then starts failing is flagged as a regime shift. No release, no reviewer, no prompt edit.
+**Outcomes decide what agents act on.** Before a task, the agent is briefed on what is already known: what has held up, what has been discredited, what started failing this week, and which action has the best record here. After the task, it reports how things ended, and credits that result to the exact knowledge and actions it used. A rule that kept working and then starts failing is flagged as a regime shift. No release, no reviewer, no prompt edit. Observability would show you the same failure in a dashboard; SenseLab has already changed what the next agent is told.
 
-**The engine writes its own corrections and proves them.** When a failure keeps recurring, a repair agent drafts the fix on a branch no agent can see, replays it against the runs that failed and the runs that passed, then exposes it to a slice of live traffic against a control. It ships only if it helps without doing harm, and reverts on its own if it regresses. Every proposal, ship and rollback is written back as evidence, so the next draft reads what happened to the last one.
+**The engine writes its own corrections and proves them.** When a failure keeps recurring, a repair agent drafts the fix on a branch no agent can see, replays it against the runs that failed and the runs that passed, then exposes it to a slice of live traffic against a control. It ships only if it helps without doing harm, and reverts on its own if it regresses. Every proposal, ship and rollback is written back as evidence, so the next draft reads what happened to the last one. Observability ends in a suggestion for a person to judge; SenseLab ends in a canary with the verdict written down.
 
-**The record becomes your model.** Every run leaves a sealed trace: what was asked, what the agent read, what it did, how it turned out. That is a labelled training example nobody annotated. Once there are enough, SenseLab trains a small model on your own decisions, scores it against your history, and serves it with the same memory the frontier agent used.
+**The record becomes your model.** Every run leaves a sealed trace: what was asked, what the agent read, what it did, how it turned out. That is a labelled training example nobody annotated. Once there are enough, SenseLab trains a small model on your own decisions, scores it against your history, and serves it with the same memory the frontier agent used. A trace store accumulates logs with a retention window; this accumulates the one dataset that trains a model.
 
 **Agents learn as a fleet.** Every outcome is shared, so a rule change is learned once, by whichever agent meets it first, and every other agent inherits the correction on its next task. A new agent joining a fleet starts from everything the fleet has already validated and is productive on its first task.
 
@@ -38,7 +42,7 @@ SenseLab is a self-improvement engine that agents run on. It closes three loops,
 
 ## How we are different
 
-| | Braintrust | SenseLab |
+| | Observability | SenseLab |
 | :-- | :-- | :-- |
 | **Who uses it** | Engineers, in a dashboard | The agent, in whatever tool it runs in |
 | **When learning happens** | Next release | Next run |
@@ -51,9 +55,24 @@ SenseLab is a self-improvement engine that agents run on. It closes three loops,
 
 Three differences carry the weight.
 
-- **The loop closes inside the run.** Braintrust improves agents at the speed engineers can review. SenseLab improves them at the speed agents do work, and the more agents you run, the wider that gap gets.
-- **The engine fixes itself safely.** Generating a fix is easy; a model does that. Knowing which fixes to trust is the hard part, and it is what separates a self-improving system from one that improves itself into a regression. Braintrust's loop ends in a suggestion queued for a human to judge. SenseLab's ends in a canary against a control, with the evidence written back either way.
+- **The loop closes inside the run.** Observability improves agents at the speed engineers can review. SenseLab improves them at the speed agents do work, and the more agents you run, the wider that gap gets.
+- **The engine fixes itself safely.** Generating a fix is easy; a model does that. Knowing which fixes to trust is the hard part, and it is what separates a self-improving system from one that improves itself into a regression. Observability's loop ends in a suggestion queued for a human to judge. SenseLab's ends in a canary against a control, with the evidence written back either way.
 - **The record is the asset.** A trace store accumulates logs with a retention window. SenseLab accumulates decisions with outcomes attached, which is the one dataset that cannot be reconstructed later and the one that trains a model. You own it and can export it.
+
+---
+
+## What it unlocks for teams
+
+The benefit is not a better view of the same agents. It is agents that get better without the team in the loop, and a team whose time goes back to the product. Figures are from preregistered benchmarks on GPT-5.5 and Claude Opus 5; the frontier-alone baseline is the agent as it runs on an observability platform, reading nothing back between runs.
+
+- **Rules change without a release.** When a rule changed partway through a run, agents on SenseLab were right first time 45% of the time against 25% for the frontier model alone, while unchanged work stayed at 100%. Nobody edited a prompt; the first agent to hit the change failed once and every other agent had the new rule on its next task.
+- **The review queue stops being the bottleneck.** The engine proposed 32 corrections and shipped 2, with 0 rolled back; the 30 that failed replay or canary never reached a person. The canary caught a draft that would have failed 88% of sessions. Engineers review the repair policy, not every fix.
+- **A fleet learns once.** Ten agents under a mid-run rule change, each seeing a tenth of the work, went from 37% to 75% right first try. On an observability platform the same ten agents send ten streams of traces to one queue and wait for one release.
+- **New agents are productive on day one.** A newcomer joining a fleet was right on 84% of first encounters, against 67% on a memory product and 46% with nothing. On a healthy fleet, a newcomer was right on 122 of 122. It inherits the record, not just the prompt.
+- **Fewer tasks handed back to humans.** 5% of tasks escalated, against 14.9% for the frontier alone and 8% to 12% for memory stores, because the agent has a record of what it does and does not know.
+- **Failures nobody wrote an eval for still get caught.** Evals test what was anticipated. SenseLab judges by what happened, so a failure is learned from the first time it recurs, whether or not anyone foresaw it.
+- **The model swap stops being a reset.** Prompts and harnesses are tuned to a model and start over when it changes. The record carries across and lifts the new model on its first task.
+- **The bill comes down.** A model trained on 200 of your own traces matched the frontier on house rules, beat it where the rule moved, and ran at one twenty-third the cost per task. Its own traces trained a better successor.
 
 ---
 
@@ -63,18 +82,18 @@ The release loop works while one team can read every failure. It stops working a
 
 - **Rules that change under the agent.** Pricing, policy, an API field, a runbook step. On a trace platform the change shows up as a regression days later; an engineer edits the prompt, the fix ships in the next release, and the prompt is a line longer. With hundreds of rules moving, the review queue is the bottleneck and the prompt is the technical debt. On SenseLab, the first agent to hit the change fails once, the old rule is discredited, and every agent has the new one on its next task.
 - **Fleets doing the same job.** Support, on-call, order operations, CI repair. Every agent in a fleet fails in the same places, and on a trace platform each failure is a separate ticket for the same team of reviewers. Trace volume grows with the fleet; reviewer capacity does not. On SenseLab the fleet shares one record, so a lesson is learned once, by whichever agent meets it first.
-- **Failures nobody wrote an eval for.** Evals test what was anticipated. A scorer can only judge a case its author foresaw, and production fails on the cases nobody did. SenseLab judges by what happened, so no eval has to exist before the engine can learn from a failure.
-- **Fixes that regress something else.** The more fixes a tool proposes, the more a human has to review, and a prompt change that helps one segment and hurts another looks fine in a review queue. SenseLab's engine proposed 32 corrections and shipped 2, because 30 failed replay or canary; a human queue would have had to read all 32.
-- **The model swap.** Prompts and harnesses are tuned to a model. When the model changes, the tuning restarts. A SenseLab record survives the swap and lifts the new model on its first task.
+- **Failures nobody wrote an eval for.** A scorer can only judge a case its author foresaw, and production fails on the cases nobody did. SenseLab needs no eval to exist before it can learn from a failure.
+- **Fixes that regress something else.** The more fixes a tool proposes, the more a human has to review, and a prompt change that helps one segment and hurts another looks fine in a review queue. SenseLab's replay and canary are what turned 32 proposals into 2 safe ships; a human queue would have had to read all 32.
+- **The model swap.** Prompts and harnesses are tuned to a model. When the model changes, the tuning restarts. A SenseLab record survives the swap.
 - **Cost that never comes down.** On a trace platform you run a frontier model per task indefinitely. On SenseLab the traces become a small model that does the same work at a fraction of the cost, and the memory keeps it current after training.
 
 ---
 
 ## Proof
 
-Preregistered benchmarks on GPT-5.5 and Claude Opus 5, with tasks that never repeat and a rule change partway through; the harness and per-episode records are public. The frontier-alone baseline is the agent as it runs on Braintrust: it reads nothing back between runs. The right-hand column is how each scenario plays out on that stack.
+Preregistered benchmarks on GPT-5.5 and Claude Opus 5, with tasks that never repeat and a rule change partway through; the harness and per-episode records are public. The frontier-alone baseline is the agent as it runs on an observability platform: it reads nothing back between runs. The right-hand column is how each scenario plays out on that stack.
 
-| Scenario | SenseLab | On Braintrust |
+| Scenario | SenseLab | On an observability stack |
 | :-- | :-- | :-- |
 | **A rule changes mid-run** | 45% right first try against 25% for the frontier model alone; unchanged work stays at 100% | The agent runs at the 25% line until the regression shows in a dashboard, an engineer edits the prompt, and the release ships. Every run in between applies the old rule with full confidence. |
 | **Tasks handed to a human** | 5%, against 14.9% frontier alone and 8% to 12% for memory stores | The agent has no record of what it does and does not know, so it guesses or escalates. The trace store counts the escalations; the count falls only when a person rewrites the instructions. |
@@ -100,7 +119,7 @@ Each feeds the others. More agents produce more record; more record sharpens the
 
 ---
 
-## You do not have to replace Braintrust
+## You do not have to replace your observability stack
 
 SenseLab enters through the agent. Adoption is one MCP entry in a coding agent or three SDK calls, with no instrumentation project, no migration and nothing to run. Observability stays where it is. SenseLab sits on the side of the stack a trace platform does not touch: inside the run, between what the agent did last time and what it does next.
 

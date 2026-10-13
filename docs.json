@@ -21,9 +21,15 @@
                 "pages": [
                   "amfs/introduction",
                   "amfs/editions",
-                  "amfs/vs-competitors",
-                  "amfs/vs-braintrust",
-                  "amfs/vs-vector-databases"
+                  {
+                    "group": "Competitor Analysis",
+                    "icon": "scale-balanced",
+                    "pages": [
+                      "amfs/vs-memory",
+                      "amfs/vs-observability",
+                      "amfs/vs-vector-databases"
+                    ]
+                  }
                 ]
               },
               {
@@ -154,6 +160,14 @@
     {
       "source": "/amfs/concepts/memory-entries",
       "destination": "/amfs/concepts/learning-entries"
+    },
+    {
+      "source": "/amfs/vs-competitors",
+      "destination": "/amfs/vs-memory"
+    },
+    {
+      "source": "/amfs/vs-braintrust",
+      "destination": "/amfs/vs-observability"
     }
   ],
   "logo": {
