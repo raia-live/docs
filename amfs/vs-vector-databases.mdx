@@ -1,6 +1,6 @@
 ---
 title: "SenseLab vs Vector Databases"
-description: "Why a vector database is not agent memory, and what it costs to build the difference yourself."
+description: "Why a vector database is not agent memory, what it cannot do after a bad run, and what it costs to build the difference yourself."
 icon: "database"
 ---
 
@@ -12,33 +12,38 @@ If you are considering building a memory layer on top of a vector database, this
 
 **A vector database answers one question:** *what is most similar to this query?* It returns the nearest embeddings and stops there.
 
-**SenseLab answers the questions that actually decide whether an agent should act:** who learned this, how confident should we be, what happened the last time someone acted on it, who else on the team knows it, and can I see the reasoning six months later.
+**SenseLab answers the questions that actually decide whether an agent should act:** who learned this, how confident should we be, what happened the last time someone acted on it, which action has worked here before, who else on the team knows it, and can I see the reasoning six months later.
 
-Those are not two flavours of the same product. A similarity index has no notion of an author, a version, an outcome or a teammate, and no amount of metadata columns adds one. Everything on this page that a vector database does not do is something you would be signing up to build and then maintain.
+**And it answers the one that comes after:** when acting on it failed, what fixes it? A vector database returns the same vectors next time. SenseLab lowers the confidence of what the run relied on, grades the run, opens an incident when the failure recurs, and replay-tests a fix before it ships.
+
+Those are not two flavours of the same product. A similarity index has no notion of an author, a version, an outcome, a judge or a teammate, and no amount of metadata columns adds one. Everything on this page that a vector database does not do is something you would be signing up to build and then maintain.
+
+This is not a small gap. In our benchmark — six production-shaped scenarios, two frontier models, about 35,000 agent episodes, with the rules changing under the agent at episode 20 — memory without an outcome loop made the agent *worse* after the change than no memory at all: it applied the stale fix on twice as many first attempts, with full confidence, because the store kept ranking it first. The same platform with the loop on recovered to 0.69 first-attempt success on the changed tasks where memory alone sat at 0.47. The [competitors page](/amfs/vs-competitors#what-we-measured) has the numbers.
 
 ---
 
 ## Side-by-Side Comparison
 
 | Dimension | Vector Database | SenseLab |
-|:----------|:----------------|:-----|
-| **Primary operation** | Similarity search over embeddings | Read/write versioned knowledge with provenance |
-| **Collaboration model** | Shared index — last write wins | Git model — branch, diff, PR, merge, rollback, access control |
-| **Data model** | Vectors + metadata | Structured entries with entity/key scoping, confidence, memory type, provenance |
-| **Versioning** | Overwrite or append | Copy-on-Write — every write creates a new version, full history preserved |
-| **Who wrote it?** | Not tracked | Provenance: agent ID, session ID, timestamp, pattern refs |
-| **Trust signal** | None | Confidence score that evolves based on real-world outcomes |
-| **Feedback loop** | None | Outcome back-propagation — incidents boost confidence, clean deploys decay it |
-| **Query style** | "Find similar to X" | "Read key Y", "Search by entity/agent/confidence", "What happened over time?" |
+| :-- | :-- | :-- |
+| **Primary operation** | Similarity search over embeddings | Read, write and brief versioned learning with provenance |
+| **Data model** | Vectors \+ metadata | Entries with an entity path and key, a memory type (fact, belief, experience, procedure), confidence, evidence status, provenance |
+| **Versioning** | Overwrite or append | Copy-on-write — every write creates a new version, full history preserved |
+| **Who wrote it?** | Not tracked | Provenance: agent, session, timestamp, pattern refs |
+| **Trust signal** | None — a similarity score is not trust | Confidence moved by outcomes, with a label: `untested`, `validated`, `contested`, `discredited` |
+| **Feedback loop** | None | Outcome back-propagation — success lifts confidence on what the run relied on, failure lowers it; a validated rule that stops working is flagged as a regime shift |
+| **Choosing an action** | None | Action priors from past runs here — act, explore or escalate |
+| **When a failure repeats** | Nothing — the same vectors come back | Behavior: judges grade the run, an incident opens, a fix to the learning is replay-tested, shipped and verified |
+| **Query style** | "Find similar to X" | "Brief me on Y", "Read key Z", "Search by entity, agent or confidence", "What happened over time?" |
 | **Temporal queries** | Snapshot at query time | Full version history with time-range filtering |
-| **Explainability** | None | Causal chain: which entries \+ external contexts informed a decision |
+| **Explainability** | None | Decision trace: which entries, at what confidence, which external inputs, which attempts, every LLM call |
 | **Multi-agent** | Shared index | Per-agent provenance, auto-causal linking, cross-agent reads logged on both sides |
 | **Disagreement** | Last write wins, silently | Both versions survive with their authors; disagreement is visible |
 | **Teams of people** | None — an index has no members | Rooms: many people's agents on one topic, with collaborator and viewer roles |
 | **Onboarding a new agent** | It must know what to query for | A joining briefing hands it what the team already knows |
-| **Document retrieval** | The core job | Built in — documents are chunked, embedded and searched inside SenseLab |
+| **Document retrieval** | The core job | Built in — documents are chunked, embedded and searched inside SenseLab, cited by page |
 | **Improving the model itself** | Out of scope | Models fine-tuned on your decision traces, trained and hosted for you |
-| **Update pattern** | Re-embed and upsert | CoW write with automatic version increment |
+| **Update pattern** | Re-embed and upsert | Copy-on-write with automatic version increment |
 
 ---
 
@@ -47,8 +52,10 @@ Those are not two flavours of the same product. A similarity index has no notion
 Vector databases are **stateless retrieval indexes**. They don't track:
 
 - **Who wrote the data** — No provenance. You don't know which agent or process created an entry.
-- **How trust evolves** — No confidence scoring. A vector's relevance score is similarity to a query, not a measure of how trustworthy the information is.
+- **How trust evolves** — No confidence scoring. A vector's relevance score is similarity to a query, not a measure of whether acting on the information has ever worked.
 - **What happened when you used it** — No outcome tracking. If an agent retrieves a vector and acts on it, and that action causes an incident, the vector database has no way to learn from that.
+- **What to do about a failure** — No judge, no incident, no fix. The run that went wrong leaves no mark, and the same result comes back next time.
+- **Which action to pick** — No record of what worked here before, so every run chooses from scratch.
 - **How data changed over time** — Vectors are overwritten or appended. You can't ask "what did this entry say last week?"
 - **Why a decision was made** — No causal chain linking retrieved data to actions and outcomes.
 - **How to collaborate on changes** — No branching, no review process, no way for one agent to propose a change and another to approve it. It's like coding without Git.
@@ -57,7 +64,7 @@ Vector databases are **stateless retrieval indexes**. They don't track:
 
 ## What SenseLab Does Differently
 
-SenseLab is designed for **agent memory** — the layer between retrieval and action:
+SenseLab is designed for **agent learning** — the layer between retrieval and action, and the loop that runs after the action:
 
 ### Knowledge has identity
 
@@ -79,11 +86,32 @@ print(entry.provenance.written_at)  # 2026-03-15T14:30:00Z
 
 ### Knowledge evolves with outcomes
 
-When a deploy succeeds or an incident occurs, confidence scores on related entries adjust automatically:
+When a run succeeds or fails, every entry it relied on is re-weighed:
 
 ```python
-mem.commit_outcome("INC-1042", OutcomeType.CRITICAL_FAILURE)
-# All entries this agent read get their confidence boosted
+updated = mem.commit_outcome(
+    "INC-1042", OutcomeType.CRITICAL_FAILURE,
+    task_input="checkout worker restart looping in prod",
+)
+for e in updated:
+    print(e.key, round(e.confidence, 2), e.evidence_status)
+# retry-pattern 0.26 discredited  ← held back from the next briefing
+```
+
+A fresh entry at `0.7` drops to about `0.26` on its first failure and lifts to about `0.82` on its first success. A rule validated many times that suddenly fails is flagged as a regime shift, and agents in that scope are steered to try something else.
+
+### Knowledge tells the agent what to do
+
+A briefing is compiled per entity — validated learning first, discredited learning set aside — and when the task ends in a choice, the priors say which action has worked here:
+
+```python
+hits = mem.retrieve(
+    "customer did not receive the invoice email",
+    entity_path="acme/support",
+    include_priors=True,
+    candidate_actions=["resolve:resend_email", "resolve:update_payment_method"],
+)
+print(mem.last_priors["recommendation"]["mode"])   # "act" | "explore" | "escalate" | "abstain"
 ```
 
 ### Knowledge has full history
@@ -96,29 +124,40 @@ versions = mem.history("checkout-service", "retry-pattern", since=last_week)
 
 ### Decisions are explainable
 
-The causal chain shows exactly what informed a decision — both SenseLab entries and external tool context:
+The causal chain shows exactly what informed a decision — SenseLab entries and external tool context — and the sealed trace behind it keeps the actions taken, the attempts abandoned and every LLM call:
 
 ```python
 chain = mem.explain("DEP-500")
-# → causal_entries: entries the agent read
+# → causal_entries: entries the agent read, at the confidence it saw
 # → external_contexts: tool/API inputs the agent consulted
 ```
+
+### Failures get repaired
+
+None of this needs code. Judges grade every run; a failure that recurs becomes a named behavior and opens an incident, segmented by model, agent version and tool; a fix to the learning is staged on a branch, replay-tested against the failing and passing runs, shipped, and verified a week later. A repair policy decides whether fixes wait for review or ship on their own.
+
+<Card title="Behavior" icon="stethoscope" href="/amfs/guides/behavior">
+  The repair loop in full: judges, behaviors, incidents, fixes, replay, canary, verify and rollback.
+</Card>
 
 ---
 
 ## What it costs to build this yourself
 
-Teams rarely set out to build a memory platform. They add a versions table to a vector store, and eighteen months later they own one. Here is what sits between a similarity index and something an agent can safely act on:
+Teams rarely set out to build a learning platform. They add a versions table to a vector store, and eighteen months later they own one. Here is what sits between a similarity index and something an agent can safely act on:
 
 | You would have to build | What it turns into |
 | :-- | :-- |
-| Versioning | Copy-on-Write storage, a supersede rule instead of an overwrite, and history queries that stay fast as versions accumulate. Then diff, and rollback, because a history you cannot act on is a log. |
+| Versioning | Copy-on-write storage, a supersede rule instead of an overwrite, and history queries that stay fast as versions accumulate. Then diff, and rollback, because a history you cannot act on is a log. |
 | Provenance | An identity on every version, not every row. Then the migration when you realise reads need attributing too, and the schema change when one agent reads another's work. |
-| An outcome loop | Recording which entries were read on the way to a decision, propagating success and failure back to each one, and a decay model that distinguishes a fact from a belief and slows down for anything an outcome has validated. |
-| Decision traces | Capturing the causal chain as it happens rather than reconstructing it from logs, then storing it so it is still answerable in a year, with integrity checks if anyone will rely on it. |
+| An outcome loop | Recording which entries were read on the way to a decision, propagating success and failure back to each one with the right weight, a label the next run can read, a rule for the first failure after a long run of successes, and a way to charge a failed attempt without charging the recovery from it. |
+| Guidance | Compiling what is known about an entity into something an agent can start from, ranked by evidence rather than similarity, and keeping a record of which actions won and lost here so the agent is told whether to act, explore or escalate. |
+| Decision traces | Capturing the causal chain as it happens rather than reconstructing it from logs, then storing it so it is still answerable in a year, signed, with integrity checks if anyone will rely on it. |
+| Grading and repair | Judges that grade every run, a definition of a behavior, incidents that open when one recurs, a fix staged with a prediction, a replay harness that re-runs the failing cases against it, a canary, a verify sweep a week later, a rollback. Then the policy that decides which fixes may ship on their own. |
 | Team access | Membership, roles, and a write path that refuses a viewer below the interface rather than in the UI. Then the audit trail, because the reason you needed roles is the reason you will be asked for one. |
 | Onboarding | Deciding what a new agent should be handed on day one, and keeping that current as the team's knowledge moves. |
 | Conflict handling | Deciding what happens when two agents write the same key — and resisting the easy answer, last-write-wins, which is how the knowledge silently gets worse. |
+| A model loop | A readiness gate, a holdout built from your own history, a training job, a scoring step, a serving endpoint your code already speaks, and a fallback for when the tuned model is unsure. |
 
 Each row is a system, not a sprint. Each one grows edge cases the first production incident finds for you. And none of it is your product — it is the substrate your product needs in order to stop repeating itself.
 
@@ -130,46 +169,42 @@ SenseLab is that substrate, already built, already carrying other teams' traffic
 
 The usual reason to keep a vector store alongside a memory layer is search. SenseLab does that itself:
 
-- **Hybrid search** — full-text, semantic similarity through pluggable embedders, recency and confidence, combined into one ranked result rather than a similarity score you then have to re-rank by hand.
-- **Documents, chunked and embedded in place** — upload a document to a room and SenseLab splits it on sentence boundaries with overlap, sizes each chunk to the embedding model's real token budget, and makes it searchable alongside everything the team has learned. No second pipeline, no second copy, no sync job between them.
-- **A knowledge graph you did not have to build** — entity relationships and causal links materialize from normal reads and writes, surfacing connections similarity search cannot.
+- **Hybrid search** — full-text, semantic similarity, recency and confidence, combined into one ranked result rather than a similarity score you then have to re-rank by hand. Ranking is learned from your outcomes, so what worked here ranks above what merely matched.
+- **Documents, chunked and embedded in place** — upload a document to a room and SenseLab splits it on sentence boundaries with overlap, sizes each chunk to the embedding model's real token budget, and makes it searchable alongside everything the team has learned, with page numbers in the results. No second pipeline, no second copy, no sync job between them.
+- **A knowledge graph you did not have to build** — entity relationships and causal links materialize from normal reads, writes and outcomes, surfacing connections similarity search cannot.
 
-If you already run a vector database for product search or retrieval over millions of documents, keep it. That is a different job from remembering what your agents decided and whether it worked, and nothing here asks you to migrate it. What is not worth doing is standing up a second system to hold your agents' memory, and then building the seven rows above on top of it.
+If you already run a vector database for product search or retrieval over millions of documents, keep it. That is a different job from remembering what your agents decided and whether it worked, and nothing here asks you to migrate it. What is not worth doing is standing up a second system to hold your agents' memory, and then building the ten rows above on top of it.
 
 ---
 
 ## The Compounding Loop
 
-The fundamental difference becomes clear over time. A vector database stores static embeddings that you retrieve. SenseLab builds a **compounding knowledge asset** that gets more valuable the longer you use it:
+The fundamental difference becomes clear over time. A vector database stores static embeddings that you retrieve. SenseLab builds a **compounding record** that gets more valuable the longer you use it:
 
-```
-Week 1:   Agents write what they learn      → memory with an author
-Week 4:   Outcomes validate it              → confidence reflects reality
-Week 8:   A room shares it across the team  → nobody solves it twice
-Week 12:  Decision traces accumulate        → precedent, not folklore
-Week 24:  Patterns surface                  → recurring failures found early
-Week 52:  Enough traces to train on         → a model tuned on your own work
-```
+<Frame>
+  ![From week 1 to week 52: learning with an author, outcomes, a room, judges and incidents, priors, and finally a model tuned on your own work](/images/vs-compounding-timeline.png)
+</Frame>
 
-Week 52 is the part no retrieval layer reaches. By then the record of what your agents decided is large enough to fine-tune on, and we run that for you: we spin up the training job, score the candidate against a holdout of your own decisions, and host the result for serving. Pro also adds cross-system context over webhooks, decision traces that are still answerable months later, and pattern detection that finds recurring failures before they become incidents.
+Week 12 is where the record starts paying for itself: a failure that keeps recurring is caught by a judge, becomes an incident, and the fix is replay-tested against the runs that failed before it ships — no prompt edit, no redeploy. By week 52 the record of what your agents decided is large enough to fine-tune on, and we run that for you: we spin up the training job, score the candidate against a holdout of your own decisions, and host the result for serving.
 
-A vector database is the same on week 52 as it was on week 1. SenseLab is a **memory system that compounds**, and the compounding is the product.
+A vector database is the same on week 52 as it was on week 1. SenseLab is a **record that compounds**, and the compounding is the product.
 
 ---
 
 ## Summary
 
 | | Vector Database | SenseLab |
-|:--|:----------------|:-----|
-| **Think of it as** | A search index for embeddings | GitHub for agent memory |
-| **Best for** | Finding relevant data | Knowing what your agents learned, and whether it held up |
+| :-- | :-- | :-- |
+| **Think of it as** | A search index for embeddings | The record your agents learn from, repair, and train on |
+| **Best for** | Finding relevant data | Knowing what your agents learned, whether it held up, and what to do when it stops |
+| **After a bad run** | Nothing changes | Confidence drops on what the run relied on; a recurring failure is graded, fixed, replay-tested and verified |
 | **Collaboration** | None — shared index, last write wins | Branch, diff, PR, review, merge, rollback, access control |
 | **Teams** | None | Rooms: several people's agents on one topic, with roles and an activity trail |
-| **Data lifecycle** | Write once, query many | Write, version, track outcomes, decay, explain |
+| **Data lifecycle** | Write once, query many | Write, version, brief, track outcomes, repair, explain |
 | **Multi-agent** | Shared index | Provenance, causal chains, and disagreement that stays visible |
 | **Document search** | The core job | Included — chunked, embedded and searchable in place |
-| **Cross-system context** | Manual ingestion | Pro: webhook ingestion, with PagerDuty shipping as a connector |
-| **Pattern intelligence** | None | Pro: recurring failures, stale clusters, confidence drift |
-| **Improves the model** | No | Pro: fine-tuned on your traces, trained and hosted for you |
-| **Enterprise readiness** | Auth varies by vendor | Pro: RLS isolation, RBAC, scoped API keys, audit logging |
-| **Build effort to match it** | — | Seven systems, per the table above |
+| **Cross-system context** | Manual ingestion | Webhook ingestion, with PagerDuty as a ready-made connector |
+| **Pattern intelligence** | None | One scan across every agent: conflicts, stale knowledge, single points of knowledge, recurring failures |
+| **Improves the model** | No | Fine-tuned on your traces, trained and hosted for you |
+| **Enterprise readiness** | Auth varies by vendor | Isolation per account, roles and teams, scoped API keys, audit log, SIEM forwarding |
+| **Build effort to match it** | — | Ten systems, per the table above |
