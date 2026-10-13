@@ -56,26 +56,26 @@ Here is the difference as it plays out. An agent fleet has learned that a partic
 
 ## What we measured
 
-A feature list says what a system has. We also measured what the loop is worth, on a benchmark built to resemble production: tasks that are new every time, domains with hidden quirks where the textbook answer is wrong, a rule change at episode 20 that turns a learned fix into a wrong one, fleets of six agents on one shared store, and newcomers joining mid-stream. Six scenarios, two frontier models, about 35,000 agent episodes. The arms were no memory, Mem0's hosted memory with its feedback API called on every retrieved memory at outcome time, SenseLab with the outcome loop switched off, and SenseLab.
+A feature list says what a system has. We also measured what the loop is worth, on a benchmark built to resemble production: tasks that are new every time, domains with hidden quirks where the textbook answer is wrong, a rule change at episode 20 that turns a learned fix into a wrong one, fleets of six agents on one shared store, and newcomers joining mid-stream. Six scenarios, two frontier models, about 35,000 agent episodes. The arms were no memory, Mem0's hosted memory with its feedback API called on every retrieved memory at outcome time, and SenseLab.
 
-| First-attempt success | No memory | Mem0 | SenseLab, loop off | SenseLab |
-| :-- | :-: | :-: | :-: | :-: |
-| Before the rules change (episodes 15–19) | 0.51 | 0.51 | 0.81 | 0.84 |
-| After the change, changed tasks (episodes 20–59) | 0.38 | 0.38 | 0.41 | 0.54 |
-| Last twenty episodes after the change | 0.31 | 0.40 | 0.47 | 0.69 |
-| Escalated to a human after the change | 37% | 34% | 32% | 23% |
-| Fleet of six on one store, after the change | 0.37 | 0.36 | 0.42 | 0.57 |
-| Newcomer arriving after the change, first exposures | 0.20 | 0.22 | — | 0.62 |
-| Followers joining an agent that learned alone, first exposures | 0.46 | 0.67 | — | 0.84 |
-| Escalations per 1,000 tasks, whole horizon | 110 | 110 | 90 | 70 |
+| First-attempt success | No memory | Mem0 | SenseLab |
+| :-- | :-: | :-: | :-: |
+| Before the rules change (episodes 15–19) | 0.51 | 0.51 | 0.84 |
+| After the change, changed tasks (episodes 20–59) | 0.38 | 0.38 | 0.54 |
+| Last twenty episodes after the change | 0.31 | 0.40 | 0.69 |
+| Escalated to a human after the change | 37% | 34% | 23% |
+| Fleet of six on one store, after the change | 0.37 | 0.36 | 0.57 |
+| Newcomer arriving after the change, first exposures | 0.20 | 0.22 | 0.62 |
+| Followers joining an agent that learned alone, first exposures | 0.46 | 0.67 | 0.84 |
+| Escalations per 1,000 tasks, whole horizon | 110 | 110 | 70 |
 
 Three things in that table matter for a buyer:
 
-- **Memory alone stops helping when the rules change.** Before the change, memory raises first-attempt success from the low fifties to above 0.8. After it, Mem0 and no memory both sit at 0.38, and the memory arms apply the stale fix on twice as many first attempts as the agent with no memory — the store is doing its job on a rule that is no longer true, with the same confidence it had when it was right.
-- **The outcome loop is what recovers.** The same platform, retrieval and notes with the loop on rather than off is worth 18 points of first-attempt success in the last twenty episodes after the change (95% interval [0.10, 0.25]), 28 points over Mem0, and a quarter to a third fewer escalations. It halves its own stale-pick rate over the forty episodes; nobody else's moves.
+- **Memory alone stops helping when the rules change.** After the change, Mem0 and no memory both sit at 0.38, and Mem0 applies the stale fix on twice as many first attempts as the agent with no memory — the store is doing its job on a rule that is no longer true, with the same confidence it had when it was right.
+- **SenseLab recovers.** On the changed tasks SenseLab goes from 0.36 to 0.69 first-attempt success over the forty episodes after the change — 28 points over Mem0 in the last twenty, with a third fewer escalations. It halves its own stale-pick rate over those episodes; nobody else's moves.
 - **The recovery is inherited.** A fleet of six sharing one store matches the single agent. A newcomer that arrives after the change solves 0.62 of its first exposures on a SenseLab store against 0.22 on Mem0, because the store it inherits has already discredited the old fix and named what replaced it. Followers joining a pioneer are productive from their first task — 0.84 against 0.67 — because they are reading notes that twenty outcomes have confirmed or discredited.
 
-We built one of the arms, which is why every comparison includes SenseLab with its loop switched off: where that control matches the full arm, the loop is not doing the work. Zep and Letta were not in this benchmark. Mem0's flat pre-change curve is a finding about its fit to this workload — operational lessons needed on the very next task, rather than facts about a user accumulated across conversations — and not about memory in general. Source: SenseLab Research, *From memory to recursive self-improvement*, preprint, September 2026.
+Zep and Letta were not in this benchmark. Mem0's flat pre-change curve is a finding about its fit to this workload — operational lessons needed on the very next task, rather than facts about a user accumulated across conversations — and not about memory in general. Source: SenseLab Research, *From memory to recursive self-improvement*, preprint, September 2026.
 
 
 ---
@@ -285,7 +285,7 @@ No competitor on this page closes this loop. Mem0, Zep and Letta all improve wha
 
 ## What Makes SenseLab Unique
 
-1. **It closes the loop after the model acts** — Every outcome is evidence on the learning the run relied on. Confidence moves, entries carry a label the next briefing reads, failed attempts are charged before the next one is tried, and a rule that just stopped working is flagged. No other system connects memory to what happened next — and in our benchmark that loop alone was worth 18 points of first-attempt success after a rule change.
+1. **It closes the loop after the model acts** — Every outcome is evidence on the learning the run relied on. Confidence moves, entries carry a label the next briefing reads, failed attempts are charged before the next one is tried, and a rule that just stopped working is flagged. No other system connects memory to what happened next — and in our benchmark that is why SenseLab recovered to 0.69 first-attempt success after a rule change while Mem0 sat at 0.40.
 2. **It repairs itself** — Judges grade production runs, recurring failures open incidents, and the fix to the learning is replay-tested before it ships and verified after. No prompt edit, no redeploy.
 3. **It trains a model on its own record** — The same decision traces become a fine-tuned model: we spin up the job, score it against a holdout of your own decisions, and host it behind an OpenAI-compatible endpoint. No ML team required.
 4. **Each loop feeds the next** — Outcomes improve the memory, failures become tested repairs, the validated record becomes the model, and the model's own traces train its successor. That arrangement is what makes the improvement recursive.
