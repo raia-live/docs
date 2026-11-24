@@ -6,6 +6,8 @@ icon: "route"
 
 Routing decides where each call for `Sensei` goes. With no rules, Sensei answers every call. With rules, you can send some calls to a model on your own provider key, split calls between two models, cap spend, or refuse calls of a certain kind.
 
+Whichever model answers, the call starts with what Sensei has learned on the project. See [Learnings on routed calls](#learnings-on-routed-calls).
+
 Routing is a Team plan feature. On Developer the page shows example rules. Only an account admin can change routing, and everyone on the account can read it.
 
 ## How a call is routed
@@ -18,6 +20,38 @@ Routing is a Team plan feature. On Developer the page shows example rules. Only 
 Two kinds of call skip the rules. A call that names a provider model directly, such as `openai/gpt-5`, is served by that model. A call with the header `x-senselab-route: direct` is answered by Sensei.
 
 Every response carries an `x-senselab-route` header, a JSON object that says how the call was routed. Each call on the **Sessions** page has a routing badge.
+
+## Learnings on routed calls
+
+Sensei's [Learnings](/sensei/learnings) belong to the project, and the model that answers a call does not change which ones it gets. A call that a rule sends to a model on your own provider key starts with the same Learnings as a call Sensei answers. Its turn gets an outcome and a summary in the same way, and the next turn on the project reads that summary, whichever model serves it. The same holds for a call that names a provider model directly.
+
+With a split between Sensei and another model, both halves of your team's work feed one set of Learnings. A correction made in a session Sensei answered reaches the sessions the other model answers, and a fix the other model found reaches Sensei.
+
+The **Recalled** card of a session lists what its calls started with. To send a call without Learnings, add the header `x-senselab-learnings: off`, as on any call.
+
+Two things stay with the calls Sensei answers. The version of Sensei trained on your project serves only those calls, and the content of calls on your own keys is never kept as training material. See [Your model](/sensei/your-model) and [Provider keys](/sensei/routing/providers#data). A model on your key is also sent the conversation as your tool sent it, with the Learnings added. Sensei shortens a long conversation only for itself.
+
+## What a routed model gains
+
+A model that starts from Learnings does not have to carry its team's history in every call to know what the team already worked out. In October 2026 we measured this on a team of ten agents working 300 support and CI repair tasks whose rules changed partway through. The same frontier model ran three ways: on its own, with 20,000 tokens of the team's history in every call, and working from the learning that is built into Sensei.
+
+| How the model ran | Tokens per task | List cost per task | Solved within three tries |
+| --- | --- | --- | --- |
+| On its own | 3,618 | $0.0151 | 80% |
+| Carrying the team's history | 47,675 | $0.1908 | 99% |
+| Working from what the team had learned | 7,012 | $0.0186 | 99% |
+
+Across ten repetitions of the test, on the tasks whose rule had changed, the model was right on the first try 0% of the time on its own, 94% of the time carrying history and 96% of the time working from what the team had learned. Token use was within 1% of the table's.
+
+So the model reached the result of carrying its full history on about a seventh of the tokens and a tenth of the cost. Compared with the model on its own, it used about twice the tokens and solved 99% of tasks where it had solved 80%. Token counts include the calls made to keep the learning up to date.
+
+Read these figures with three things in mind:
+
+- The test gave the model the team's learning directly. It did not go through a routing rule, and we have not yet run the same test through one.
+- The tasks were short, so expect the ratios to carry over better than the dollar amounts.
+- Sensei adds Learnings to a routed call and removes nothing from it. The token saving arrives when your agents stop carrying history, rules files or notes of their own to stay consistent, and as fewer retries.
+
+A turn answered by a model on your key costs $0.01 on top of what the provider bills. See [Usage and cost](/sensei/usage-and-cost).
 
 ## Observe before you enforce
 

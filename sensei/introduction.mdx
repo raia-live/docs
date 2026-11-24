@@ -14,6 +14,27 @@ An agent here is any program that calls a model in a loop to get work done: your
 Sensei is invite-only for now. An invitation comes with $10 of credit and asks for no card.
 </Note>
 
+## What to expect
+
+A team on Sensei should see more of its tasks solved, fewer mistakes made twice, and a lower cost for each task. The gain is small on the first request of a kind and grows as the project's Learnings build up.
+
+We measured this in November 2026 with nine tests built from two kinds of agent work, support tickets and failing CI runs. In each test the right answer is a house rule that has to be learned from feedback and that changes partway through. Ten agents shared each stream of requests, and each system answered about 20,400 requests. The same team ran on Sensei and on two frontier models, whose agents each read their own history.
+
+| Question | What we found |
+| --- | --- |
+| Does a team on Sensei solve more requests? | In 8 of 9 tests. In seven of them Sensei solved 95.6 to 99.2% and the other two models 86.0 to 96.4%. In the test with the widest choice of actions it was 82.0% against 47.4% and 50.6%. |
+| What happens when a rule changes? | In those eight tests Sensei solved 92.4 to 99.3% of the requests under a changed rule. The other two solved 51.4 to 92.8%. |
+| How fast does it learn a kind of request? | The first time a kind came up, all three solved about the same share: 76%, 74% and 77%. The second time Sensei solved 94% and the others 84%. From the fourth time Sensei solved 98% or more. |
+| Does a new agent start from what the team knows? | On its first three requests a new agent was right on the first try 96% of the time on Sensei, and 54% and 48% on the other two. |
+| How many tokens does it use? | 6,900 to 12,200 for a request, counting the calls Sensei makes internally. The other two used 11,800 to 38,700 and 5,700 to 19,200. Sensei used fewer than the first in every test and fewer than the second in five. |
+| What does it cost? | At list price, 1,000 requests cost $8 to $13 on Sensei, and $48 to $156 and $7 to $21 on the other two. Sensei cost less than the first in every test and less than the second in seven. |
+
+Sensei was not ahead in two places. On the first request of a kind that nobody on the team had seen, it did no better than the other models. When one piece of feedback in ten was wrong, it tied with them on requests solved and lost more ground than they did, which is why reporting [outcomes](/sensei/outcomes) accurately matters.
+
+These tests measured what Sensei learns on the job, with no version trained for the project. The tasks were short, so the percentages and ratios are a better guide to your own work than the dollar amounts. Your own figures are on the dashboard's **Overview** page: the outcome trend, and the share of turns that started with Learnings.
+
+Learnings also reach the calls you route to another model on your own provider key. See [Routing](/sensei/routing/overview#learnings-on-routed-calls).
+
 ## Two ways to use it
 
 Your agents can call Sensei as their model. The endpoint speaks the OpenAI and the Anthropic formats, so an agent or tool that can talk to either can talk to Sensei. See [Connect your tool](/sensei/connect-your-tool).
