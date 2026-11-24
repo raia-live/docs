@@ -1,0 +1,123 @@
+---
+title: "Connect your tool"
+description: "Base URL, key and model name for Cursor, Claude Code, Codex, the OpenAI SDK and curl."
+icon: "plug"
+---
+
+Every tool needs a base URL, your key and the model name `Sensei`. Copy the values for your account from **Access management**, on the **Endpoints** tab.
+
+| Setting | Value |
+| --- | --- |
+| OpenAI base URL | `https://models.sense-lab.ai/v1` |
+| Anthropic base URL | `https://models.sense-lab.ai` |
+| Model | `Sensei` |
+
+The model name is read in any case, so `sensei` works too. Keys start with `amfs_`. Create one under **Access management**, on the **Keys** tab.
+
+<Tabs>
+  <Tab title="Cursor">
+    1. Open **Cursor Settings**, go to **Models** and click **Add model**. Type `Sensei` and leave it switched on.
+    2. Expand **API Keys**. Paste your key under **OpenAI API Key** and turn on **Use OpenAI API Key**.
+    3. Turn on **Override OpenAI Base URL**, enter `https://models.sense-lab.ai/v1` and press **Verify**.
+    4. Reopen Cursor and pick `Sensei` in the model picker.
+
+    While the override is on, Cursor sends its GPT, Composer and Grok models to the same address. Claude and Gemini are unaffected. Switch the override off to use the others again.
+
+    If Cursor says the model name is not valid, the request left without your key. Check that **Use OpenAI API Key** is on and that the base URL is filled in.
+  </Tab>
+  <Tab title="Claude Code">
+    To keep `claude` working as before, add a second command to `~/.zshrc`:
+
+    ```bash
+    alias sensei-code='ANTHROPIC_BASE_URL=https://models.sense-lab.ai \
+      ANTHROPIC_AUTH_TOKEN=amfs_... \
+      ANTHROPIC_MODEL=Sensei claude'
+    ```
+
+    To set it for one project, put this in `.claude/settings.local.json` and keep the file out of git:
+
+    ```json
+    {
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://models.sense-lab.ai",
+        "ANTHROPIC_AUTH_TOKEN": "amfs_...",
+        "ANTHROPIC_MODEL": "Sensei"
+      }
+    }
+    ```
+
+    Claude Code sends its own session id, so every call in one Claude Code session lands in one session on the **Sessions** page.
+  </Tab>
+  <Tab title="Codex">
+    Add a provider and a profile to `~/.codex/config.toml`. Plain `codex` is unchanged.
+
+    ```toml
+    [model_providers.sensei]
+    name = "sensei"
+    base_url = "https://models.sense-lab.ai/v1"
+    env_key = "SENSELAB_API_KEY"
+
+    [profiles.sensei]
+    model = "Sensei"
+    model_provider = "sensei"
+    ```
+
+    ```bash
+    export SENSELAB_API_KEY=amfs_...
+    codex --profile sensei
+    ```
+
+    Each Codex conversation is one session.
+  </Tab>
+  <Tab title="OpenAI SDK">
+    ```python
+    from openai import OpenAI
+
+    client = OpenAI(base_url="https://models.sense-lab.ai/v1", api_key="amfs_...")
+    resp = client.chat.completions.create(
+        model="Sensei",
+        messages=[{"role": "user", "content": "Add a retry to the upload client."}],
+        extra_headers={"x-senselab-session-id": "my-task-42", "x-senselab-client": "agent"},
+    )
+    print(resp.choices[0].message.content)
+    ```
+
+    Both headers are optional. They are described under [Headers for agents](#headers-for-agents).
+  </Tab>
+  <Tab title="curl">
+    ```bash
+    curl https://models.sense-lab.ai/v1/chat/completions \
+      -H "Authorization: Bearer amfs_..." \
+      -H "Content-Type: application/json" \
+      -H "x-senselab-session-id: my-task-42" \
+      -H "x-senselab-client: agent" \
+      -d '{"model":"Sensei","messages":[{"role":"user","content":"hello"}]}'
+    ```
+  </Tab>
+  <Tab title="Any other app">
+    1. Find where the app keeps its base URL. OpenAI-style apps take `https://models.sense-lab.ai/v1`. Anthropic-style apps take `https://models.sense-lab.ai`.
+    2. Paste your key where the app asks for an API key.
+    3. Set the model name to `Sensei`.
+  </Tab>
+</Tabs>
+
+<Note>
+The dashboard's Claude Code snippet names the alias `sensei`. The command line tool for [runs](/sensei/reference/cli) is also called `sensei`, and a shell alias takes precedence over a command, so this page uses `sensei-code`.
+</Note>
+
+## Headers for agents
+
+Editors need none of these. They help when your own code calls Sensei.
+
+| Header | What it does |
+| --- | --- |
+| `x-senselab-session-id` | Keeps one task in one session even when your code rewrites the conversation along the way. Without it, calls that share a first message are grouped. |
+| `x-senselab-client: agent` | Says nobody is reading the replies live. Sensei keeps the tools on and reads the result from the checks the agent runs. |
+| `x-senselab-agent-id` | Names which of your agents made the call, for example `billing-bot`. When one agent's results keep being contradicted by the others, the others stop learning from it. |
+| `x-senselab-learnings: off` | Sends the call without Learnings. Nothing is saved from a session sent this way. |
+
+The full list is in the [model endpoint reference](/sensei/reference/model-api#request-headers).
+
+## Check that it worked
+
+Send a message and open **Sessions**. The session appears within a few seconds. If it does not, see [If nothing arrives](/sensei/quickstart#if-nothing-arrives).

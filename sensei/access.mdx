@@ -1,0 +1,72 @@
+---
+title: "Access"
+description: "Create and revoke keys, copy the endpoint settings, and invite people."
+icon: "users"
+---
+
+**Access management** has three tabs: **Keys**, **Endpoints** and **Team**.
+
+## Keys
+
+A key is what a tool sends with each call. Each key names the project its sessions belong to.
+
+### Create a key
+
+1. Click **Create key**.
+2. Name it for the tool or person that will use it, for example "Ana's laptop" or "CI runner".
+3. Pick the project. This decides which model serves the key and where its sessions are kept. You can move the key later.
+4. Copy the key. It is shown once.
+
+Keys start with `amfs_`. After creation the table shows only the start of the key.
+
+### Manage keys
+
+| Column | Meaning |
+| --- | --- |
+| Project | The project the key's calls belong to. Change it here, and the next call goes to the new project. |
+| Limit | Requests per minute. New keys start at 120. |
+| Last used | When the key last made a call |
+
+Revoking a key takes effect on the next call. Tools using it stop working. Tick **Show revoked** to see revoked keys.
+
+Members create keys and manage their own. An admin manages every key on the account.
+
+A key over its limit gets `429` with a `retry-after` header that says how long to wait.
+
+## Endpoints
+
+The **Endpoints** tab has the three settings every tool needs, each with a copy button, and a setup guide for Cursor, Claude Code, Codex, the OpenAI SDK, curl and other apps. [Connect your tool](/sensei/connect-your-tool) covers the same steps.
+
+Under **More options** are three optional settings:
+
+- **Outcomes from your editor** installs the hook. See [Outcomes](/sensei/outcomes#from-your-editor).
+- **Outcomes from CI or a script** shows the outcome request. See [Outcomes](/sensei/outcomes#from-ci-or-a-script).
+- **Privacy Mode**, or on Team **Improve Sensei with this team's sessions**, controls whether your sessions are used to improve Sensei. See [Privacy](/sensei/privacy).
+
+## Team
+
+People join an account through a team. Create a team on the **Team** tab, open it, and invite people by email as an admin, a developer or a viewer.
+
+An admin or a developer can create a team. Only an admin can delete one, and deleting a team removes its memberships.
+
+## Roles
+
+| Action | Who can do it |
+| --- | --- |
+| Call the endpoint with a key | Anyone with a key |
+| Create a key and manage your own | Any member |
+| Manage every key | Admin |
+| Start, stop, answer and mark runs; connect repositories and tools; save and delete agents | Developer, admin, owner |
+| Create a team | Developer, admin |
+| Delete a team | Admin |
+| Edit routing rules and provider keys | Admin |
+| Add a project, change what a project keeps, delete kept turns | Admin |
+| Promote, discard or roll back a version of your model, and run trials | Admin, owner |
+| Buy credits | Admin |
+| Change whether sessions improve Sensei | Admin. On Developer, any user. |
+
+Everyone on the account can read sessions, runs, projects, routing and usage.
+
+## Invitations to Sensei
+
+Sensei is invite-only for now. An invitation link signs a person up in one step, is valid for a month and works once. A person who opens one while signed in to SenseLab adds Sensei to that account.

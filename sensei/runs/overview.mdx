@@ -1,0 +1,107 @@
+---
+title: "Runs"
+description: "Hand Sensei a piece of work. It does the work on its own computer and reports what it checked."
+icon: "play"
+---
+
+A run is a piece of work you hand to Sensei. The work happens in a sandbox on Sensei's side, so nothing runs on your machine. When the run ends you get a result that says what was done, what was checked and what Sensei could not confirm.
+
+## Kinds of run
+
+| Kind | What you give it | What comes back |
+| --- | --- | --- |
+| A task on a repository | A repository and a task in your words | A change verified against the repository's tests and opened as a pull request, or an answer when the task was a question |
+| An agent | A saved definition and its input | An output in the shape the definition names, with evidence |
+| A one-off task | A task in your words, with no repository | A written result |
+| Steps | A definition that runs other agents in order | The output of the last step that ran |
+
+A definition is a short YAML file your team keeps in a repository. See [Agents](/sensei/runs/agents).
+
+## Start a run
+
+<Tabs>
+  <Tab title="Dashboard">
+    Open **Runs** and click **New run**. Pick **An agent** to run a saved definition, or **A task** to describe the work. Under **More** you can choose a repository, a branch, a pull request, tools and a browser.
+
+    A developer, admin or owner can start runs.
+  </Tab>
+  <Tab title="Terminal">
+    ```bash
+    uv tool install senselab-sensei
+    sensei login
+
+    sensei run "Fix the failing test"            # in a checkout: a change to this repository
+    sensei run refund-requests -i ticket=48213   # a saved agent, by name
+    sensei run "List the largest tables and why" --no-repo
+    ```
+
+    The [CLI reference](/sensei/reference/cli) lists every command.
+  </Tab>
+  <Tab title="Python">
+    ```python
+    from sensei import Sensei
+
+    sensei = Sensei()  # reads SENSEI_API_KEY
+    r = sensei.run("refund-requests", ticket=48213)
+    print(r.status, r.output, r.evidence, r.not_sure)
+    ```
+
+    See the [Python SDK](/sensei/reference/python-sdk).
+  </Tab>
+  <Tab title="API">
+    ```bash
+    curl -X POST https://runs.sense-lab.ai/v1/runs \
+      -H "Authorization: Bearer $SENSEI_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"agent": "refund-requests", "input": {"ticket": 48213}}'
+    ```
+
+    See the [Runs API](/sensei/reference/runs-api).
+  </Tab>
+</Tabs>
+
+You can also start runs from Claude, Cursor or Codex by chat. See [Run from a chat tool](/sensei/runs/chat-tools).
+
+## Statuses
+
+| Status | Meaning |
+| --- | --- |
+| Queued | Accepted and waiting for a worker |
+| Running | Sensei is working. Reads **Stopping** after you click **Stop**. |
+| Waiting for you | The run has a question or a change to approve. Nothing is charged for the computer while it waits. |
+| Verified | A check passed: the repository's tests, or the check command in the definition |
+| Done | The run finished and no check applied |
+| Not verified | There is a change and the tests do not prove it. Reads **Stopped at budget** when a limit ended the run. |
+| Failed | A test that passed before now fails, a check failed, or the run could not continue |
+| Stopped | Someone stopped it |
+
+In the API and the CLI the same statuses are `queued`, `running`, `waiting`, `verified`, `done`, `unverified`, `failed` and `cancelled`.
+
+## The Runs page
+
+The strip at the top covers the last 30 days.
+
+| Figure | Definition |
+| --- | --- |
+| Success rate | Correct runs over checked runs. A run is checked when a check ran or your team marked it. |
+| Waiting for you | Runs that need a person. Click it to filter the table. |
+| Delivered | Runs that produced a change, and how many were pull requests |
+| Spent | What runs drew from the balance, with the median time to a verified result |
+
+The table has a tab for each status, a search box and a repository filter. The **Result** column shows the test suite before and after the change for a repository with tests, and what Sensei said it did otherwise.
+
+**Connections** opens the repositories and tools runs can use. A stored token or secret shows only its last four characters.
+
+## A run's page
+
+The header has the status, the repository and branch, the start time, duration, cost and attempts. Below it is a timeline of what Sensei did. The rail on the right holds the evidence: tests before and after, the change, and the budget used.
+
+Click the result to read it in full. Long results open with their sections collapsed, and **Expand all** opens them.
+
+While a run is live you can **Stop** it. A stop ends the run within seconds, including a command that is in flight. The computer is destroyed with the run.
+
+What you can do with a finished or waiting run is covered in [Review a run](/sensei/runs/review).
+
+## Cost
+
+A run draws from the same balance as your other calls: the tokens of its model calls, plus $0.005 for each minute its computer is up. See [Limits and cost](/sensei/runs/limits).

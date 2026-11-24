@@ -1,0 +1,195 @@
+---
+title: "Definition file"
+description: "Every key of an agent definition, with its type, limits and the combinations that are refused."
+icon: "file-code"
+---
+
+A definition is a YAML or JSON mapping. `sensei check FILE` validates one without running it, and each error names the place in the file, for example `steps[1].when`.
+
+## Top-level keys
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `agent` | string | To save it | The name the agent is run by. Lower-case letters, digits, `-` and `_`, up to 63 characters, starting with a letter or digit. |
+| `description` | string | No | What the agent is for. Cut to 500 characters. |
+| `instructions` | string | Yes, unless `steps` | What Sensei should do, in your words. Up to 20,000 characters. |
+| `input` | mapping | No | The input fields and their types |
+| `output` | mapping | No | The output fields and their types |
+| `computer` | string | No | `plain` (the default) or `browser` |
+| `repo` | string | No | The repository the agent works on, as a URL or `org/repo` |
+| `ref` | string | No | Branch or commit to start from. Needs `repo`. |
+| `image` | string | No | The container image to work in |
+| `tools` | list | No | Names of connected tools the agent may call |
+| `ask_first` | list | No | Tool actions that wait for a person |
+| `check` | string | No | A command that decides whether the result is acceptable. One line. |
+| `limit` | mapping | No | Ceilings for one run |
+| `steps` | list | No | Steps to run in place of `instructions` |
+
+A definition is limited to 200,000 bytes.
+
+## Field types
+
+`input` and `output` map a field name to a type.
+
+| Type | Accepts |
+| --- | --- |
+| `text` | A string. `string` and `str` are read as `text`. |
+| `number` | A number. `int`, `integer` and `float` are read as `number`. |
+| `boolean` | `true` or `false`. `bool` is read as `boolean`. |
+| `list` | A list |
+| `object` | A mapping |
+| `any` | Anything |
+| `a \| b \| c` | One of the listed values |
+| A nested mapping | An object with those fields |
+
+A trailing `?` on the name or on the type makes a field optional. `amount?: number` and `amount: number?` are the same field.
+
+```yaml
+input:
+  ticket: number
+  note?: text
+output:
+  decision: refunded | handed_over
+  amount?: number
+  customer:
+    email: text
+    tier: free | paid
+```
+
+Values given on the command line with `-i` are strings. They are converted to the type the definition names.
+
+## limit
+
+| Key | Meaning | Default | Ceiling |
+| --- | --- | --- | --- |
+| `usd` | Spend for the run, in dollars | 5 | 50 |
+| `minutes` | Time for the run | 30 | 120 |
+| `steps` | Steps for each attempt | 60 | 200 |
+
+Each value is a number above zero.
+
+## ask_first
+
+| Form | Covers |
+| --- | --- |
+| `tool` | Every action of the tool |
+| `tool.*` | The same |
+| `tool.action` | One action |
+
+Every tool named here must also be in `tools`.
+
+## steps
+
+`steps` is a list of 1 to 20 steps. Each step is a mapping with these keys.
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `id` | string | Yes | A short lower-case name that starts with a letter: letters, digits and `_`, up to 40 characters. The names `input`, `item`, `true`, `false`, `null`, `and`, `or` and `not` are reserved. |
+| `agent` | string or mapping | Yes | A saved agent's name, an inline definition, or a file path such as `./triage.yaml` |
+| `input` | mapping | No | The agent's input fields. A string that starts with `$` is a reference. |
+| `when` | condition | No | The step runs when this is true |
+| `for_each` | reference | No | A list. The step runs once for each item. |
+| `parallel` | integer | No | How many items run at once, 1 to 10. Needs `for_each`. Defaults to 1. |
+
+### References
+
+| Reference | Value |
+| --- | --- |
+| `$input.field` | A field of this definition's input |
+| `$step_id.output.field` | A field of an earlier step's output |
+| `$item` | The current item under `for_each`. `$item.field` reads a field of it. |
+
+A step can read `$input` and the steps before it. A skipped step's output reads as nothing.
+
+### Conditions
+
+A condition is built from references, quoted strings, numbers, `true`, `false` and `null`, the comparisons `==` and `!=`, the words `and`, `or` and `not`, and parentheses. `not` binds tighter than `and`, and `and` tighter than `or`.
+
+```yaml
+when: $triage.output.kind == "late-order" and not ($triage.output.amount == null)
+```
+
+### File references
+
+A step's `agent` can be a path that starts with `./`, `../`, `/` or `~`, or ends in `.yaml`, `.yml` or `.json`. The `sensei` command and the SDK read the file in before they send the definition. Relative paths resolve against the file that names them. Files can include files up to 3 deep, and a cycle is refused.
+
+## Refused combinations
+
+| Combination | Why |
+| --- | --- |
+| `instructions` with `steps` | A definition does the work itself or runs steps |
+| `repo` with `tools`, or with `computer: browser` | An agent that changes a repository works in the repository and runs its tests. Do the other part in a step before it. |
+| `ref` without `repo` | A branch needs a repository |
+| `parallel` without `for_each` | There is nothing to run in parallel |
+| `computer`, `repo`, `ref`, `image`, `tools`, `ask_first` or `check` beside `steps` | These belong on the agent a step runs |
+| A name in `ask_first` that is not in `tools` | The agent could never call it |
+| Steps nested more than 3 deep, or steps that name each other in a circle | |
+| A secret | A key such as `api_key`, `token`, `secret` or `password`, or text that looks like a credential, is refused. Connect the tool on the project. |
+
+## Examples
+
+A question about a repository:
+
+```yaml
+agent: repo-check
+repo: acme/checkout
+ref: main
+instructions: Give an overview of the repository and its services.
+```
+
+An agent with tools, an action that asks first, a typed output and a limit:
+
+```yaml
+agent: refund-requests
+description: Decides refund requests from the helpdesk.
+instructions: |
+  Refund when the order arrived late and the amount is under $50.
+  Otherwise hand it to a person.
+input:
+  ticket: number
+output:
+  decision: refunded | handed_over
+  amount?: number
+tools: [zendesk, stripe]
+ask_first: [stripe.refund]
+limit:
+  usd: 0.50
+  minutes: 10
+```
+
+An agent with a browser and a check:
+
+```yaml
+agent: pricing-page-check
+instructions: |
+  Open the pricing page at the URL given and read the price of each plan.
+input:
+  url: text
+output:
+  plans: list
+computer: browser
+check: python -c "import json; assert json.load(open('/work/output.json'))['plans']"
+```
+
+Steps with a condition and a fan-out:
+
+```yaml
+agent: translate-app
+input:
+  language: text
+steps:
+  - id: list
+    agent: list-screens
+  - id: translate
+    agent: translate-screen
+    for_each: $list.output.screens
+    parallel: 4
+    input:
+      screen: $item
+      language: $input.language
+  - id: review
+    agent: review-translation
+    when: $input.language != "en"
+    input:
+      language: $input.language
+```

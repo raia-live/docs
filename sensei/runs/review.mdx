@@ -1,0 +1,83 @@
+---
+title: "Review a run"
+description: "Answer a run that waits for you, try again with guidance, and say how the result turned out."
+icon: "eye"
+---
+
+Some runs stop and wait for a person. Others finish and leave you a result to judge. This page covers both.
+
+## Find runs that need you
+
+The **Waiting for you** figure on the **Runs** page filters the table to runs that wait. **Overview** shows the same count with a **Review** button. From the terminal:
+
+```bash
+sensei runs --status waiting
+```
+
+A run waits for one of two reasons: an agent reached an action listed under `ask_first`, or a repository run was started with `--ask` and has a change to approve.
+
+## Answer a question
+
+A waiting agent run shows the action it wants to take, the arguments and its reason. You have three answers.
+
+| Answer | What happens |
+| --- | --- |
+| Approve | The action is carried out and the run continues |
+| Correct | The action is not carried out. The agent is told what to do instead, and your words are kept for its later runs. |
+| Reject | The action is not carried out. The agent finishes what it can without it and lists what was left undone. |
+
+```bash
+sensei answer <run> approve
+sensei answer <run> correct "Give store credit when they paid with a gift card"
+sensei answer <run> reject
+```
+
+Anything else the agent asked for in the same turn was not run. It asks again if it still needs it.
+
+## Approve a change
+
+A repository run that waits shows the change and its verification. The button reads **Approve and push** for a verified change and **Push anyway** when the tests did not prove it. On a dry run the buttons read **Accept** and **Accept anyway**.
+
+```bash
+sensei approve <run>                       # push it and open the pull request
+sensei resume <run> --guidance "Keep the public API as it is"
+sensei patch <run> | git apply             # take the change locally
+sensei cancel <run>                        # drop it
+```
+
+## Try again
+
+**Try again** is available on a run that finished without a verified change, and on a waiting run. Say what should be different this time, or leave the box empty to let Sensei try once more on its own.
+
+On a waiting run, Sensei starts another attempt on the same repository and task from the same commit, and reads your guidance first. The earlier attempts stay on the page. On a finished run, Sensei starts a new run of the same task on the same branch, and the finished run stays as it is.
+
+## Stop a run
+
+Click **Stop** on the run's page, or:
+
+```bash
+sensei cancel <run>
+```
+
+A queued or waiting run stops at once. A running one stops within seconds: the command in flight is cut and the computer is destroyed. Steps of a run with steps stop with it.
+
+## Say how it turned out
+
+When you know whether a finished run was right, mark it. This is what Sensei learns from when no check ran, and it is what an agent's **Correct** figure counts.
+
+On the run's page, click **Right** or **Wrong**. **Wrong** asks what happened and, on a run with steps, which step. You can change the mark later.
+
+```bash
+sensei outcome <run> right
+sensei outcome <run> wrong --note "The ticket was reopened"
+```
+
+Some outcomes are recorded for you. A repository run whose change was verified is recorded as a success, and one that broke a passing test as a failure. An agent run records the result of its `check` the same way. A run that ended **Not verified** or **Done** records nothing until you mark it.
+
+## Read the result
+
+Click the result on a run's page to open it in a reader. Markdown is formatted, code scrolls inside its block, and a long result with headings opens with its sections collapsed. **Expand all** opens every section and **Copy** copies the text.
+
+## Who can do what
+
+A developer, admin or owner can start, stop, answer and mark runs, and add connections. Other members can read runs and their results.

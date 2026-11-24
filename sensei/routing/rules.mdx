@@ -1,0 +1,104 @@
+---
+title: "Rules"
+description: "The four parts of a routing rule: when it applies, where it sends calls, how it adapts and what it caps."
+icon: "sliders"
+---
+
+A rule has up to four parts. **When** and **Route** are required. **Adapt** and **Guard** are optional. The sentence at the top of the rule editor rewrites itself as you fill them in, so you can read what the rule will do before you save it.
+
+Saving a rule saves the whole policy as its next version.
+
+## When
+
+Conditions say which calls the rule applies to. Every condition must hold. A rule with no conditions applies to every call.
+
+| Condition | Matches on |
+| --- | --- |
+| Project | The project the API key is attached to |
+| API key | The key the call was made with |
+| Editor | Cursor, Claude Code, Codex or something else, read from the call |
+| Project data | What the project's traffic may contain, as you declared it: internal, customer or regulated |
+| Task step | The first step of a task, which is the ask with nothing done yet, or the tool loop, which is every step after |
+| Last check | Whether the last test, type check or lint the model ran in this task failed |
+| Check attempts | How many times the same check has run in this task. A high number is a retry loop. |
+| Context size | A rough count of the tokens the model will read on this call |
+| Images | Whether the ask carries a screenshot or image |
+| Tools | Whether the editor offered tools on this call |
+| Priority | Whether the client marked the call as background with the header `x-senselab-priority: background` |
+| Month spend | What the project has spent so far this calendar month, across every model |
+| Success rate | A model's verified success rate on this project over the last 30 days, from your own outcomes, with an optional limit on its p95 latency |
+
+Some conditions can change from one turn of a session to the next: **Task step**, **Last check**, **Check attempts** and **Context size**. A rule that uses one of them picks a model for each turn. Every other rule picks one for the session.
+
+## Route
+
+A rule either sends the call to a model or refuses it.
+
+**Send to a model** takes one model or a split. To split, add a second model and drag the bar to set each share. The models you can choose are Sensei and the models you enabled on your provider keys.
+
+**Refuse the call** returns a `403` that names the rule. Nothing is served.
+
+## Adapt
+
+**Adapt on results** moves a split by itself, based on verified outcomes. It needs a split between exactly two models. One of them is the model to adapt, and the other takes the rest.
+
+| Setting | Meaning |
+| --- | --- |
+| Model to adapt | The model whose share of the calls moves |
+| Verified tasks needed | Nothing moves until both models have this many verified tasks under this rule |
+| Look at results every | How often results are looked at, in hours. There is at most one move per look. |
+| Each gain | How much of the rule's calls the model gains at one look. At 2, a share of 60% becomes 62%. |
+| Highest share | The model stops gaining at this share |
+| Lowest share | The model never gets less than this, and a drop returns it here |
+
+Choose when the model gains share:
+
+- **Close to the other model's, or better.** The model gains while it is ahead, level, or behind by no more than the number of points you set under **Behind by no more than**. At 0, it gains only while ahead or level.
+- **Ahead of the other model's.** The model gains only while its success rate is at least the number of points under **Ahead by at least** above the other's, and the lead is more than chance over the tasks counted.
+
+And when it drops: under **Behind by more than**, set how many points below the other model's success rate it may fall. Once it is further behind than that, and the gap is more than chance, its share drops to the lowest share in one move.
+
+Every move is a new policy version with the numbers that caused it, listed on the **Activity** tab. After you change an adapting rule, both models start again from no verified tasks.
+
+## Guard
+
+**Guard** limits what a rule can spend and says where calls go when something fails.
+
+| Setting | Meaning |
+| --- | --- |
+| Daily cap | Spend on this rule for one day |
+| Monthly cap | Spend on this rule for one calendar month |
+| Fallback | Where calls go once a cap is reached, and where a call goes if a model's key fails |
+
+Sensei is always the last fallback. With no guard, a rule has no caps and falls back to Sensei if a key fails.
+
+## Evidence
+
+A saved rule has an **Evidence** tab with the calls it decided and how they turned out for each model. The evidence is for the saved rule. While the form holds an edit you have not saved, the tab says so.
+
+## Examples
+
+Send the first step of each task in one project to a model on your own key, and keep the tool loop on Sensei:
+
+| Part | Setting |
+| --- | --- |
+| When | **Project** is `Payments service`, **Task step** is first step of a task |
+| Route | Send to `openai/gpt-5` |
+
+Try Sensei on a tenth of sessions from Cursor and let results move the split:
+
+| Part | Setting |
+| --- | --- |
+| When | **Editor** is Cursor |
+| Route | Split: `sensei` 10%, `openai/gpt-5` 90% |
+| Adapt | Model to adapt `sensei`, 50 verified tasks needed, look every 24 hours, each gain 10, close to the other model's or better |
+| Guard | Monthly cap $500, fallback `sensei` |
+
+Keep regulated projects on Sensei:
+
+| Part | Setting |
+| --- | --- |
+| When | **Project data** is regulated |
+| Route | Send to `sensei` |
+
+Put this rule first. Rules run top to bottom, so it decides before any rule below it.

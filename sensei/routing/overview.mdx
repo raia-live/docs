@@ -1,0 +1,81 @@
+---
+title: "Routing"
+description: "Decide which model answers which call, with rules that run top to bottom."
+icon: "route"
+---
+
+Routing decides where each call for `Sensei` goes. With no rules, Sensei answers every call. With rules, you can send some calls to a model on your own provider key, split calls between two models, cap spend, or refuse calls of a certain kind.
+
+Routing is a Team plan feature. On Developer the page shows example rules. Only an account admin can change routing, and everyone on the account can read it.
+
+## How a call is routed
+
+1. Rules run top to bottom. The first enabled rule whose conditions all hold decides.
+2. If no rule matches, the call goes to **Everything else**, the default. Sensei alone is the usual default.
+3. The rule names one model or a split. A session keeps the model it drew on its first call, so a conversation does not change model part way.
+4. If the chosen model cannot answer, for example because a provider key was rejected, the call moves to the rule's other models, then to the rule's fallback, then to Sensei. A call fails for a routing reason only when a rule in force refuses it.
+
+Two kinds of call skip the rules. A call that names a provider model directly, such as `openai/gpt-5`, is served by that model. A call with the header `x-senselab-route: direct` is answered by Sensei.
+
+Every response carries an `x-senselab-route` header, a JSON object that says how the call was routed. Each call on the **Sessions** page has a routing badge.
+
+## Observe before you enforce
+
+The switch at the top of the page has two positions.
+
+| Mode | Effect |
+| --- | --- |
+| Observe | Every call takes the default. Each rule records what it would have done. |
+| Enforce | Rules route |
+
+Start in **Observe**, read the table for a few days, then switch to **Enforce** when the would-be decisions look right.
+
+## Start from a template
+
+**Templates** offers rules to start from. The model names are filled in from your provider keys.
+
+| Template | What it does |
+| --- | --- |
+| Start Sensei at 10% and ramp on results | Sends 10% of sessions to Sensei and the rest to another model, and moves the split toward Sensei each day while results hold |
+| Plan on another model, execute on Sensei | The first step of every task goes to the other model. The tool loop that follows runs on Sensei. |
+| Escalate after a failed check | When a task's last test or type check failed and Sensei is retrying, hands the retry to the other model |
+| Cap a model at $20 a day | Routes to the model until the day's spend on the rule reaches $20, then sends the rest to Sensei |
+| Keep a project on Sensei | Every call from one project stays on Sensei, whatever the rules below say |
+| Regulated data never leaves Sensei | Projects marked as regulated are served by Sensei only |
+
+[Rules](/sensei/routing/rules) describes every part of a rule.
+
+## The tabs
+
+| Tab | Content |
+| --- | --- |
+| Rules | The ordered list. Reorder rules, switch one on or off, or click one to edit it. |
+| Activity | Automatic moves: ramps, rollbacks, holds and caps, each with the numbers that caused it |
+| Versions | Every save of the policy. You can compare two versions and restore one. |
+| Providers | Your own provider keys. See [Provider keys](/sensei/routing/providers). |
+| Settings | Project data, notifications, and export, import and API access |
+
+The four figures above the tabs cover the last 7 days: calls the rules saw, the share decided by a rule, rules switched on, and automatic moves.
+
+## Versions
+
+Every save is a new version of the policy, and so is every automatic move. The **Versions** tab lists them with who or what made each one. Restoring an old version creates a new one with the old configuration, for example "Created v12 using the configuration from v9".
+
+## Settings
+
+**Project data** declares what each project's traffic may contain: internal, customer or regulated. A rule with the **Project data** condition reads this. Nothing is inspected.
+
+**Notifications** chooses where you hear about a split that ramps up, a split that rolls back and a spend cap that is reached: in the app, by email, or at a signed webhook. You can send a sample event to a saved webhook URL.
+
+**Export, import, API** gives you the policy as one JSON document. You can download it, paste one in, or read and write it over the API.
+
+```bash
+curl https://models.sense-lab.ai/v1/routing/policy \
+  -H "Authorization: Bearer $SENSEI_API_KEY"
+```
+
+Reading works with any key of the account. Saving with `PUT` needs a key created by an admin. A policy that is pasted or sent is saved as a new version once it validates against your provider keys, and nothing changes until then.
+
+## Limits
+
+A policy can have 50 rules, fewer if your plan says so. A split can name 6 models, and its shares add up to 100.

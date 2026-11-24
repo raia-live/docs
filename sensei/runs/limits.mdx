@@ -1,0 +1,60 @@
+---
+title: "Limits and cost"
+description: "What a run can spend, how long it can take, and what it costs."
+icon: "gauge-high"
+---
+
+Every run has a spend limit, a time limit and a step limit. You can lower them for one run or in a definition. You cannot raise them above the ceilings.
+
+| Limit | Default | Ceiling |
+| --- | --- | --- |
+| Spend | $5 | $50 |
+| Time | 30 minutes | 120 minutes |
+| Steps for each attempt | 60 | 200 |
+| Attempts | 1 | 5 |
+
+A single command in the sandbox can run for up to 10 minutes. The computer has 2 CPUs and 4 GB of memory. An account can have 5 runs queued or running at once, and a sixth is refused until one finishes.
+
+## Set limits
+
+In a definition:
+
+```yaml
+limit:
+  usd: 0.50
+  minutes: 10
+  steps: 40
+```
+
+For one run:
+
+```bash
+sensei run "Fix the failing test" --budget 2 --minutes 15 --steps 80
+```
+
+A limit given for one run overrides the definition's. In a run with steps, each step is also capped by what the parent has left.
+
+## What a run costs
+
+A run draws from the account's balance for two things.
+
+| Item | Rate |
+| --- | --- |
+| Model calls | The token rates on [Usage and cost](/sensei/usage-and-cost#rates) |
+| Computer time | $0.005 a minute, counted by the second while the computer is up |
+
+The spend limit counts both. A run that waits for a person holds no computer, so the wait costs nothing.
+
+The run's page shows the cost so far. **Usage & cost** has a **Computer time** figure for the month.
+
+## When a run reaches a limit
+
+| Limit reached | What happens |
+| --- | --- |
+| Spend or time | The run stops at the end of the command it is on. A model call in flight is dropped. |
+| Steps | The attempt ends where it is |
+| Credits used up | The run fails with the reason, and new runs are refused until you add credits |
+
+A run that a limit ended shows **Stopped at budget**, and its work so far stays on the page. Start it again with a higher limit, or use **Try again** and give it a hint.
+
+A stop you ask for does cut the command in flight. See [Stop a run](/sensei/runs/review#stop-a-run).

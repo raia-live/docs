@@ -1,0 +1,62 @@
+---
+title: "Sensei"
+description: "Sensei is a hosted coding model that learns from how your work turns out."
+icon: "rocket"
+---
+
+Sensei is a coding model you call from the tool you already use. You give Cursor, Claude Code, Codex or your own script a base URL, a key and the model name `Sensei`. From then on each task is recorded as a session, each session gets an outcome, and what worked is carried into the sessions that follow.
+
+<Note>
+Sensei is invite-only for now. An invitation comes with $10 of credit and asks for no card.
+</Note>
+
+## Two ways to use it
+
+You can call Sensei as a model. The endpoint speaks the OpenAI and the Anthropic formats, so a tool that can talk to either can talk to Sensei. See [Connect your tool](/sensei/connect-your-tool).
+
+You can also hand Sensei a piece of work and let it do the work on a computer of its own. This is a run. A run can change a repository and open a pull request, or follow a definition your team saved and call your tools. See [Runs](/sensei/runs/overview).
+
+## What the dashboard holds
+
+The dashboard is at [sensei.sense-lab.ai](https://sensei.sense-lab.ai). Its sidebar has seven sections, and these docs follow the same order.
+
+| Section | What you do there | Docs |
+| --- | --- | --- |
+| Overview | Read this month's sessions, spend and outcome trend, and see what the learning loop did | [How Sensei learns](/sensei/how-sensei-learns) |
+| Sessions | Open any task call by call and say how it went | [Sessions](/sensei/sessions), [Outcomes](/sensei/outcomes) |
+| Runs | Start work, answer runs that wait for you, manage saved agents | [Runs](/sensei/runs/overview) |
+| Projects | Group keys by codebase and decide what happens to new versions of your model | [Projects](/sensei/projects), [Your model](/sensei/your-model) |
+| Routing | Decide which model answers which call | [Routing](/sensei/routing/overview) |
+| Usage & cost | Check the balance and where it went, and add credits | [Usage and cost](/sensei/usage-and-cost) |
+| Access management | Create keys, copy the endpoint settings, invite people | [Access](/sensei/access) |
+
+## Plans
+
+Sensei is prepaid. An account holds credits and its calls draw them down.
+
+| | Developer | Team | Enterprise |
+| --- | --- | --- | --- |
+| Price | Credits as you use them | $200 a month, all of it added as credits | Contract |
+| The endpoint, runs, sessions and outcomes | Yes | Yes | Yes |
+| A model trained on your project's work | No | Yes | Yes, one for each project |
+| Your own provider keys and routing rules | No | Yes | Yes |
+| More than one project | No | No | Yes |
+
+Rates are the same on every plan. They are listed on [Usage and cost](/sensei/usage-and-cost).
+
+## Where to start
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/sensei/quickstart">
+    Accept the invitation, create a key and send a first message.
+  </Card>
+  <Card title="Connect your tool" icon="plug" href="/sensei/connect-your-tool">
+    Settings for Cursor, Claude Code, Codex, the OpenAI SDK and curl.
+  </Card>
+  <Card title="Start a run" icon="play" href="/sensei/runs/overview">
+    Hand Sensei a task from the dashboard, the terminal or code.
+  </Card>
+  <Card title="Model endpoint reference" icon="code" href="/sensei/reference/model-api">
+    Endpoints, headers, limits and errors.
+  </Card>
+</CardGroup>

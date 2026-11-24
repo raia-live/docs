@@ -1,0 +1,55 @@
+---
+title: "Privacy"
+description: "What Sensei keeps, for how long, and whether your sessions are used to improve Sensei."
+icon: "lock"
+---
+
+This page lists what Sensei stores about your work and the switches that control it. The contract terms are in the [privacy policy](https://sensei.sense-lab.ai/privacy) and the [terms](https://sensei.sense-lab.ai/terms).
+
+## Are my sessions used to improve Sensei?
+
+It depends on the plan, and you can change it.
+
+| Plan | Default | Control |
+| --- | --- | --- |
+| Developer | Sessions help improve Sensei | Turn on **Privacy Mode** to stop it |
+| Team | Sessions are not used | An admin can opt in with **Improve Sensei with this team's sessions** |
+| Enterprise | Sessions are never used | Fixed. There is no switch. |
+
+The switch is under **Access management**, on the **Endpoints** tab, in **More options**. A change takes effect from the next retrain and never applies backwards.
+
+You can also set it for each key. A key follows the account unless you set it to **Help improve** or **Privacy Mode**.
+
+The setting applies to turns served by Sensei. Turns served on your own provider keys are never used. Your projects' own models are unaffected by this setting.
+
+## What is kept
+
+| What | How it is kept |
+| --- | --- |
+| Session records: calls, tokens, cost, outcomes | In your account. They are what the **Sessions** and **Usage & cost** pages show. |
+| Learnings | In your account. Read only by calls made with your account's keys. |
+| Kept turns: the conversation and Sensei's answer for turns that ended in a verified success | At rest in your account's region, and removed after 30 days |
+| Repository tokens and tool secrets | Encrypted, and shown afterwards only as their last four characters |
+| Provider keys | Encrypted, and never shown again |
+
+Kept turns exist only on a project with **Keep turns for your model** switched on. You can export or delete them at any time, and turning the switch off deletes them at once. A turn later marked as anything other than a success is removed. See [Kept turns](/sensei/projects#kept-turns).
+
+## What leaves your machine
+
+The editor hook sends the verdict of the last check, the runner's name and the pass and fail counts. It does not send the command, its output, your files or the conversation.
+
+The `sensei` command sends what you give it: the task or definition, the input, and with `--from-failure` the output of the command you named. It does not upload your working tree. A repository run clones the repository on Sensei's side and works in a sandbox there. See [How a run is isolated](/sensei/runs/isolation).
+
+## Calls on your own provider keys
+
+Calls served on your own provider keys go from Sensei to the provider directly. Their content is never kept for your model and never used to improve Sensei. What Sensei holds to serve them is listed with each provider under **Routing**, on the **Providers** tab.
+
+## Routing by data class
+
+On Team you can declare a project's data as regulated and add a rule that keeps regulated projects on Sensei, so none of their calls reach another provider. See [Routing](/sensei/routing/overview#start-from-a-template).
+
+## Things that store nothing
+
+The **Try** panel on a model page sends one prompt to the versions you pick. Nothing is stored and no session is created.
+
+A call sent with `x-senselab-learnings: off` is answered without Learnings, and nothing is saved from its session.

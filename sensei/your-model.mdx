@@ -1,0 +1,109 @@
+---
+title: "Your model"
+description: "How a version of your model is trained, checked, tried and promoted, and how to roll one back."
+icon: "microchip"
+---
+
+On Team and Enterprise, each project has a model of its own. Sensei trains a new version from the project's turns that ended in a verified success, checks it against what the project's keys use now, and then either serves it or waits for your decision.
+
+To open a project's model page, go to **Projects**, click the project and then **Versions and roll-out**.
+
+## The path of a version
+
+Every version takes the same five steps. The strip at the top of the model page shows where the next one stands.
+
+| Step | What happens |
+| --- | --- |
+| Learn | The project collects sessions and outcomes |
+| Train | A version is trained on work that was confirmed |
+| Check | The version is compared with what your keys use now |
+| Review and trial | You decide. Skipped when new versions go live by themselves. |
+| Live | The version is served to every key of the project |
+
+Your keys keep being served what they have while a version trains and is checked. If a version does not pass its check, nothing changes.
+
+## When training starts
+
+Training starts by itself. You do not schedule it.
+
+The first version trains once the project has, over the last 30 days:
+
+- 250 turns
+- a verified outcome on 80% of them
+- 200 verified successes
+
+The project page shows how far along you are and names what is missing. If the share of verified outcomes is the gap, install the [editor hook](/sensei/outcomes#from-your-editor) or post outcomes from CI.
+
+Later versions train when there is enough new confirmed work since the last one. A project trains at most once in 7 days.
+
+The project must be keeping turns. See [Kept turns](/sensei/projects#kept-turns).
+
+## The check
+
+A new version is checked on steps from sessions that were held out of its training, every one of them a verified success. For each step, the check asks whether the version makes the same kind of move on the same thing as the step that worked. No model grades another.
+
+The version passes when it takes those steps often enough and is not worse than what your keys use now. A project's first version must also be better than the included model.
+
+The model page shows the figures in one line, such as `Its check: 62% of 240 held-out steps, against 58% for v2.`
+
+## Review or automatic
+
+The **New versions** control at the top of the model page has two positions.
+
+| Setting | A version that passes its check |
+| --- | --- |
+| Go live by themselves | Is served to every key at once |
+| Wait for my review | Stays on the page until you try it on a share of sessions, promote it or discard it |
+
+A version waiting for review that nobody tries or promotes is set aside by itself after 14 days, so the project keeps learning. The account is told three days before. A running trial keeps the version open.
+
+## Try a version on a share of sessions
+
+Pick a share under **Share of sessions** (5%, 10%, 25% or 50%) and click the **Start trial** button. That share is served the new version and the rest keep what they have. A session stays on one side from its first call to its last.
+
+Once each side has 20 confirmed outcomes, the page compares them. Until then it reads **Too early to say**.
+
+With **End the trial automatically when the new version falls behind** switched on, the trial ends by itself if the new version solves clearly less confirmed work than the live one, or if its calls start failing. A trial never promotes by itself.
+
+You can move the share or click **Stop trial** at any time.
+
+## Promote, discard, roll back
+
+| Action | Effect |
+| --- | --- |
+| **Promote to every key** | Every key of the project is served the version from its next call. The version it replaces is kept. |
+| **Discard** | Nobody is served the version and it is set aside. You can note why, and the note is kept in the history. The next version trains when there is enough new confirmed work. |
+| **Roll back** | The project's keys return to what they were served before the latest promotion, on their next call. The version rolled back is set aside and not deleted. |
+
+Rolling back while a trial is running ends the trial, because the trial was being compared with the version you rolled back. The version on trial keeps waiting and can be tried again.
+
+## Compare versions on one prompt
+
+The **Try** panel sends one prompt to each version you pick and shows the answers side by side. Each version answers on its own, without the project's Learnings or your agent's tools. Nothing is stored and no session is created.
+
+## Records and history
+
+The model page lists every version with its state and what it learned from.
+
+| State | Meaning |
+| --- | --- |
+| Training, Checking | In progress |
+| Ready for review | Passed its check and waits for you |
+| On trial | Served to a share of sessions |
+| Live | Served to every key of the project |
+| Replaced | Was live until a later version was promoted |
+| Did not pass | Failed its check |
+| Rolled back, Discarded | Set aside by a person or by the 14-day rule |
+| Failed | Training did not complete |
+
+Each version's record on real work covers its sessions, turns, confirmed outcomes, success rate, steps per task, cost per task, response time and failed calls. The activity feed lists every decision with who made it. Admins can turn on email for a project's version events.
+
+If a turn a version learned from is later withdrawn, for example because you deleted kept turns, that version can only be discarded. The next one trains without those turns.
+
+## Who can decide
+
+An admin or owner of the account can change the **New versions** setting, start and stop trials, promote, discard, roll back and use the **Try** panel. Other members can read the page.
+
+## Cost
+
+Calls served by your trained model are billed at 1.5 times the token rates. See [Usage and cost](/sensei/usage-and-cost#rates).

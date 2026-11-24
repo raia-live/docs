@@ -1,0 +1,66 @@
+---
+title: "Projects"
+description: "A project groups keys, their sessions and outcomes, and on Team the model trained on them."
+icon: "folder"
+---
+
+A project is where an account's sessions and outcomes are kept. Each API key names one project, and every call made with the key belongs to it. On Team and Enterprise, a project also has a model trained on its own verified sessions, served to the project's keys.
+
+Every account has a default project. A key created without a project uses it.
+
+## What belongs to a project
+
+- The keys attached to it, and the sessions and runs those keys make
+- The Learnings from those sessions
+- The turns kept for its model
+- The versions of its model, and the decisions made about them
+
+## The Projects page
+
+Four figures sit above the table: the number of projects, the models that are live, calls in the last 30 days with the outcomes recorded, and the turns kept for your models.
+
+A project is in one of four states.
+
+| State | Meaning |
+| --- | --- |
+| Collecting outcomes | Sessions are being collected. On Team, training starts on its own once there are enough verified outcomes. |
+| Training your model | A new version is training. The endpoint keeps serving meanwhile. |
+| Your model is live | The project's keys are served its model |
+| Paused | The model is kept and is not served |
+
+Click a row to open the project's sheet. The sheet holds the kept turns, the archive action and a **Versions and roll-out** link to the project's model page. The link reads **Review new version** when one is waiting.
+
+## Create a project
+
+More than one project is an Enterprise feature. An account admin clicks **Add project** and fills in the dialog.
+
+| Field | Purpose |
+| --- | --- |
+| Name | How the project appears on the dashboard and on the **Keys** tab |
+| Agent id starts with | Learn only from sessions of agents whose id has this prefix, for example `payments-` |
+| Record path starts with | Learn only from what is written under this path, for example `payments/` |
+| Keep this project's record separate | Sessions on this project see only what this project has learned |
+
+The last three are under **Limit what this model learns from**. By default a project learns from every session on its keys. Narrow it when the same keys serve more than one kind of work.
+
+Use one project for each codebase or kind of work. After creating it, pick it for a key on the **Keys** tab, or when you create a key.
+
+## Move a key to another project
+
+Open **Access management**, find the key on the **Keys** tab and change its **Project**. The next call with that key goes to the new project.
+
+## Kept turns
+
+To train a version, Sensei needs the turns themselves: the conversation and Sensei's answer. A project keeps them when **Keep turns for your model** is on.
+
+- Only turns that ended in a verified success are kept. A turn later marked as anything else is removed.
+- Kept turns are stored at rest in your account's region and removed after 30 days.
+- You can export them as JSON lines or delete them from the project's sheet at any time.
+
+On Team the switch is on by default, and an admin confirms it or turns it off. When you turn it off, new turns are no longer kept and the turns kept so far are deleted at once. The model is not trained again until the switch is back on, so export first if you want a copy.
+
+Only an account admin can add projects or change what they keep.
+
+## Project data
+
+Each project can declare what its traffic may contain: internal, customer or regulated data. Routing rules can read this, for example to keep a regulated project's calls on Sensei whatever the other rules say. Nothing is inspected. The declaration is what you set under **Routing**, on the **Settings** tab. See [Routing](/sensei/routing/overview#settings).

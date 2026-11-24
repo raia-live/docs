@@ -1,0 +1,128 @@
+---
+title: "Work on a repository"
+description: "Connect a repository, give Sensei a task, and get a verified change as a pull request."
+icon: "code-branch"
+---
+
+Given a repository and a task, Sensei clones the repository into a sandbox, runs the tests to see what already fails, makes the change, runs the tests again and opens a pull request. A task that is a question is answered and nothing is changed.
+
+## Connect the repository
+
+Open **Runs**, click **Connections** and add the repository, or use the terminal:
+
+```bash
+sensei repos connect acme/checkout --token <token>
+```
+
+The token needs to be able to push and open pull requests. It is stored encrypted and shown afterwards only as its last four characters.
+
+You can write the repository as an https URL, as `git@host:org/repo`, or as `org/repo` for GitHub.
+
+| Repository | Not connected | Connected with a token |
+| --- | --- | --- |
+| Public | Read as it is. The result is a patch. | Pull request |
+| Private | Cannot be cloned | Pull request |
+
+GitHub and GitLab repositories get pull requests. Working on an existing pull request is for GitHub repositories for now.
+
+## Start the run
+
+In a checkout, the repository defaults to the checkout's origin and the branch to the one you are on:
+
+```bash
+sensei run "Fix the failing test in the upload client"
+```
+
+From anywhere else, name both:
+
+```bash
+sensei run "Add a retry to the upload client" --repo acme/checkout --ref main
+```
+
+To hand Sensei a failure you can reproduce, let the command run it and attach the output:
+
+```bash
+sensei run "Fix this" --from-failure "pytest tests/test_upload.py -x"
+```
+
+## How Sensei sets up
+
+Sensei picks an image, setup commands and a test command from the repository, and reports the basis for each choice in the run's timeline.
+
+| Choice | Where it comes from, in order |
+| --- | --- |
+| Image | The devcontainer image, the Dockerfile's first `FROM`, a language image chosen from the lockfiles, then a default Python image |
+| Setup | The package manager files in the repository |
+| Test command | The first test step in a CI workflow, then the default for the language: `pytest`, `npm test`, `go test ./...` or `cargo test` |
+
+Override the test command with `--test-command`. In a definition, `check` sets the test command and `image` sets the image.
+
+## How a change is verified
+
+The tests run before any change, so Sensei knows what already fails. After the change they run again, on the test files as they were at the start.
+
+| Verdict | When |
+| --- | --- |
+| Verified | The tests pass after the change. The summary says how many passed and how many that failed before now pass. |
+| Failed | A test that passed before now fails |
+| Not verified | No change was made, the tests timed out, the same tests fail before and after, or the repository has no test command |
+
+If the change edits test files, Sensei restores them to the starting commit before the check and says so on the run. The result is against your original tests. A run whose task is about the tests is told it may edit them, and the same restore applies.
+
+### More than one attempt
+
+`--attempts 3` runs up to five independent attempts from the same starting point and keeps the best: a verified change first, then an unverified one, then a failed one.
+
+## How the change is delivered
+
+By default Sensei pushes a branch named `sensei/<run id>` and opens a pull request. The pull request body has the task, what changed, the verification verdict and the diff summary.
+
+| Option | Effect |
+| --- | --- |
+| `--ask` | Show the verified change and wait for your approval before pushing |
+| `--no-pr` | Push the branch and open no pull request |
+| `--dry-run` | Push nothing. The patch is the result. |
+| `--branch <name>` | Use this branch name |
+
+To apply a run's change locally:
+
+```bash
+sensei patch <run> | git apply
+```
+
+## Fix an open pull request
+
+```bash
+sensei pr 212
+```
+
+Sensei reads the review comments and the failing checks, adds one commit to the pull request's branch and says what it did in a comment. It never force pushes. You can add a task after the number to say what to do.
+
+The repository must be connected with a token. Pull requests from forks are refused, because Sensei cannot push to a fork's branch.
+
+Review comments and check output are other people's text. Sensei reads them as review of the code and does not take instructions from them.
+
+## Ask a question
+
+A task that asks about the repository gets an answer and no change:
+
+```bash
+sensei run "Give an overview of the services in this repository and how they call each other"
+```
+
+The run ends **Done**, and the answer is the result.
+
+## A saved agent on a repository
+
+A definition can name its repository, so the team runs the same work by name:
+
+```yaml
+agent: repo-check
+repo: acme/checkout
+ref: main
+instructions: Give an overview of the repository and its services.
+```
+
+`sensei check` and `sensei push` say which repository the definition names and whether it is connected. A definition that names none starts on an empty computer, or on the repository you pass with `--repo` when you run it.
+
+An agent that works on a repository cannot also list `tools` or use a browser. Do that part in a step before it and pass what it finds as input. See [Steps](/sensei/runs/steps).

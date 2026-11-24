@@ -142,6 +142,102 @@
           }
         ],
         "description": "Continuous Learning for Agents"
+      },
+      {
+        "product": "Sensei",
+        "tabs": [
+          {
+            "tab": "Guides",
+            "groups": [
+              {
+                "group": "Product",
+                "pages": [
+                  "sensei/introduction",
+                  "sensei/how-sensei-learns"
+                ]
+              },
+              {
+                "group": "Get started",
+                "pages": [
+                  "sensei/quickstart",
+                  "sensei/connect-your-tool"
+                ]
+              },
+              {
+                "group": "Sessions",
+                "icon": "list",
+                "pages": [
+                  "sensei/sessions",
+                  "sensei/outcomes",
+                  "sensei/learnings"
+                ]
+              },
+              {
+                "group": "Runs",
+                "icon": "play",
+                "pages": [
+                  "sensei/runs/overview",
+                  "sensei/runs/repository-runs",
+                  "sensei/runs/agents",
+                  "sensei/runs/steps",
+                  "sensei/runs/schedules",
+                  "sensei/runs/review",
+                  "sensei/runs/limits",
+                  "sensei/runs/chat-tools",
+                  "sensei/runs/isolation"
+                ]
+              },
+              {
+                "group": "Projects",
+                "icon": "folder",
+                "pages": [
+                  "sensei/projects",
+                  "sensei/your-model"
+                ]
+              },
+              {
+                "group": "Routing",
+                "icon": "route",
+                "pages": [
+                  "sensei/routing/overview",
+                  "sensei/routing/rules",
+                  "sensei/routing/providers"
+                ]
+              },
+              {
+                "group": "Account",
+                "icon": "gear",
+                "pages": [
+                  "sensei/usage-and-cost",
+                  "sensei/access",
+                  "sensei/privacy"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Reference",
+            "groups": [
+              {
+                "group": "Model endpoint",
+                "pages": [
+                  "sensei/reference/model-api",
+                  "sensei/reference/errors"
+                ]
+              },
+              {
+                "group": "Runs",
+                "pages": [
+                  "sensei/reference/cli",
+                  "sensei/reference/definition",
+                  "sensei/reference/runs-api",
+                  "sensei/reference/python-sdk"
+                ]
+              }
+            ]
+          }
+        ],
+        "description": "The hosted model that improves on its outcomes"
       }
     ]
   },

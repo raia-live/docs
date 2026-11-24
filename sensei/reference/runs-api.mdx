@@ -1,0 +1,210 @@
+---
+title: "Runs API"
+description: "Start, follow, answer and manage runs over HTTP."
+icon: "server"
+---
+
+The runs API is what the `sensei` command, the Python SDK and the dashboard call. The base URL is `https://runs.sense-lab.ai`.
+
+## Authentication
+
+Send a Sensei key as `Authorization: Bearer amfs_...`. `x-api-key` works too. The project is the key's project.
+
+Every response carries an `x-senselab-request-id` header. Request bodies are JSON, up to 256,000 bytes.
+
+## Start a run
+
+```
+POST /v1/runs
+```
+
+The body takes one of four forms.
+
+| Form | Body |
+| --- | --- |
+| A saved agent | `{"agent": "refund-requests", "input": {...}}`. Add `"version": 3` to run an older version. |
+| A definition | `{"definition": {...}, "input": {...}}`. It is saved under its `agent` name unless you send `"save": false`. |
+| A one-off task | `{"task": "..."}`, with any of `computer`, `tools`, `ask_first`, `output`, `check`, `image` |
+| A task on a repository | `{"repo": "acme/checkout", "task": "..."}` |
+
+These fields apply to any form.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `input` | object | The agent's input |
+| `repo` | string | Repository URL or `org/repo` |
+| `base_ref` | string | Branch or commit to start from. `ref` is accepted too. |
+| `attempts` | integer | 1 to 5 |
+| `budget` | object | `{"usd": 2, "minutes": 15, "steps": 80}` |
+| `policy` | object | Delivery options, below |
+
+| `policy` field | Type | Description |
+| --- | --- | --- |
+| `open_pr` | boolean | `false` pushes the branch and opens no pull request |
+| `approve_before_push` | boolean | Wait for approval before pushing |
+| `dry_run` | boolean | Push nothing. The patch is the result. |
+| `branch` | string | Branch name for the change |
+| `pr` | integer | Work on this open pull request. Cannot be combined with `branch`. |
+| `test_command` | string | Override the test command |
+| `image` | string | Override the image |
+| `callback_url` | string | An https address to post to when the run waits or finishes |
+
+The response is `202` with the run.
+
+```bash
+curl -X POST https://runs.sense-lab.ai/v1/runs \
+  -H "Authorization: Bearer $SENSEI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repo": "acme/checkout",
+    "task": "Add a retry to the upload client",
+    "base_ref": "main",
+    "budget": {"usd": 2},
+    "policy": {"approve_before_push": true}
+  }'
+```
+
+## The run object
+
+| Field | Description |
+| --- | --- |
+| `id` | The run's id |
+| `status` | `queued`, `running`, `waiting`, `verified`, `done`, `unverified`, `failed` or `cancelled` |
+| `waiting_for` | On a waiting run: `approval` for a change to approve, `ask` for a tool action, `step` when a step of the run waits |
+| `agent`, `agent_version` | The saved agent and version, when there is one |
+| `input`, `output` | The agent's input and output |
+| `ask` | On a run waiting for a tool action: `tool`, `action`, `arguments` and `why` |
+| `repo_url`, `base_ref`, `base_sha` | The repository and where the run started |
+| `task` | The task |
+| `budget`, `attempts`, `policy` | What the run was started with |
+| `result` | What the run produced. See below. |
+| `usage` | `calls`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `steps`, `seconds`, `usd`, `tokens_usd`, `computer_usd`, `computer_seconds` |
+| `outcome`, `outcome_note`, `outcome_at` | The verdict a person gave |
+| `error` | Why the run failed or stopped |
+| `parent_run_id`, `step` | On a step of a run with steps |
+| `schedule_id` | On a run a schedule started |
+| `url` | The run's page on the dashboard |
+| `created_at`, `started_at`, `finished_at` | Timestamps |
+
+### result
+
+| Kind of run | Fields |
+| --- | --- |
+| Repository | `summary`, `verification`, `diff_stat`, `changed_files`, `patch`, `environment`, `attempts`, and after delivery `branch`, `pr_url` and `delivery`. A question that was answered has `answered: true` and the answer in `summary`. |
+| Agent | `output`, `summary`, `evidence`, `not_sure`, `started_with`, `steps`, `tool_calls`, and `check` when the definition has one |
+| Steps | `steps`, a list of `{id, status, runs, output}`, and `output`, the output of the run |
+
+## Read runs
+
+| Method and path | Returns |
+| --- | --- |
+| `GET /v1/runs` | `{"object": "list", "data": [run]}`. Query: `status`, `agent`, `parent`, `limit` (1 to 200, default 50). |
+| `GET /v1/runs/{id}` | The run. A run with steps also carries `steps`, a list of its step runs. |
+| `GET /v1/runs/{id}/events` | The run's events. Query: `after`, a sequence number. Up to 500 a page. |
+
+## Follow a run
+
+Request the events with `Accept: text/event-stream`, or add `?stream=1`, to get server-sent events.
+
+```
+id: 14
+event: verification
+data: {"seq": 14, "kind": "verification", "attempt": 1, "data": {...}, "at": "2026-11-24T10:02:11Z"}
+```
+
+The stream sends a keep-alive comment every 15 seconds while nothing happens. It closes when the run waits or finishes. To resume, send `Last-Event-ID` or `?after=N`.
+
+| Event | Sent when |
+| --- | --- |
+| `status` | The run moves on, for example `queued`, `cloned` or `cancel_requested` |
+| `environment`, `setup` | The image, setup and test command were chosen and run |
+| `started` | The model starts, with the Learnings and corrections it started with |
+| `step` | A command or tool call |
+| `stage` | A step of a run with steps started, finished, failed or was skipped |
+| `note` | What the model said while it worked |
+| `verification` | Tests before, tests after, test files restored, and the verdict |
+| `check` | A definition's check ran |
+| `ask`, `waiting` | The run stops for a person |
+| `answer` | A person answered |
+| `change`, `pull_request` | The change and its delivery |
+| `outcome` | A verdict was recorded |
+| `error` | Something failed, with where |
+| `done` | The run ended |
+
+## Act on a run
+
+| Method and path | Body | Does |
+| --- | --- | --- |
+| `POST /v1/runs/{id}/answer` | `{"decision": "approve" \| "correct" \| "reject", "text": "..."}` | Answers a waiting run. `text` is required for `correct`. |
+| `POST /v1/runs/{id}/approve` | | Pushes the change a run is waiting with |
+| `POST /v1/runs/{id}/resume` | `{"guidance": "..."}` | Starts another attempt on a waiting run |
+| `POST /v1/runs/{id}/cancel` | | Stops a run. Returns `202`. |
+| `POST /v1/runs/{id}/outcome` | `{"outcome": "right" \| "wrong", "note": "...", "step": "..."}` | Records how a finished run turned out. The response adds `learned_from`, the number of sessions that took the verdict. |
+
+## Agents
+
+| Method and path | Does |
+| --- | --- |
+| `GET /v1/agents` | Lists saved agents, each with its `numbers` |
+| `GET /v1/agents/{name}` | One agent with its `definition`, `versions`, `kept` corrections and `numbers`. Query: `version`. |
+| `PUT /v1/agents/{name}` | Saves `{"definition": {...}}`. `201` when a new version was created, `200` when nothing changed. |
+| `DELETE /v1/agents/{name}` | Deletes the agent and its schedules |
+| `POST /v1/agents/check` | Validates `{"definition": {...}}` and returns what it needs: `ok`, `needs`, `missing_tools`, and `error` when it would not run |
+| `DELETE /v1/agents/{name}/notes/{id}` | Removes a kept correction |
+
+## Repositories and tools
+
+| Method and path | Body | Does |
+| --- | --- | --- |
+| `GET /v1/repos` | | Lists connected repositories. A token appears as its last four characters. |
+| `POST /v1/repos` | `{"url": "...", "token": "...", "default_branch": "main"}` | Connects a repository |
+| `DELETE /v1/repos/{id}` | | Disconnects it |
+| `GET /v1/tools` | | Lists connected tools |
+| `POST /v1/tools` | `{"name": "stripe", "url": "https://...", "secret": "...", "header_name": "Authorization"}` | Connects an MCP server. The response lists its `actions`. |
+| `DELETE /v1/tools/{name}` | | Disconnects it |
+
+## Schedules
+
+| Method and path | Body | Does |
+| --- | --- | --- |
+| `GET /v1/schedules` | | Lists schedules. Query: `agent`. |
+| `POST /v1/schedules` | `{"agent": "...", "when": "every weekday at 09:00", "input": {...}, "timezone": "Europe/Lisbon"}` | Creates one. `cron` is accepted in place of `when`. |
+| `PATCH /v1/schedules/{id}` | `{"enabled": false}`, or new `when`, `timezone`, `input` | Pauses, resumes or changes one |
+| `DELETE /v1/schedules/{id}` | | Removes one |
+
+## Callbacks
+
+With `policy.callback_url`, the service posts to your address when the run waits or finishes:
+
+```json
+{"type": "run.verified", "run": {"id": "...", "status": "verified"}}
+```
+
+`type` is `run.` followed by the status. The address must start with `https://`.
+
+## Errors
+
+Errors have this shape:
+
+```json
+{"error": {"message": "No such run.", "type": "invalid_request_error", "code": "run_not_found"}}
+```
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| 400 | `invalid_json`, `missing_task`, `task_too_long` | The body could not be used |
+| 400 | `invalid_definition` | The definition is not valid. The message names the place. |
+| 400 | `invalid_repo`, `invalid_ref`, `invalid_attempts`, `invalid_policy`, `repo_without_tools` | A field of the run is not valid |
+| 400 | `tool_not_connected` | The definition names a tool that is not connected on the project |
+| 400 | `invalid_decision`, `missing_text` | The answer is not `approve`, `correct` or `reject`, or `correct` came without text |
+| 400 | `invalid_outcome`, `invalid_step` | The outcome is not `right` or `wrong`, or the run has no such step |
+| 400 | `invalid_schedule`, `missing_agent` | The schedule could not be read |
+| 400 | `invalid_token`, `invalid_tool`, `tool_unreachable` | A connection could not be made. Nothing was saved. |
+| 404 | `run_not_found`, `agent_not_found`, `repo_not_found`, `tool_not_found`, `schedule_not_found`, `note_not_found` | There is no such thing on this project |
+| 409 | `run_not_waiting`, `nothing_to_approve` | The run is not waiting, or has no change to approve |
+| 409 | `run_not_finished` | An outcome was sent for a run that has not finished |
+| 409 | `agent_in_use` | The agent is a step of another agent |
+| 413 | `body_too_large`, `definition_too_large` | The body or the definition is too large |
+| 429 | `too_many_runs` | 5 runs are already queued or running |
+| 429 | `too_many_schedules` | The account has 50 schedules |
+| 503 | `runs_unavailable` | Runs are not available at the moment |

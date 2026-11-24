@@ -1,0 +1,136 @@
+---
+title: "Model endpoint"
+description: "Endpoints, authentication, headers and limits of the Sensei model endpoint."
+icon: "code"
+---
+
+The Sensei endpoint accepts requests in the OpenAI and Anthropic formats. Use the client library you already have and change the base URL.
+
+## Base URLs
+
+| Format | Base URL |
+| --- | --- |
+| OpenAI | `https://models.sense-lab.ai/v1` |
+| Anthropic | `https://models.sense-lab.ai` |
+
+The values for your account are under **Access management**, on the **Endpoints** tab.
+
+## Authentication
+
+Send a Sensei key in one of these headers. Keys start with `amfs_`.
+
+| Header | Example |
+| --- | --- |
+| `Authorization` | `Bearer amfs_...` |
+| `x-api-key` | `amfs_...` |
+| `X-AMFS-API-Key` | `amfs_...` |
+
+## Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/chat/completions` | OpenAI chat completions |
+| `POST` | `/v1/responses` | OpenAI Responses, which is what Codex uses |
+| `POST` | `/v1/messages` | Anthropic messages |
+| `GET` | `/v1/models` | The model and its context window |
+| `POST` | `/v1/sessions/{session_id}/outcome` | Report how a turn went. See [Outcomes](/sensei/outcomes#from-ci-or-a-script). |
+| `GET`, `PUT` | `/v1/routing/policy` | Read or save the routing policy. Saving needs a key created by an admin. |
+| `GET` | `/v1/routing/versions` | List versions of the routing policy |
+| `GET` | `/v1/routing/versions/{version}` | Read one version |
+| `POST` | `/v1/routing/versions/{version}/restore` | Restore a version as a new one |
+| `GET` | `/v1/hooks/install.sh` | The editor hook installer. Public. |
+| `GET` | `/health` | Service health. Public. |
+
+## Model names
+
+| Model | Served by |
+| --- | --- |
+| `Sensei` | Sensei, or what your routing rules decide. Case does not matter. |
+| `<provider>/<model>` | That model on your own provider key, for example `openai/gpt-5`. Team and above. |
+
+For a project with a live version of its model, `Sensei` is that version. You do not name versions in a request.
+
+## Request features
+
+| Feature | Support |
+| --- | --- |
+| Streaming | Yes, in both formats |
+| Tools and function calling | Yes |
+| Images | Up to 8 in a request. Each image is described first and the description is given to the model. |
+| Context window | 131,072 tokens |
+| Output | 16,384 tokens when the request sets no limit, fitted to what the prompt leaves of the window |
+| Request body | 32 MB |
+
+A conversation that approaches the context window is compacted automatically. One that still does not fit returns `400` with the code `context_too_long`.
+
+## Request headers
+
+All of these are optional.
+
+| Header | Values | Effect |
+| --- | --- | --- |
+| `x-senselab-session-id` | Any string | Files the call under this session. See [Sessions](/sensei/sessions#how-calls-become-a-session). |
+| `x-senselab-client` | `agent`, `script`, `ci`, `harness`, `sdk`, `batch`, `editor`, or an editor's name | Says whether a person is reading the replies live. For a program, Sensei keeps the tools on and reads the result from the checks the program runs. |
+| `x-senselab-agent-id` | Any string | Names which of your agents made the call |
+| `x-senselab-learnings` | `off` | Answers without Learnings and saves nothing from the session |
+| `x-senselab-route` | `direct` | Keeps the call out of the routing rules. Sensei answers. |
+| `x-senselab-priority` | `background` | Marks the call as background, which routing rules can match on |
+
+## Response headers
+
+| Header | Content |
+| --- | --- |
+| `x-senselab-request-id` | An id for this call. Quote it when you report a problem. |
+| `x-senselab-session-id` | The session the call was filed under |
+| `x-senselab-route` | A JSON object that says how the call was routed and which model served it |
+| `x-ratelimit-limit`, `x-ratelimit-remaining`, `x-ratelimit-window` | The key's requests per minute and what is left |
+
+## Rate limits
+
+Each key has a limit in requests per minute. Keys created on the dashboard start at 120. Over the limit, the endpoint answers `429` with a `retry-after` header.
+
+## Examples
+
+<CodeGroup>
+
+```bash curl
+curl https://models.sense-lab.ai/v1/chat/completions \
+  -H "Authorization: Bearer $SENSEI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-senselab-session-id: my-task-42" \
+  -d '{
+    "model": "Sensei",
+    "messages": [{"role": "user", "content": "Add a retry to the upload client."}],
+    "stream": true
+  }'
+```
+
+```python OpenAI SDK
+from openai import OpenAI
+
+client = OpenAI(base_url="https://models.sense-lab.ai/v1", api_key="amfs_...")
+resp = client.chat.completions.create(
+    model="Sensei",
+    messages=[{"role": "user", "content": "Add a retry to the upload client."}],
+    extra_headers={"x-senselab-session-id": "my-task-42", "x-senselab-client": "agent"},
+)
+print(resp.choices[0].message.content)
+```
+
+```python Anthropic SDK
+from anthropic import Anthropic
+
+client = Anthropic(base_url="https://models.sense-lab.ai", api_key="amfs_...")
+msg = client.messages.create(
+    model="Sensei",
+    max_tokens=2048,
+    messages=[{"role": "user", "content": "Add a retry to the upload client."}],
+)
+print(msg.content[0].text)
+```
+
+</CodeGroup>
+
+## Errors
+
+Errors come back in the format of the request. The [error reference](/sensei/reference/errors) lists every code.

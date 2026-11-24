@@ -1,0 +1,44 @@
+---
+title: "Provider keys"
+description: "Connect your own Anthropic, OpenAI or Google key so routing can send calls to those models."
+icon: "key"
+---
+
+With a provider key connected, Routing can send calls to that provider's models, and your tools can name one of those models directly. Provider keys are a Team plan feature.
+
+## Connect a key
+
+1. Open **Routing** and go to the **Providers** tab.
+2. Add a key and pick the provider: Anthropic, OpenAI or Google. A provider can have more than one key.
+3. Paste the key. It is checked with the provider, encrypted, and never shown again. The page shows its last four characters.
+4. Add an optional label so your team knows which key it is.
+5. Choose the models the key serves. For models that support it, choose how much each one reasons.
+
+Routing and sessions can use the models you chose and no others. Only an account admin can add, rotate or revoke keys.
+
+## Use a provider model
+
+There are two ways to reach a model on your key.
+
+Let Routing decide. Tools keep sending `Sensei` as the model, and a [rule](/sensei/routing/rules) sends the calls you choose to the provider model.
+
+Or name the model in the call. Set the model to `<provider>/<model>`, for example `openai/gpt-5`. The call is served by that model and no rule is consulted.
+
+```bash
+curl https://models.sense-lab.ai/v1/chat/completions \
+  -H "Authorization: Bearer $SENSEI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openai/gpt-5","messages":[{"role":"user","content":"hello"}]}'
+```
+
+## Billing
+
+The provider bills the tokens of calls served on your key. Sensei charges $0.01 for each turn a model on your key answers, however many calls the turn takes. Calls on these models appear on **Sessions** and **Usage & cost** with the model that served them.
+
+## Data
+
+The content of calls served on your own provider keys is never kept for your model and never used to improve Sensei. Calls go from Sensei to the provider directly. What Sensei holds to serve a provider's calls is listed with each provider on the **Providers** tab.
+
+## When a provider fails
+
+A call routed by a rule moves to the next model in the rule's chain when a provider key is missing or rejected, and ends on Sensei. A call that names a provider model directly has no chain, so it returns the provider's error. See the `byok_` codes in the [error reference](/sensei/reference/errors#provider-keys).

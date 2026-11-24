@@ -1,0 +1,50 @@
+---
+title: "How Sensei learns"
+description: "Sessions get outcomes, outcomes become Learnings, and on Team they train a version of your model."
+icon: "brain"
+---
+
+Sensei improves from one source: how your work turned out. This page defines the terms the dashboard uses and follows one task through the loop.
+
+## The terms
+
+A **session** is the calls that belong to one task. A **turn** is one ask from you and every model call Sensei made before it answered.
+
+An **outcome** says how a turn went. It is one of `success`, `minor_failure`, `failure` or `critical_failure`. An outcome is **verified** when a person, an editor hook, CI or a harness reported it. When nobody reports one, Sensei reads the outcome itself from the checks that ran in the turn. The dashboard labels that case **Sensei's read**.
+
+**Learnings** are what Sensei keeps from finished sessions: a summary of each turn, a map of the codebase, and what you told it to do differently. Later sessions on the same project start with the Learnings that fit the ask.
+
+A **project** groups API keys. Sessions on those keys belong to the project, and so do its Learnings and its model.
+
+A **version** is a model trained on the turns of one project that ended in a verified success. Versions are named `v1`, `v2` and so on. Before any version exists, a project's keys are served the **included model**.
+
+## One task through the loop
+
+1. You ask for a change in your editor. The calls are grouped into a session.
+2. The turn ends. Your tests passed, and the editor hook posts `success`. Without a hook, Sensei reads the result from the conversation.
+3. The outcome seals the turn. Sensei writes a summary of what was asked, which files were read and edited, which commands ran and how it ended.
+4. The next session on that project asks for something related. Sensei puts the earlier summary in front of the model before it answers.
+5. On Team, the turn is also kept for 30 days as training material for the project's next version. See [Your model](/sensei/your-model).
+
+## The learning loop on Overview
+
+The **Learning loop** card on **Overview** counts the last 30 days at five points. A weak point shows a warning under its ring.
+
+| Link | What it counts |
+| --- | --- |
+| Sealed | Sessions in which a turn got an outcome. A session with no outcome taught nothing. |
+| Verified | Turns whose outcome came from a person, a hook, CI or a harness. The rest carry Sensei's read, or went idle before an answer and are left out. |
+| Agreed | Turns that have both a verified outcome and Sensei's read, and where the two say the same. This is how far Sensei's read can be trusted when it stands alone. |
+| Recorded | Outcomes and session notes that reached your Learnings. Writes are queued and retried. One that failed after ten attempts shows a **Retry** button. |
+| Reused | Sessions that started with an earlier session on at least half the same ask. |
+
+Under the rings, the card compares turns that built on an earlier session with turns that did not, and gives the success rate of each group. It is a count of what happened. While the groups are small the card shows an **Early** badge.
+
+## What raises the quality of what Sensei learns
+
+A posted result stands above Sensei's read. Two things produce verified outcomes with little effort:
+
+- The [editor hook](/sensei/outcomes#from-your-editor) posts the verdict of the last check when a session ends.
+- [One request from CI](/sensei/outcomes#from-ci-or-a-script) marks a session after your pipeline finishes.
+
+For runs, marking a run **Right** or **Wrong** on its page does the same job. See [Review a run](/sensei/runs/review#say-how-it-turned-out).

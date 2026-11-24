@@ -1,0 +1,55 @@
+---
+title: "Schedules"
+description: "Run a saved agent every hour, every weekday morning or on a cron expression."
+icon: "clock"
+---
+
+A schedule runs a saved agent on a timetable, with the input you give it.
+
+```bash
+sensei schedule add daily-report "every weekday at 09:00" -i team=support --timezone Europe/Lisbon
+```
+
+On the dashboard, schedules are on the agent's page.
+
+## Say when
+
+Write the time in words or as a five-field cron expression.
+
+| You write | It runs |
+| --- | --- |
+| `every hour` | On the hour |
+| `every 2 hours` | Every second hour. Hours must divide the day: 1, 2, 3, 4, 6, 8 or 12. |
+| `every 15 minutes` | Four times an hour. Minutes must divide the hour: 5, 10, 15, 20 or 30. |
+| `every day at 09:00` | Daily |
+| `every weekday at 9am` | Monday to Friday |
+| `every weekend at noon` | Saturday and Sunday |
+| `every monday, wednesday and friday at 18:30` | On those days |
+| `every month at 08:00` | On the first of the month |
+| `0 9 * * 1-5` | Cron: minute, hour, day of month, month, day of week |
+
+Times can be written as `09:00`, `9`, `9am`, `9:30pm`, `noon` or `midnight`. The shortest schedule is every 5 minutes.
+
+## Time zones
+
+A schedule runs in UTC unless you pass a time zone by its IANA name, such as `Europe/London` or `Asia/Tokyo`. The time is read in that zone, so 09:00 stays 09:00 when the clocks change.
+
+## Manage schedules
+
+```bash
+sensei schedule list
+sensei schedule pause <id>
+sensei schedule resume <id>
+sensei schedule remove <id>
+```
+
+`list` shows each schedule with how its last run went. An id can be shortened to its first characters. Removing a schedule leaves the agent and its runs in place.
+
+## What to expect
+
+- A schedule starts one run at a time. If the previous run is still going when the next time comes, that time is skipped.
+- When the account already has the maximum number of live runs, the time is skipped and tried again at the next one.
+- A schedule that fails to start three times in a row pauses itself and says why. Resume it after fixing the cause.
+- A schedule keeps running after the key that created it is revoked.
+- An account can have 50 schedules.
+- Deleting an agent removes its schedules.

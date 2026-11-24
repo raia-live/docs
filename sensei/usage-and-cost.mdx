@@ -1,0 +1,80 @@
+---
+title: "Usage and cost"
+description: "Rates, plans, credits, and where to read what the account spent."
+icon: "credit-card"
+---
+
+Sensei is prepaid. The account holds credits, and calls and runs draw them down. The plan decides what the account may do. It does not limit how much you use.
+
+## Rates
+
+Rates are the same on every plan.
+
+| Item | Rate |
+| --- | --- |
+| Input tokens | $1.00 per million |
+| Cached input tokens | $0.10 per million |
+| Output tokens | $3.00 per million |
+| Calls served by your trained model | 1.5 times the token rates |
+| A turn answered by a model on your own provider key | $0.01 for the turn. The provider bills the tokens. |
+| A run's computer | $0.005 a minute while it is up |
+
+A run's model calls are billed like any other calls. Calls the service answered with an error are not billed. An answer the client stopped reading part way is billed for what was generated.
+
+## Plans
+
+| | Developer | Team | Enterprise |
+| --- | --- | --- | --- |
+| Price | Pay as you go | $200 a month | Contract |
+| How credits arrive | You buy them | The whole $200 becomes credits each month | Invoiced |
+| People | Unlimited | Unlimited | By contract |
+| The endpoint, runs, sessions, outcomes | Yes | Yes | Yes |
+| A model trained on your work | No | Yes, on the default project | Yes, for each project |
+| Your own provider keys | No | Yes | Yes |
+| Routing rules and spend caps | No | Yes | Yes |
+| Projects | The default one | The default one | As many as the contract says |
+
+Developer has no subscription, and its credits do not expire. Team can be cancelled at any time. If a Team subscription lapses, the account continues on Developer and the endpoint keeps working on the credits it has.
+
+To move to Team, use the upgrade link on **Usage & cost**. The dashboard also offers it wherever a Team feature is locked, such as **Routing**. For Enterprise, write to hello@sense-lab.ai.
+
+## Credits
+
+A new account starts with $10 of credit and no card.
+
+An account admin adds credits on **Usage & cost**. A purchase is between $10 and $200,000, with presets of $10, $25, $50 and $100.
+
+On Team, automatic recharge charges your card $50 when the balance reaches $10. You agree to this before giving the card, and you can change it at any time.
+
+Sensei warns you as the balance runs down. A notice appears on every page at half the current credit and again at zero, and usage notices go out at 50%, 80% and 100%.
+
+### When credits run out
+
+The endpoint answers `402` with the code `credits_used_up`, and new runs are refused. Your sessions and data stay where they are. Calls already in flight are served, so a balance can end slightly below zero, and the next credit pays that first.
+
+Add credits and the endpoint works again on the next call.
+
+## The Usage & cost page
+
+The header shows the start of the billing month and the rates. The page has two tabs.
+
+**Usage** shows the balance and its history, then four figures for the month.
+
+| Figure | Meaning |
+| --- | --- |
+| Used this month | What the month drew from your balance: tokens, turns on your provider keys and computer time. Calls that are not billable are left out. |
+| Routed to your keys | Turns answered by a model on your own provider key, at $0.01 each |
+| Computer time | Minutes your runs' computers were up, at $0.005 a minute |
+| Tokens | Tokens for the month, with the cached share and the number of calls |
+
+Below them, **By key** shows who or what is spending and **By project** shows which model served the calls.
+
+**Cost comparison** estimates what the same traffic would have cost on other models.
+
+On a contract, usage is covered by the contract and nothing is drawn from a balance.
+
+## Keep spend under control
+
+- Give each tool or person a key, so **By key** tells you where spend comes from.
+- Set a `limit` on agents and a `--budget` on runs. See [Limits and cost](/sensei/runs/limits).
+- On Team, put a daily or monthly cap on a routing rule. See [Guard](/sensei/routing/rules#guard).

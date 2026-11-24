@@ -1,0 +1,112 @@
+---
+title: "Steps"
+description: "Run several agents in order, pass results between them, and fan out over a list."
+icon: "layer-group"
+---
+
+A definition with `steps` runs other agents in order. Each step is a run of its own, with its own page, its own Learnings and its own questions for a person. The parent run holds the steps together and reports the output of the last step that ran.
+
+A definition does the work itself or runs steps. It cannot have both `instructions` and `steps`.
+
+## An example
+
+```yaml
+agent: support-triage
+input:
+  ticket: number
+steps:
+  - id: triage
+    agent: ./triage.yaml
+    input:
+      ticket: $input.ticket
+
+  - id: refund
+    agent: refund-requests
+    when: $triage.output.kind == "late-order"
+    input:
+      ticket: $input.ticket
+
+  - id: reply
+    agent: draft-reply
+    input:
+      ticket: $input.ticket
+      decision: $refund.output.decision
+```
+
+The `refund` step runs when triage called the ticket a late order. If it is skipped, `$refund.output.decision` reads as nothing in the `reply` step and is not an error.
+
+## What a step names
+
+`agent` is a saved agent's name, an inline definition, or a file path such as `./triage.yaml`. The `sensei` command and the SDK read a file in before they send the definition, and resolve relative paths against the file that names them. The service itself never reads files.
+
+A step's `id` is a short lower-case name that starts with a letter. Later steps use it to read the step's output.
+
+## Pass values between steps
+
+In a step's `input`, a string that starts with `$` is a reference. Any other value is taken as written.
+
+| Reference | Reads |
+| --- | --- |
+| `$input.ticket` | A field of the parent's input |
+| `$triage.output.kind` | A field of an earlier step's output |
+| `$item` | The current item, under `for_each` |
+
+A step can read `$input` and the steps before it. A reference to a step that comes later is refused when the definition is checked.
+
+## Run a step on a condition
+
+`when` takes a condition. The step runs when the condition is true.
+
+```yaml
+when: $triage.output.kind == "late-order" and not $triage.output.spam
+```
+
+Conditions compare references, quoted strings, numbers, `true`, `false` and `null` with `==` and `!=`, and combine with `and`, `or`, `not` and parentheses.
+
+## Fan out over a list
+
+`for_each` names a list from the input or from an earlier step. The step runs once per item, and `$item` is the item.
+
+```yaml
+agent: translate-app
+input:
+  language: text
+steps:
+  - id: list
+    agent: list-screens
+
+  - id: translate
+    agent: translate-screen
+    for_each: $list.output.screens
+    parallel: 4
+    input:
+      screen: $item
+      language: $input.language
+```
+
+`parallel` is how many items run at once, from 1 to 10. It defaults to 1. A list can have up to 200 items.
+
+## When a step waits
+
+A step that reaches an `ask_first` action waits the same way any agent run does. The parent shows **Waiting for you** and links to the step. Your answer goes to the step, and the parent carries on from there.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Steps in one definition | 20 |
+| Depth of steps inside steps | 3 |
+| Items under `for_each` | 200 |
+| `parallel` | 10 |
+
+A `limit` on the parent covers the whole run. Each step is capped by what the parent has left.
+
+Keys that describe one computer belong on the agent a step runs: `computer`, `repo`, `ref`, `image`, `tools`, `ask_first` and `check` are refused beside `steps`.
+
+## Mark a run with steps
+
+**Right** applies to every step. **Wrong** asks which step was wrong, and applies to the last step that ran when you leave it at **Not sure**. From the terminal:
+
+```bash
+sensei outcome <run> wrong --step refund --note "Refunded a gift card order"
+```

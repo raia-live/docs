@@ -1,0 +1,95 @@
+---
+title: "Errors"
+description: "Status codes, error codes and messages from the Sensei endpoint, and what to do about each."
+icon: "triangle-exclamation"
+---
+
+An error has the shape of the format you called with, and every response carries an `x-senselab-request-id` header.
+
+<CodeGroup>
+
+```json OpenAI format
+{
+  "error": {
+    "message": "Invalid or revoked API key.",
+    "type": "authentication_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+```json Anthropic format
+{
+  "type": "error",
+  "error": {
+    "type": "authentication_error",
+    "message": "Invalid or revoked API key.",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+</CodeGroup>
+
+Calls that end in an error are not billed. They appear on the session with a red badge.
+
+## Your request
+
+| Status | Code | Meaning | What to do |
+| --- | --- | --- | --- |
+| 400 | `invalid_json` | The body is not valid JSON, or is not an object | Fix the body |
+| 400 | `invalid_request` | `messages` is empty | Send at least one message |
+| 400 | `upstream_bad_request` | The model rejected the request | Read the message, which quotes the reason |
+| 400 | `context_too_long` | The conversation has outgrown the context window. The error carries `context_tokens` and `context_window`. | Start a new chat, or remove some attached files |
+| 413 | `body_too_large` | The body is over 32 MB | Send less |
+
+## Your key and account
+
+| Status | Code | Meaning | What to do |
+| --- | --- | --- | --- |
+| 401 | `unauthenticated` | No key was sent | Send it as `Authorization: Bearer <key>` or `x-api-key: <key>` |
+| 401 | `invalid_api_key` | The key is wrong or revoked | Create a key on **Access management** |
+| 402 | `credits_used_up` | The balance is used up | Add credits on **Usage & cost** |
+| 402 | `sensei_not_started` | Sensei is not set up on this account | Open the Sensei dashboard to start |
+| 429 | `rate_limited` | The key is over its requests per minute | Wait for the time in `retry-after` |
+
+## Routing and plan
+
+| Status | Code | Meaning | What to do |
+| --- | --- | --- | --- |
+| 403 | `routing_denied` | A routing rule in force refuses calls like this. The message names the rule. | Change the rule, or the call |
+| 403 | `routing_not_in_plan` | Routing is a Team plan feature | Upgrade, or stop calling the routing API |
+| 403 | `byok_not_in_plan` | Models on your own provider keys are a Team feature | Upgrade, or send `Sensei` as the model |
+| 409 | `stale_version` | The routing policy was saved from an old version | Read the policy again and reapply your change |
+
+## Sensei is unavailable
+
+| Status | Code | Meaning | What to do |
+| --- | --- | --- | --- |
+| 503 | `model_warming_up` | The model is loading after a quiet period, which takes a few minutes | Retry. The response has a `retry-after` header, and most tools retry on their own. |
+| 503 | `upstream_overloaded` | The model is busy | Retry shortly |
+| 504 | `upstream_timeout` | The model took too long to answer | Retry, or send a shorter request |
+| 502 | `upstream_unreachable`, `upstream_error`, `upstream_malformed` | The model could not be reached or returned something unreadable | Retry. If it persists, contact support with the request id. |
+| 502 | `upstream_model_missing` | The project's version is not loaded yet | Retry in a few minutes |
+| 500 | `internal` | An error on Sensei's side | Retry. If it persists, contact support with the request id. |
+
+## Provider keys
+
+These apply to calls served on your own provider key.
+
+| Status | Code | Meaning | What to do |
+| --- | --- | --- | --- |
+| 400 | `byok_key_rejected` | The provider rejected the key on file | Rotate it under **Routing**, on the **Providers** tab |
+| 429 | `byok_rate_limited` | The provider's rate limit was reached | Wait, or raise the limit with the provider |
+| 4xx | `byok_provider_rejected` | The provider refused the request. The status is the provider's. | Read the message, which quotes the provider |
+| 400 | `byok_key_missing` | The account has no key for that provider | Add one under **Routing**, on the **Providers** tab |
+| 400 | `byok_model_not_enabled` | The model is not among those enabled on your key | Enable it on the key |
+| 502 | `byok_provider_error`, `byok_provider_malformed`, `byok_provider_unreachable` | The provider failed or could not be reached | Retry |
+| 504 | `byok_provider_timeout` | The provider took too long | Retry |
+| 503 | `byok_key_unreadable` | The key on file could not be read | Add the key again |
+
+When a routing rule chose the provider model, a provider failure moves the call to the next model in the rule's chain and you see no error. These codes reach you when the call named the provider model itself.
+
+## Runs
+
+The runs service uses the same error shape in the OpenAI format. Its codes are listed in the [Runs API reference](/sensei/reference/runs-api#errors).

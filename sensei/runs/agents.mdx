@@ -1,0 +1,128 @@
+---
+title: "Agents"
+description: "Save a definition once and let the team run it by name."
+icon: "robot"
+---
+
+An agent is a definition file: instructions in your words, the tools it may call, the actions that need a person, and the shape of its output. You save it once, and anyone on the team runs it by name.
+
+## Write a definition
+
+```yaml
+# agents/refund-requests.yaml
+agent: refund-requests
+description: Decides refund requests from the helpdesk.
+instructions: |
+  Refund when the order arrived late and the amount is under $50.
+  Otherwise hand it to a person.
+input:
+  ticket: number
+output:
+  decision: refunded | handed_over
+  amount?: number
+tools: [zendesk, stripe]
+ask_first: [stripe.refund]
+limit:
+  usd: 0.50
+  minutes: 10
+```
+
+Only `agent` and `instructions` are required. The [definition reference](/sensei/reference/definition) lists every key.
+
+A definition holds no secrets. A tool is a name, and its address and sign-in are stored with the project. That is why the file can live in your repository.
+
+## Check, save and run it
+
+```bash
+sensei check agents/refund-requests.yaml      # would it run, and what does it need
+sensei push agents/refund-requests.yaml       # save it under its name
+sensei run refund-requests -i ticket=48213    # run it
+```
+
+`check` reports the kind of run, the tools and whether each is connected, the actions that ask first, and the repository when the definition names one. `push` saves a new version each time the definition changes. `sensei pull refund-requests` writes the saved definition back to a file.
+
+To run a file without saving it, pass `--no-save`.
+
+## Connect tools
+
+A tool is an MCP server your team runs or subscribes to. Connect it once for the project:
+
+```bash
+sensei tools connect stripe --url https://mcp.example.com/stripe
+```
+
+The command prompts for the secret that signs in to the server. Sensei asks the server what it offers before the connection is kept, so a wrong address or sign-in is found here and not in the middle of a run. The address must be https.
+
+The secret goes in the `Authorization` header unless you pass `--header`. It is stored encrypted and never enters a sandbox: Sensei asks for an action, and the runs service makes the call with the secret from outside the computer.
+
+You can also connect tools on the dashboard, under **Runs**, in **Connections**.
+
+## Actions that wait for a person
+
+`ask_first` lists actions the agent may not take on its own.
+
+| Entry | Covers |
+| --- | --- |
+| `stripe` | Every action of the tool |
+| `stripe.*` | The same |
+| `stripe.refund` | One action |
+
+When the agent reaches one, the run stops and shows the action, its arguments and one sentence on why the agent thinks it is right. The computer is saved and switched off while the run waits. You then approve, correct or reject. See [Review a run](/sensei/runs/review#answer-a-question).
+
+## Output, evidence and what it is not sure about
+
+When the agent finishes it submits four things.
+
+| Field | Content |
+| --- | --- |
+| `output` | The result, in the shape `output` names. An output in the wrong shape is handed back to the agent to fix. |
+| `summary` | What it did, in a sentence |
+| `evidence` | What it checked |
+| `not_sure` | What it could not confirm |
+
+An agent starts with what you gave it: the input, the tools, and an empty computer. When the work needs something it was not given, it is instructed to stop and say what is missing in `not_sure`.
+
+## Add a check
+
+`check` is a command that decides whether the output is acceptable. It runs in the sandbox after the agent submits, with the output in `/work/output.json`.
+
+```yaml
+check: python -c "import json; d = json.load(open('/work/output.json')); assert d['decision'] in ('refunded', 'handed_over')"
+```
+
+When the check fails, its output is handed back to the agent, which fixes the result and submits again. A run whose check passes ends **Verified**. A run with no check ends **Done**, and you can say later how it turned out.
+
+## A browser
+
+```yaml
+computer: browser
+```
+
+The agent gets a computer with Chromium and Playwright, drives the browser from a script and can save screenshots.
+
+## Kept for next time
+
+When you correct an agent on a waiting run, your words are kept and given to every later run of that agent. The agent's page lists them under **Kept for next time**, and you can remove one there.
+
+## The Agents page
+
+Open **Runs** and switch to **Agents**. Each saved agent has a card with four figures for the last 30 days, each with its earlier value.
+
+| Figure | Meaning |
+| --- | --- |
+| Correct | Runs marked right or verified by a check, over the runs that have a verdict |
+| Needed a person | The share of runs that stopped to ask |
+| Steps per run | The average number of steps a run took |
+| Cost per correct result | What the agent spent for each correct run |
+
+An agent's page adds its schedules, what was kept for next time, the definition with its versions, and its runs.
+
+## Delete an agent
+
+```bash
+sensei delete refund-requests
+```
+
+or **Delete** on the agent's page. The agent and its schedules are removed. Its runs stay on record. Saving a definition under the same name later brings back its versions and what was kept for it.
+
+An agent that another agent runs as a step cannot be deleted. Take it out of that agent's steps first, or delete that agent too.

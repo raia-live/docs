@@ -1,0 +1,75 @@
+---
+title: "Outcomes"
+description: "Tell Sensei how a session went, from your editor, from CI or on the dashboard."
+icon: "circle-check"
+---
+
+An outcome is the result of a turn. Sensei reads one on its own from what happens in the session. When you or your pipeline know the answer, report it, and the session carries a verified result. A reported result stands above the one Sensei reads.
+
+| Value | Use it when |
+| --- | --- |
+| `success` | The work did what was asked |
+| `minor_failure` | It worked in part |
+| `failure` | It did not do what was asked |
+| `critical_failure` | It failed and you want the failure treated as severe |
+
+## What Sensei reads on its own
+
+Sensei looks at the checks the agent ran in the turn: tests, type checks, lints. It reads a final answer shortly after the conversation moves on. A turn that goes quiet in the middle of a tool call is closed later from what the conversation held, and shows as **Unfinished** when no answer came.
+
+These outcomes are labelled **Sensei's read**. The **Agreed** figure on [the learning loop](/sensei/how-sensei-learns#the-learning-loop-on-overview) says how often the read matched a verified outcome on your own work.
+
+## From your editor
+
+A hook for Claude Code and Cursor posts the verdict of the last check when a session ends. Install it once on each machine:
+
+```bash
+curl -fsSL https://models.sense-lab.ai/v1/hooks/install.sh | sh -s -- --key <your API key>
+```
+
+Add `claude-code` or `cursor` at the end to set up one of the two.
+
+The hook reads the result of checks the editor runs: pytest, vitest, jest, go test, cargo, tsc, eslint, ruff, mypy and pyright. When the session stops it posts one verdict.
+
+It sends the verdict, the runner's name and the pass and fail counts. The command, its output, your files and the conversation stay on the machine.
+
+The hook is installed at `~/.local/bin/sensei-hook` and keeps the key in `~/.config/sensei/hook.json`. `sensei-hook uninstall` removes it.
+
+<Note>
+Claude Code sends its session id, so the verdict lands on the exact session. Cursor does not. For Cursor, the verdict goes to the session on that key that finished a turn on the same check in the last two minutes, and is dropped when there is none.
+</Note>
+
+## From CI or a script
+
+One request marks a session:
+
+```bash
+curl -X POST https://models.sense-lab.ai/v1/sessions/<session-id>/outcome \
+  -H "Authorization: Bearer $SENSEI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"outcome_type":"success","verified_by":"ci","summary":"tests green"}'
+```
+
+The session id is on every response from the endpoint as the `x-senselab-session-id` header, and on each row of the **Sessions** page.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `outcome_type` | string | `success`, `minor_failure`, `failure` or `critical_failure` |
+| `verified_by` | string | `ci`, `harness` or `hook` |
+| `summary` | string | Up to 2,000 characters on what happened |
+| `turn` | string | The turn the outcome is for. Without it, the outcome goes to the latest turn the model answered in. |
+| `signals` | object | A small flat object of evidence, such as the runner's name and counts |
+| `wait` | boolean | `true` to get the reply only after Sensei has learned from the outcome |
+
+The reply comes as soon as the result is recorded, and Sensei learns from it in the background.
+
+## On the dashboard
+
+Open a session and mark its turns, as described in [Sessions](/sensei/sessions#say-how-a-session-went). For a run, use **Right** and **Wrong** on the run's page. See [Review a run](/sensei/runs/review#say-how-it-turned-out).
+
+## What an outcome changes
+
+- It closes the turn, and Sensei writes the turn's summary to your Learnings.
+- Learnings the session started with are credited when the turn worked and lose standing when it did not.
+- On a project that keeps turns, a turn that ended in a verified success is kept for the next version of your model. A turn later marked as anything else is removed.
+- It counts toward the project's readiness to train, and toward the success rates that routing rules can read.

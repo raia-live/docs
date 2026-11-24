@@ -1,0 +1,156 @@
+---
+title: "Python SDK"
+description: "Start runs, answer them and record outcomes from Python."
+icon: "python"
+---
+
+The Python SDK ships in the same package as the CLI.
+
+```bash
+pip install senselab-sensei
+```
+
+It needs Python 3.11 or later. The key comes from `SENSEI_API_KEY`, or from the config file `sensei login` writes.
+
+## Run something
+
+```python
+from sensei import Sensei
+
+sensei = Sensei()
+
+r = sensei.run("refund-requests", ticket=48213)        # a saved agent, by name
+r = sensei.run("agents/refunds.yaml", ticket=48213)    # a definition file
+r = sensei.run(task="List the three largest tables and say why they are large.")
+
+print(r.status, r.output, r.evidence, r.not_sure)
+```
+
+`run` waits until the run has finished or has a question for a person. `start` takes the same arguments and returns at once.
+
+Input fields are keyword arguments, or a dictionary passed as `input=`.
+
+## Sensei
+
+```python
+Sensei(api_key=None, *, base_url=None, client=None)
+```
+
+| Method | Returns | Description |
+| --- | --- | --- |
+| `run(what=None, *, task=None, input=None, timeout=None, **fields)` | `Result` | Starts a run and waits for it to settle. With `timeout`, in seconds, it returns the run as it is when the time is up. |
+| `start(what=None, *, task=None, input=None, **fields)` | `Result` | Starts a run and returns |
+| `map(what, inputs, *, parallel=4, timeout=None, **options)` | `list[Result]` | One run for each input, in the order given |
+
+`what` is a saved agent's name, a path to a definition file, or a definition as a dictionary.
+
+These keyword arguments are options of the run. Any other keyword argument is an input field.
+
+| Option | Meaning |
+| --- | --- |
+| `budget` | `{"usd": 1, "minutes": 10, "steps": 40}` |
+| `repo`, `base_ref` | The repository and where to start |
+| `attempts` | 1 to 5 |
+| `tools`, `ask_first`, `computer`, `output`, `check`, `image` | For a task in words, the same keys a definition has |
+| `save` | `False` runs a definition without saving it |
+| `open_pr`, `approve_before_push`, `dry_run`, `branch`, `pr`, `test_command` | Delivery of a repository change |
+| `callback_url` | An https address to post to when the run waits or finishes |
+
+`sensei.runs`, `sensei.agents`, `sensei.tools` and `sensei.schedules` are the lower-level groups described under [Client](#client).
+
+## Result
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `id` | `str` | The run's id |
+| `status` | `str` | `queued`, `running`, `waiting`, `done`, `verified`, `unverified`, `failed` or `cancelled` |
+| `ok` | `bool` | True when the status is `done` or `verified` |
+| `waiting` | `bool` | True when the run has a question for a person |
+| `settled` | `bool` | True when the run has stopped moving: finished or waiting |
+| `output` | any | The output, in the shape the definition names |
+| `summary` | `str` | What it did, in a sentence |
+| `evidence` | `list[str]` | What Sensei checked |
+| `not_sure` | `list[str]` | What it could not confirm |
+| `started_with` | `dict` | `{"learnings": 4, "corrections": ["Store credit for gift cards"]}` |
+| `ask` | `dict` or `None` | On a waiting run: `tool`, `action`, `arguments`, `why` |
+| `steps` | `list[dict]` | The steps of a run with steps |
+| `cost` | `float` or `None` | In US dollars |
+| `error` | `str` or `None` | Why it failed |
+| `url` | `str` or `None` | The run's page |
+| `run` | `dict` | The run as the API returned it |
+
+| Method | Description |
+| --- | --- |
+| `wait(timeout=None)` | Waits for the run to settle |
+| `refresh()` | Reads the run again |
+| `answer(decision, text=None, *, wait=True, timeout=None)` | Answers a waiting run with `"approve"`, `"correct"` or `"reject"` |
+| `outcome(outcome, *, note=None, step=None)` | Records `"right"` or `"wrong"` |
+| `cancel()` | Stops the run |
+
+## Answer a waiting run
+
+```python
+r = sensei.run("refund-requests", ticket=48213)
+if r.waiting:
+    print(r.ask)
+    # {"tool": "stripe", "action": "refund", "arguments": {...}, "why": "..."}
+    r = r.answer("correct", "Store credit when they paid with a gift card")
+```
+
+`correct` takes what to do instead, and the text is kept for the agent's later runs. `answer` waits for what comes next unless you pass `wait=False`.
+
+## Record an outcome
+
+```python
+r.outcome("wrong", note="The ticket was reopened")
+```
+
+On a run with steps, `step="refund"` names the step that was wrong.
+
+## Many at once
+
+```python
+results = sensei.map("translate-screen", [{"screen": "home"}, {"screen": "cart"}], parallel=4)
+for r in results:
+    print(r.status, r.output)
+```
+
+A run that asks a person comes back `waiting`, and the others are not held up by it.
+
+## Client
+
+`Client` is the HTTP API with nothing added. Every method returns the API's JSON.
+
+```python
+from sensei.client import Client, SenseiError
+
+with Client() as client:
+    run = client.runs.create(agent="refund-requests", input={"ticket": 48213})
+    for event in client.runs.stream(run["id"]):
+        print(event["kind"], event["data"])
+    settled = client.runs.wait(run["id"], timeout=60)
+```
+
+| Group | Methods |
+| --- | --- |
+| `client.runs` | `create`, `get`, `list`, `wait`, `events`, `stream`, `answer`, `outcome`, `approve`, `resume`, `cancel` |
+| `client.agents` | `list`, `get`, `save`, `check`, `delete`, `forget` |
+| `client.tools` | `list`, `connect`, `disconnect` |
+| `client.repos` | `list`, `connect`, `disconnect` |
+| `client.schedules` | `list`, `create`, `update`, `pause`, `resume`, `delete` |
+
+## Errors
+
+A response that is not a success raises `SenseiError`, with the `status`, `code` and `message` the service sent.
+
+```python
+from sensei.client import SenseiError
+
+try:
+    sensei.run("refund-requests", ticket=48213)
+except SenseiError as e:
+    if e.code == "too_many_runs":
+        print("Try again in a moment.")
+    else:
+        raise
+```

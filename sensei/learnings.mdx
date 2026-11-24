@@ -1,0 +1,46 @@
+---
+title: "Learnings"
+description: "What Sensei keeps from finished sessions and puts in front of later ones."
+icon: "lightbulb"
+---
+
+Learnings are what Sensei keeps from your sessions. You do not write them. Sensei writes them when a turn gets an outcome, and reads them back at the start of later turns on the same project.
+
+## What Sensei keeps
+
+| In the dashboard | What it holds |
+| --- | --- |
+| What session ... did | One summary per turn: the ask, the outcome, the files read and edited, the searches and commands, and the final answer |
+| Codebase map | Which directories get read and edited for which kinds of asks, learned from use |
+| Where the code lives | The directories the project's sessions worked in, the branches they named and the base its pull requests were opened on |
+| What you told Sensei | Statements from earlier sessions that still hold, such as a convention you corrected it on |
+
+For a project with a user interface, Sensei also keeps how the interface looks: colours, type and components read from designs attached to sessions, and which interface changes were kept or sent back.
+
+A summary carries its outcome. When an earlier session failed, for example by searching forty patterns for a string that was not in the repository, the next session on a similar ask is told to avoid that.
+
+## Where you see them
+
+Open a session and look at the **Recalled** card. It lists what Sensei knew going in. Click it to see every entry, how many calls of the session carried it, and the full text. The first sessions on a codebase show nothing here, because there is nothing to recall yet.
+
+The **Learned** column on the **Sessions** page says whether what a session taught was saved. See [Sessions](/sensei/sessions#the-list).
+
+On **Overview**, the **started with Learnings** figure is the share of turns that had something recalled, and the **Learning loop** card follows Learnings from the session that produced them to the session that used them.
+
+Runs report the same thing. A run's first line says how many Learnings and team corrections it started with.
+
+## Scope
+
+Learnings belong to your account. They are read only by calls made with your account's keys.
+
+Within the account, a project reads the Learnings of its own sessions. If you create a project with **Keep this project's record separate** switched on, its sessions see only what that project has learned.
+
+## Send a call without Learnings
+
+Add the header `x-senselab-learnings: off` to a call. Sensei answers without recalling anything, and nothing is saved from a session sent this way. The session shows **learnings off** in the **Learned** column.
+
+## How outcomes change them
+
+Each outcome is applied to the Learnings the session started with. One that was present in sessions that worked gains standing and is recalled more readily. One that keeps appearing in sessions that failed loses standing and stops being recalled.
+
+This is why reporting outcomes pays off twice: the session's own summary is written with the right result, and the Learnings it relied on are corrected. See [Outcomes](/sensei/outcomes).

@@ -1,0 +1,63 @@
+---
+title: "Quickstart"
+description: "Accept your invitation, create a key and see your first session."
+icon: "bolt"
+---
+
+You need an invitation to Sensei and a tool that can call an OpenAI- or Anthropic-compatible endpoint. Setup takes a few minutes and no card.
+
+<Steps>
+  <Step title="Open your invitation">
+    Open the link in your invitation email and click **Continue**. Sign in with Google, GitHub or email. If you already have a SenseLab account and are signed in, the button reads **Add Sensei to my account**.
+
+    An invitation is valid for a month and works once. It adds $10 of credit to the account.
+  </Step>
+  <Step title="Answer two questions">
+    Enter your first name and pick the tool you will point at Sensei first. The next screen shows the setup for that tool.
+  </Step>
+  <Step title="Create your key">
+    Click **Create my key** and copy it. The key is shown once. You can create more later under **Access management**.
+  </Step>
+  <Step title="Point your tool at Sensei">
+    Every tool needs the same three settings.
+
+    | Setting | Value |
+    | --- | --- |
+    | OpenAI base URL | `https://models.sense-lab.ai/v1` |
+    | Anthropic base URL | `https://models.sense-lab.ai` |
+    | Model | `Sensei` |
+
+    The exact values for your account are under **Access management**, on the **Endpoints** tab. [Connect your tool](/sensei/connect-your-tool) has the steps for each tool.
+  </Step>
+  <Step title="Send a message">
+    Send any message with `Sensei` selected. The welcome screen shows your first session within a few seconds, and then opens the dashboard.
+  </Step>
+</Steps>
+
+## Try it with curl
+
+```bash
+curl https://models.sense-lab.ai/v1/chat/completions \
+  -H "Authorization: Bearer $SENSEI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"Sensei","messages":[{"role":"user","content":"hello"}]}'
+```
+
+The response has the shape of an OpenAI chat completion. Its `x-senselab-session-id` header names the session the call was filed under, and the same id appears on the **Sessions** page.
+
+## If nothing arrives
+
+Check that the key is pasted in full and that the base URL matches the one on the **Endpoints** tab character for character. OpenAI-style tools take the URL that ends in `/v1`. Anthropic-style tools take the one without it.
+
+The first call after a quiet period can return `503` with a message that Sensei is warming up. Most tools retry on their own. Loading takes a few minutes.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Report outcomes" icon="circle-check" href="/sensei/outcomes">
+    Install the editor hook so each session ends with a verified result.
+  </Card>
+  <Card title="Start a run" icon="play" href="/sensei/runs/overview">
+    Hand Sensei a task and get back a pull request or an answer.
+  </Card>
+</CardGroup>

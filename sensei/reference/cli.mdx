@@ -1,0 +1,156 @@
+---
+title: "CLI"
+description: "Every command of the sensei command line tool."
+icon: "terminal"
+---
+
+The `sensei` command starts and follows runs from a terminal. Nothing runs on your machine: the work happens in a sandbox on Sensei's side.
+
+## Install
+
+```bash
+uv tool install senselab-sensei
+```
+
+or `pipx install senselab-sensei`. The package needs Python 3.11 or later and installs the command `sensei`.
+
+```bash
+sensei login
+```
+
+`login` asks for your Sensei key and saves it in `~/.config/sensei/config.json`, readable only by you. Create a key under **Access management**.
+
+## Configuration
+
+| Source | Key | URL of the runs API |
+| --- | --- | --- |
+| Environment | `SENSEI_API_KEY`, or `SENSELAB_API_KEY` | `SENSEI_RUNS_URL` |
+| Config file | `api_key` | `url` |
+| Default | | `https://runs.sense-lab.ai` |
+
+The environment takes precedence over the config file.
+
+## Runs
+
+### sensei run
+
+```bash
+sensei run TARGET [options]
+```
+
+`TARGET` is a definition file, a saved agent's name, or a task in your words.
+
+| Option | Meaning |
+| --- | --- |
+| `-i`, `--input name=value` | An input field. Repeat for more. |
+| `--input-file FILE` | A JSON or YAML file of input fields |
+| `-r`, `--repo REPO` | The repository to work on, as a URL or `org/repo`. For a task the default is this checkout's origin. For an agent it is the one its definition names. |
+| `--no-repo` | For a task: do not treat it as a change to this checkout's repository |
+| `--ref REF` | Branch or commit to start from. Defaults to this checkout's branch. |
+| `--tools a,b` | For a task: connected tools it may use |
+| `--ask-first a.b,c` | For a task: tool actions that wait for you |
+| `--browser` | For a task: a computer with a browser |
+| `--no-save` | For a file: run it without saving it under its name |
+| `-n`, `--attempts N` | Independent attempts, 1 to 5. The best is kept. |
+| `--budget USD` | Spend ceiling for the run |
+| `--minutes N` | Time ceiling for the run |
+| `--steps N` | Step ceiling for each attempt |
+| `--ask` | Show the verified change and wait for approval before pushing |
+| `--no-pr` | Push the branch and open no pull request |
+| `--dry-run` | Work and verify, and push nothing. The patch is the result. |
+| `--branch NAME` | Branch name for the change. Defaults to `sensei/<run>`. |
+| `--pr N` | Work on this open pull request |
+| `--from-failure CMD` | Run this command locally and attach its failure to the task |
+| `--test-command CMD` | Override the test command Sensei verifies with |
+| `--no-follow` | Start the run and print its id |
+| `-v`, `--verbose` | Show command output as it happens |
+| `--json` | Print the run as JSON. Implies `--no-follow`. |
+
+`--tools`, `--ask-first` and `--browser` cannot be combined with `--repo` or `--pr`.
+
+Press Ctrl-C while following a run to stop following. The run continues on Sensei's side, and `sensei logs <run> --follow` picks it up again.
+
+### sensei pr
+
+```bash
+sensei pr NUMBER [TASK] [--repo REPO] [--ask] [--dry-run] [--budget USD] [--test-command CMD] [--no-follow] [-v]
+```
+
+Fixes an open pull request. Sensei reads the review and the failing checks, adds one commit to the pull request's branch and says what it did in a comment. Without `TASK` it fixes what the review and the failing checks say.
+
+### sensei runs, logs, show
+
+| Command | Does |
+| --- | --- |
+| `sensei runs [--status S] [--limit N] [--json]` | Lists recent runs. `--status` is one of `queued`, `running`, `waiting`, `verified`, `unverified`, `failed`, `cancelled`. The default limit is 20. |
+| `sensei logs RUN [-f] [-v] [--json]` | Prints a run's events. `-f` follows. |
+| `sensei show RUN` | Prints a run as JSON |
+
+A run id can be shortened. The first 8 characters are enough.
+
+### sensei answer, approve, resume, cancel, patch
+
+| Command | Does |
+| --- | --- |
+| `sensei answer RUN approve` | Approves the action a run is asking about |
+| `sensei answer RUN correct "TEXT"` | Says what to do instead. The text is kept for the agent's later runs. |
+| `sensei answer RUN reject` | Rejects the action |
+| `sensei approve RUN` | Pushes the change a run is waiting with and opens the pull request |
+| `sensei resume RUN [-g TEXT]` | Starts another attempt on a waiting run, with your guidance |
+| `sensei cancel RUN` | Stops a run that is queued, waiting or running |
+| `sensei patch RUN` | Prints the run's change as a patch, for `git apply` |
+
+`answer`, `approve` and `resume` follow the run afterwards. Pass `--no-follow` to return at once.
+
+### sensei outcome
+
+```bash
+sensei outcome RUN right|wrong [--note TEXT] [--step ID]
+```
+
+Says how a finished run turned out. `--step` names the step that was wrong on a run with steps.
+
+## Agents
+
+| Command | Does |
+| --- | --- |
+| `sensei check FILE` | Says whether the definition would run and what it needs: tools, repository, input and output |
+| `sensei push FILE` | Saves the definition under its agent name |
+| `sensei pull NAME [-o FILE] [--version N]` | Prints a saved definition, or writes it to a file |
+| `sensei agents [--json]` | Lists saved agents and how each did over the last 30 days |
+| `sensei delete NAME [-y]` | Deletes a saved agent and its schedules. Its runs stay on record. |
+
+## Repositories
+
+| Command | Does |
+| --- | --- |
+| `sensei repos list` | Lists connected repositories |
+| `sensei repos connect URL [--token T] [--default-branch B]` | Connects a repository. The token is prompted for when omitted and stored encrypted. |
+| `sensei repos disconnect ID` | Disconnects a repository |
+
+## Tools
+
+| Command | Does |
+| --- | --- |
+| `sensei tools list` | Lists connected tools |
+| `sensei tools connect NAME --url URL [--secret S] [--header H]` | Connects an MCP server under a name. The secret is prompted for when omitted, stored encrypted and never shown again. The header defaults to `Authorization`. |
+| `sensei tools disconnect NAME` | Forgets a tool and its secret |
+
+## Schedules
+
+| Command | Does |
+| --- | --- |
+| `sensei schedule add AGENT "WHEN" [-i name=value] [--input-file F] [--timezone TZ]` | Runs a saved agent on a timetable. `WHEN` is words such as `every weekday at 09:00`, or a cron expression. The time zone defaults to UTC. |
+| `sensei schedule list` | Lists schedules and how each one's last run went |
+| `sensei schedule pause ID` | Pauses a schedule |
+| `sensei schedule resume ID` | Resumes it |
+| `sensei schedule remove ID` | Removes it. The agent and its runs stay. |
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 1 | The API returned an error, `check` found a problem, an id did not match exactly one item, or `patch` was asked of a run with no change |
+| 2 | No key is configured, a definition or input file could not be read, or options were combined that cannot be |
+| 130 | You pressed Ctrl-C while following a run |

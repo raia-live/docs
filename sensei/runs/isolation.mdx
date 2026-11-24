@@ -1,0 +1,43 @@
+---
+title: "How a run is isolated"
+description: "Where a run's commands execute, what they can reach, and where your tokens and secrets are kept."
+icon: "shield-halved"
+---
+
+A run executes commands a model wrote. This page says what those commands can and cannot reach.
+
+## The computer
+
+Each run gets a Linux sandbox that no other run uses. It starts empty except for what the run was given: the repository for a repository run, and nothing for an agent run. When the run ends the sandbox is destroyed, along with any saved image of it and its storage.
+
+The container runs with every Linux capability dropped, cannot gain new privileges, and has fixed limits on CPU, memory and the number of processes.
+
+When a run waits for a person, the computer is saved as an image and switched off. It is restored when you answer. An image kept for a waiting run is removed if you stop the run.
+
+## Repository tokens
+
+The token you connect a repository with is used in a separate helper container, for the clone and the push. That container is gone before Sensei's container starts. Sensei's commands run in a container that never has the token, and the token is kept out of the clone's git configuration.
+
+Run events are scrubbed before they are stored: the repository token and authorization headers are replaced before a line reaches the timeline.
+
+## Tool secrets
+
+The secret you connect a tool with never enters a sandbox. When an agent calls `stripe.refund`, the request leaves the sandbox as a request for that action, and the runs service makes the call from outside with the secret. Code the agent runs in the sandbox cannot read a secret it never had.
+
+Tool addresses must be https and must resolve to public addresses. The check is repeated on every request, redirects included, so a tool address cannot be used to reach a private network.
+
+## Definitions
+
+A definition holds no secrets. `sensei push` refuses a definition with a key such as `api_key` or `token`, or with text that looks like a credential in its instructions or step inputs. The message tells you to connect the tool on the project.
+
+## Your key
+
+The key that starts a run is used for the model calls the run makes on your behalf. It is held encrypted for the length of the run and cleared when the run ends.
+
+## Text from other people
+
+Review comments and check output on a pull request are written by other people. Sensei is given them marked as review to weigh. They do not change the task and are not followed as instructions.
+
+## Callbacks
+
+A run can post its status to a `callback_url` when it waits or finishes. The address must be https and public, and it is checked when you give it and again when it is called.

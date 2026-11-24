@@ -1,0 +1,66 @@
+---
+title: "Sessions"
+description: "One row per task, and each call inside it."
+icon: "list"
+---
+
+The **Sessions** page lists every task the endpoint served, one row each. A row opens the task call by call: where in the task the agent was, when Sensei stepped in, and what it recalled from earlier work.
+
+## How calls become a session
+
+A session is the calls that belong to one conversation. Sensei decides which session a call belongs to in this order:
+
+1. The `x-senselab-session-id` header, when your code sends one.
+2. The session id Claude Code or Codex sends on its own.
+3. Otherwise, the key and the first message of the conversation. Calls that share both are one session.
+
+Inside a session, a turn is one ask from you and every model call made before the answer. A new conversation that opens with the same first message is filed as a new session.
+
+## The list
+
+Four figures sit above the table: **Sessions**, **Calls**, **Nudges** and **Spent this month**. The last one is the metered usage since the start of the billing month and ignores the filters, so it matches **Overview** and **Usage & cost**.
+
+You can search by the first ask or the session id, and filter by project, by the model that served the session, by period and by outcome.
+
+| Outcome tab | Meaning |
+| --- | --- |
+| Success | Every turn worked, or most did and none failed outright |
+| Mixed | Some turns worked and some did not |
+| Failure | No turn worked |
+| Unfinished | The session went idle before an answer |
+| Open | No outcome yet |
+
+Each row shows when the session started, its calls, nudges, tokens and cost, the outcome with who reported it, and a **Learned** column.
+
+| Learned | Meaning |
+| --- | --- |
+| learned | What the session taught was saved to Learnings |
+| pending | It is being saved, and is retried until it lands |
+| not learned | It could not be saved |
+| learnings off | The session was sent with Learnings switched off |
+
+The outcome badge names its source: **you**, **hook**, **CI**, **harness** or **Sensei's read**.
+
+## Inside a session
+
+Click a row to open the session. **open as page** gives you an address you can share.
+
+The top of the page has the calls, nudges, tokens and cost of the session. The token figure includes the share of input that came from cache. Below that are the outcome of each turn and the **Recalled** card, which lists what Sensei put in front of the model from earlier sessions. See [Learnings](/sensei/learnings).
+
+**Call by call** lists every model call, grouped by turn. Each call shows its step in the task, whether the agent had edited anything yet, tokens, latency and the status code. You can filter by status code, by whether a call was nudged, and by a maximum time.
+
+### Nudges
+
+A nudge is a short instruction Sensei adds in the middle of a session when it sees the agent looping, repeating work or pushing code it has not checked. Each nudged call carries a badge that says what happened, for example **nudged to write**, **circling**, **repeated search** or **destructive command**.
+
+### Failed calls
+
+A call the service answered with an error has a red badge with the reason, such as **out of credits**, **key rate limit**, **context full** or **denied by a routing rule**. Failed calls are not billed. The [error reference](/sensei/reference/errors) lists what each one means.
+
+Two other badges describe an answer that ended early. **stopped early** means the client stopped reading before the answer finished, and what was generated up to then is billed. **cut by output limit** means the answer reached the output limit.
+
+## Say how a session went
+
+Open the session and click the outcome summary to see each turn with its result. Mark a turn with **This turn did work** or **This turn did not work**. To overrule the read for the whole session, use the two buttons under **Disagree with the read for the whole session?**. Your answer then stands for every turn.
+
+An outcome you set is a verified outcome. [Outcomes](/sensei/outcomes) covers the other ways to report one.
