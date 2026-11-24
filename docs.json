@@ -177,10 +177,10 @@
                 "icon": "play",
                 "pages": [
                   "sensei/runs/overview",
-                  "sensei/runs/repository-runs",
                   "sensei/runs/agents",
                   "sensei/runs/steps",
                   "sensei/runs/schedules",
+                  "sensei/runs/repository-runs",
                   "sensei/runs/review",
                   "sensei/runs/limits",
                   "sensei/runs/chat-tools",
@@ -237,7 +237,7 @@
             ]
           }
         ],
-        "description": "The hosted model that improves on its outcomes"
+        "description": "A self-improving model for agentic workloads"
       }
     ]
   },

@@ -1,10 +1,14 @@
 ---
 title: "Sensei"
-description: "Sensei is a hosted coding model that learns from how your work turns out."
+description: "Sensei is a self-improving model for agentic workloads."
 icon: "rocket"
 ---
 
-Sensei is a coding model you call from the tool you already use. You give Cursor, Claude Code, Codex or your own script a base URL, a key and the model name `Sensei`. From then on each task is recorded as a session, each session gets an outcome, and what worked is carried into the sessions that follow.
+Sensei is a model for agentic workloads that improves itself. Your agents call it the way they call any model, and Sensei learns from how their work turns out. Each task is recorded as a session, each session gets an outcome, and what worked is carried into the tasks that follow.
+
+Learning is built into Sensei and happens in two ways. On every request, Sensei recalls what earlier work on the project showed and answers with that in hand. As verified successes add up, Sensei also trains a version of itself for the project. [How Sensei learns](/sensei/how-sensei-learns) covers both.
+
+An agent here is any program that calls a model in a loop to get work done: your own code on the OpenAI or Anthropic SDK, a saved agent that decides refund requests, or a coding agent such as Cursor, Claude Code or Codex.
 
 <Note>
 Sensei is invite-only for now. An invitation comes with $10 of credit and asks for no card.
@@ -12,9 +16,9 @@ Sensei is invite-only for now. An invitation comes with $10 of credit and asks f
 
 ## Two ways to use it
 
-You can call Sensei as a model. The endpoint speaks the OpenAI and the Anthropic formats, so a tool that can talk to either can talk to Sensei. See [Connect your tool](/sensei/connect-your-tool).
+Your agents can call Sensei as their model. The endpoint speaks the OpenAI and the Anthropic formats, so an agent or tool that can talk to either can talk to Sensei. See [Connect your tool](/sensei/connect-your-tool).
 
-You can also hand Sensei a piece of work and let it do the work on a computer of its own. This is a run. A run can change a repository and open a pull request, or follow a definition your team saved and call your tools. See [Runs](/sensei/runs/overview).
+You can also hand Sensei the work itself. This is a run, and Sensei does it on a computer of its own. A run can follow a definition your team saved and call your tools, or change a repository and open a pull request. See [Runs](/sensei/runs/overview).
 
 ## What the dashboard holds
 
@@ -25,7 +29,7 @@ The dashboard is at [sensei.sense-lab.ai](https://sensei.sense-lab.ai). Its side
 | Overview | Read this month's sessions, spend and outcome trend, and see what the learning loop did | [How Sensei learns](/sensei/how-sensei-learns) |
 | Sessions | Open any task call by call and say how it went | [Sessions](/sensei/sessions), [Outcomes](/sensei/outcomes) |
 | Runs | Start work, answer runs that wait for you, manage saved agents | [Runs](/sensei/runs/overview) |
-| Projects | Group keys by codebase and decide what happens to new versions of your model | [Projects](/sensei/projects), [Your model](/sensei/your-model) |
+| Projects | Group keys by kind of work and decide what happens to new versions of your model | [Projects](/sensei/projects), [Your model](/sensei/your-model) |
 | Routing | Decide which model answers which call | [Routing](/sensei/routing/overview) |
 | Usage & cost | Check the balance and where it went, and add credits | [Usage and cost](/sensei/usage-and-cost) |
 | Access management | Create keys, copy the endpoint settings, invite people | [Access](/sensei/access) |
@@ -54,7 +58,7 @@ Rates are the same on every plan. They are listed on [Usage and cost](/sensei/us
     Settings for Cursor, Claude Code, Codex, the OpenAI SDK and curl.
   </Card>
   <Card title="Start a run" icon="play" href="/sensei/runs/overview">
-    Hand Sensei a task from the dashboard, the terminal or code.
+    Hand Sensei a piece of work from the dashboard, the terminal or code.
   </Card>
   <Card title="Model endpoint reference" icon="code" href="/sensei/reference/model-api">
     Endpoints, headers, limits and errors.

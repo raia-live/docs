@@ -1,10 +1,16 @@
 ---
 title: "How Sensei learns"
-description: "Sessions get outcomes, outcomes become Learnings, and on Team they train a version of your model."
+description: "Sensei learns on every request from how earlier work turned out, and on Team it trains a version of itself for your project."
 icon: "brain"
 ---
 
-Sensei improves from one source: how your work turned out. This page defines the terms the dashboard uses and follows one task through the loop.
+Sensei is a self-improving model. It learns from one source: how your agents' work turned out. This page covers the two ways it learns, defines the terms the dashboard uses and follows one task through the loop.
+
+## Two ways of learning
+
+Sensei learns on the job. When a turn gets an outcome, Sensei keeps what the turn showed as Learnings. On later requests in the same project it recalls the Learnings that fit the ask and answers with them in hand. This starts with the first session and works on every plan.
+
+Sensei also trains itself. On Team and Enterprise, once a project has enough verified successes, Sensei trains a version of itself on them, checks the version against what the project's keys use now, and then serves it to those keys or waits for your review. See [Your model](/sensei/your-model).
 
 ## The terms
 
@@ -12,7 +18,7 @@ A **session** is the calls that belong to one task. A **turn** is one ask from y
 
 An **outcome** says how a turn went. It is one of `success`, `minor_failure`, `failure` or `critical_failure`. An outcome is **verified** when a person, an editor hook, CI or a harness reported it. When nobody reports one, Sensei reads the outcome itself from the checks that ran in the turn. The dashboard labels that case **Sensei's read**.
 
-**Learnings** are what Sensei keeps from finished sessions: a summary of each turn, a map of the codebase, and what you told it to do differently. Later sessions on the same project start with the Learnings that fit the ask.
+**Learnings** are what Sensei keeps from finished sessions: a summary of each turn, what you told it to do differently and, for work on code, a map of the codebase. Later sessions on the same project start with the Learnings that fit the ask.
 
 A **project** groups API keys. Sessions on those keys belong to the project, and so do its Learnings and its model.
 
@@ -20,10 +26,10 @@ A **version** is a model trained on the turns of one project that ended in a ver
 
 ## One task through the loop
 
-1. You ask for a change in your editor. The calls are grouped into a session.
-2. The turn ends. Your tests passed, and the editor hook posts `success`. Without a hook, Sensei reads the result from the conversation.
-3. The outcome seals the turn. Sensei writes a summary of what was asked, which files were read and edited, which commands ran and how it ended.
-4. The next session on that project asks for something related. Sensei puts the earlier summary in front of the model before it answers.
+1. An agent starts a task. Its calls to Sensei are grouped into a session.
+2. The turn ends and something reports how it went: your CI, your own code, a hook in your editor, or a person on the dashboard. When nothing reports, Sensei reads the result from the checks that ran in the turn.
+3. The outcome seals the turn. Sensei writes a summary of what was asked, what the agent read, changed and ran, and how it ended.
+4. The next session on that project asks for something related. Sensei recalls the earlier summary and answers with it in hand.
 5. On Team, the turn is also kept for 30 days as training material for the project's next version. See [Your model](/sensei/your-model).
 
 ## The learning loop on Overview

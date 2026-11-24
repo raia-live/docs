@@ -10,10 +10,10 @@ A run is a piece of work you hand to Sensei. The work happens in a sandbox on Se
 
 | Kind | What you give it | What comes back |
 | --- | --- | --- |
-| A task on a repository | A repository and a task in your words | A change verified against the repository's tests and opened as a pull request, or an answer when the task was a question |
 | An agent | A saved definition and its input | An output in the shape the definition names, with evidence |
-| A one-off task | A task in your words, with no repository | A written result |
 | Steps | A definition that runs other agents in order | The output of the last step that ran |
+| A one-off task | A task in your words, with no repository | A written result |
+| A task on a repository | A repository and a task in your words | A change verified against the repository's tests and opened as a pull request, or an answer when the task was a question |
 
 A definition is a short YAML file your team keeps in a repository. See [Agents](/sensei/runs/agents).
 
@@ -30,9 +30,9 @@ A definition is a short YAML file your team keeps in a repository. See [Agents](
     uv tool install senselab-sensei
     sensei login
 
-    sensei run "Fix the failing test"            # in a checkout: a change to this repository
     sensei run refund-requests -i ticket=48213   # a saved agent, by name
     sensei run "List the largest tables and why" --no-repo
+    sensei run "Fix the failing test"            # in a checkout: a change to this repository
     ```
 
     The [CLI reference](/sensei/reference/cli) lists every command.
