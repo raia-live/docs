@@ -58,8 +58,9 @@ Calls that end in an error are not billed. They appear on the session with a red
 | Status | Code | Meaning | What to do |
 | --- | --- | --- | --- |
 | 403 | `routing_denied` | A routing rule in force refuses calls like this. The message names the rule. | Change the rule, or the call |
-| 403 | `routing_not_in_plan` | Routing is a Team plan feature | Upgrade, or stop calling the routing API |
-| 403 | `byok_not_in_plan` | Models on your own provider keys are a Team feature | Upgrade, or send `Sensei` as the model |
+| 403 | `budgets_not_in_plan` | Spend caps on a routing rule need the Team plan | Upgrade, or save the rule without caps |
+| 403 | `routing_not_in_plan` | Routing rules are not part of the account's plan | Contact support. Every standard plan has them. |
+| 403 | `byok_not_in_plan` | Models on your own provider keys are not part of the account's plan | Contact support, or send `Sensei` as the model. Every standard plan has them. |
 | 409 | `stale_version` | The routing policy was saved from an old version | Read the policy again and reapply your change |
 
 ## Sensei is unavailable
@@ -79,6 +80,7 @@ These apply to calls served on your own provider key.
 
 | Status | Code | Meaning | What to do |
 | --- | --- | --- | --- |
+| 402 | `own_key_free_requests_used` | The month's 1,000 free requests on your own keys are used and the balance is used up | Add credits on **Usage & cost**. The free requests start again next month. |
 | 400 | `byok_key_rejected` | The provider rejected the key on file | Rotate it under **Routing**, on the **Providers** tab |
 | 429 | `byok_rate_limited` | The provider's rate limit was reached | Wait, or raise the limit with the provider |
 | 4xx | `byok_provider_rejected` | The provider refused the request. The status is the provider's. | Read the message, which quotes the provider |

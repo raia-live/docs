@@ -16,7 +16,8 @@ Rates are the same on every plan.
 | Cached input tokens | $0.10 per million |
 | Output tokens | $3.00 per million |
 | Calls served by your trained model | 1.5 times the token rates |
-| A turn answered by a model on your own provider key | $0.01 for the turn. The provider bills the tokens. |
+| Requests answered by a model on your own provider key | The first 1,000 a month are free, then $1 per 1,000. The provider bills the tokens. |
+| A training run for your model | One a month included, then $30 a run |
 | A run's computer | $0.005 a minute while it is up |
 
 A run's model calls are billed like any other calls. Calls the service answered with an error are not billed. An answer the client stopped reading part way is billed for what was generated.
@@ -30,13 +31,14 @@ A run's model calls are billed like any other calls. Calls the service answered 
 | People | Unlimited | Unlimited | By contract |
 | The endpoint, runs, sessions, outcomes | Yes | Yes | Yes |
 | A model trained on your work | No | Yes, on the default project | Yes, for each project |
-| Your own provider keys | No | Yes | Yes |
-| Routing rules and spend caps | No | Yes | Yes |
+| Your own provider keys | Yes | Yes | Yes |
+| Routing rules | Yes | Yes | Yes |
+| Spend caps on routing rules | No | Yes | Yes |
 | Projects | The default one | The default one | As many as the contract says |
 
 Developer has no subscription, and its credits do not expire. Team can be cancelled at any time. If a Team subscription lapses, the account continues on Developer and the endpoint keeps working on the credits it has.
 
-To move to Team, use the upgrade link on **Usage & cost**. The dashboard also offers it wherever a Team feature is locked, such as **Routing**. For Enterprise, write to hello@sense-lab.ai.
+To move to Team, use the upgrade link on **Usage & cost**. The dashboard also offers it wherever a Team feature is locked, such as the spend caps on a routing rule. For Enterprise, write to hello@sense-lab.ai.
 
 ## Credits
 
@@ -62,8 +64,8 @@ The header shows the start of the billing month and the rates. The page has two 
 
 | Figure | Meaning |
 | --- | --- |
-| Used this month | What the month drew from your balance: tokens, turns on your provider keys and computer time. Calls that are not billable are left out. |
-| Routed to your keys | Turns answered by a model on your own provider key, at $0.01 each |
+| Used this month | What the month drew from your balance: tokens, requests on your provider keys and computer time. Calls that are not billable are left out. |
+| Requests on your keys | Requests answered by a model on your own provider key: how many of the month's 1,000 free ones are used, and after that what the further requests cost at $1 per 1,000 |
 | Computer time | Minutes your runs' computers were up, at $0.005 a minute |
 | Tokens | Tokens for the month, with the cached share and the number of calls |
 

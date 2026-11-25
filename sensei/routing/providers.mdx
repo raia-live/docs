@@ -4,7 +4,7 @@ description: "Connect your own Anthropic, OpenAI or Google key so routing can se
 icon: "key"
 ---
 
-With a provider key connected, Routing can send calls to that provider's models, and your tools can name one of those models directly. Provider keys are a Team plan feature.
+With a provider key connected, Routing can send calls to that provider's models, and your tools can name one of those models directly. Provider keys are on every plan.
 
 ## Connect a key
 
@@ -33,7 +33,14 @@ curl https://models.sense-lab.ai/v1/chat/completions \
 
 ## Billing
 
-The provider bills the tokens of calls served on your key. Sensei charges $0.01 for each turn a model on your key answers, however many calls the turn takes. Calls on these models appear on **Sessions** and **Usage & cost** with the model that served them.
+The provider bills the tokens of calls served on your key. Sensei charges by the request: the first 1,000 requests a month that models on your keys answer are free, and after that they cost $1 per 1,000, drawn from your credits.
+
+- A request is one call to a model. A turn usually makes several.
+- The 1,000 are for the account, not for each person or key, and the count starts again on the first of each month (UTC).
+- A request that failed or was refused is not counted.
+- With the free requests used and no credits left, requests on your keys are refused with `own_key_free_requests_used` until you add credits or the month ends.
+
+Calls on these models appear on **Sessions** and **Usage & cost** with the model that served them. **Usage & cost** shows how many of the month's free requests are used.
 
 ## Data
 
