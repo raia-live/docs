@@ -78,7 +78,7 @@ curl -X POST https://runs.sense-lab.ai/v1/runs \
 | `task` | The task |
 | `budget`, `attempts`, `policy` | What the run was started with |
 | `result` | What the run produced. See below. |
-| `usage` | `calls`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `steps`, `seconds`, `usd`, `tokens_usd`, `computer_usd`, `computer_seconds` |
+| `usage` | `calls`, `input_tokens`, `cached_input_tokens`, `output_tokens`, `steps`, `seconds`, `usd`, `tokens_usd`, `computer_usd`, `computer_seconds`, and `models`: the calls answered by each model, such as `{"Sensei": 12}`. A model on your own key appears there when a routing rule sent calls to it. |
 | `outcome`, `outcome_note`, `outcome_at` | The verdict a person gave |
 | `error` | Why the run failed or stopped |
 | `parent_run_id`, `step` | On a step of a run with steps |

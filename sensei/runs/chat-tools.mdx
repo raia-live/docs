@@ -21,24 +21,41 @@ How you sign in depends on the tool.
 | Cursor, Codex, Claude Code | Send your Sensei key as the `Authorization` header: `Bearer amfs_...` |
 | Claude Desktop, claude.ai | Add the address as a connector and sign in when asked |
 
-In Cursor, add this to `~/.cursor/mcp.json`:
+<Tabs>
+  <Tab title="Cursor">
+    Add this to `~/.cursor/mcp.json`:
 
-```json
-{
-  "mcpServers": {
-    "sensei-runs": {
-      "url": "https://runs.sense-lab.ai/mcp/",
-      "headers": { "Authorization": "Bearer amfs_..." }
+    ```json
+    {
+      "mcpServers": {
+        "sensei-runs": {
+          "url": "https://runs.sense-lab.ai/mcp/",
+          "headers": { "Authorization": "Bearer amfs_..." }
+        }
+      }
     }
-  }
-}
-```
+    ```
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http sensei-runs https://runs.sense-lab.ai/mcp/ \
+      --header "Authorization: Bearer amfs_..."
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    export SENSELAB_API_KEY=amfs_...
+    codex mcp add sensei-runs --url https://runs.sense-lab.ai/mcp/ \
+      --bearer-token-env-var SENSELAB_API_KEY
+    ```
+  </Tab>
+</Tabs>
 
 ## What the chat tool can do
 
 | Tool | Does |
 | --- | --- |
-| `run_start` | Starts a run and waits a short while for it. A saved agent runs by name with its input. Anything else is a task in your words. With `repo` and `pr` it works on an open pull request. |
+| `run_start` | Starts a run and waits a short while for it. A saved agent runs by name with its input. Anything else is a task in your words. With `repo` it changes a repository, starting from the default branch or from the branch or commit given as `ref`. With `repo` and `pr` it works on an open pull request. |
 | `run_status` | Reads a run |
 | `run_answer` | Sends your approve, correct or reject to a waiting run |
 | `run_cancel` | Stops a run |
@@ -48,6 +65,8 @@ In Cursor, add this to `~/.cursor/mcp.json`:
 | `tools_list` | Lists the tools connected on the project |
 | `schedules_list`, `schedule_add`, `schedule_update`, `schedule_remove` | Manages schedules |
 
+A finished run's reply says which model served it when one of your [routing rules](/sensei/routing/rules) sent its calls to a model on your own key.
+
 A long run outlives one chat reply. `run_start` returns after about 50 seconds with the run's status and address, and the assistant can check it again with `run_status`.
 
 ## What stays out of chat
@@ -55,3 +74,5 @@ A long run outlives one chat reply. `run_start` returns after about 50 seconds w
 Secrets do not go through chat. Connect a tool or a repository with the `sensei` command or on the dashboard, and never paste a token to a model.
 
 Decisions stay with you. The server instructs the assistant to show you a waiting run's action and reason and to ask for your answer. It is told not to answer for you. When a run finishes, the assistant is told to show the output, the evidence and what the run was not sure about as they are.
+
+To hand tasks off from a coding agent that has reached its limit, see [Hand work off at your limit](/sensei/runs/hand-off).

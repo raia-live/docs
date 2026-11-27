@@ -54,6 +54,7 @@ The run's page shows the cost so far. **Usage & cost** has a **Computer time** f
 | Spend or time | The run stops at the end of the command it is on. A model call in flight is dropped. |
 | Steps | The attempt ends where it is |
 | Credits used up | The run fails with the reason, and new runs are refused until you add credits |
+| The key is over its requests per minute, or the model is busy | The run waits for the time the answer names and asks again. The timeline says so. A call that is still refused after 5 minutes of waiting ends the run. |
 
 A run that a limit ended shows **Stopped at budget**, and its work so far stays on the page. Start it again with a higher limit, or use **Try again** and give it a hint.
 
