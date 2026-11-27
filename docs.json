@@ -184,6 +184,7 @@
                   "sensei/runs/review",
                   "sensei/runs/limits",
                   "sensei/runs/chat-tools",
+                  "sensei/runs/hand-off",
                   "sensei/runs/isolation"
                 ]
               },

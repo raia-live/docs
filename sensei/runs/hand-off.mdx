@@ -1,0 +1,152 @@
+---
+title: "Hand work off at your limit"
+description: "Two ways to keep going when your coding agent's plan or your machine is full: extra sessions on Sensei, and tasks handed to runs."
+icon: "arrow-right-from-bracket"
+---
+
+A coding agent stops at one of two limits. The plan runs out of allowance, or the machine cannot carry another agent. They need different answers.
+
+| The limit you reached | Extra sessions on Sensei | Tasks handed to runs |
+| --- | --- | --- |
+| Your plan's allowance | Helps. The session is paid from your Sensei credits. | Helps |
+| Your machine | Does not help. The session still works on your machine. | Helps. Each task works on its own computer on Sensei's side. |
+
+Sensei does not extend a Claude or ChatGPT plan. A session signed in with a plan does not pass through Sensei, so Sensei cannot see its limit or add to it.
+
+## Open an extra session on Sensei
+
+Keep your usual command as it is and add a second one that points at Sensei.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    alias sensei-code='ANTHROPIC_BASE_URL=https://models.sense-lab.ai \
+      ANTHROPIC_AUTH_TOKEN=amfs_... \
+      ANTHROPIC_MODEL=Sensei claude'
+    ```
+
+    `claude` uses your plan. `sensei-code` uses your Sensei credits.
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    export SENSELAB_API_KEY=amfs_...
+    codex --profile sensei
+    ```
+
+    The profile is set up once in `~/.codex/config.toml`. See [Connect your tool](/sensei/connect-your-tool).
+  </Tab>
+</Tabs>
+
+A new session starts without the conversation you had in the other one. Say the task again, or point the session at the file or the issue that describes it. It does start with the project's [Learnings](/sensei/learnings).
+
+## Hand a task to a run
+
+A run takes a repository and a task, works in a sandbox, runs the repository's tests before and after the change and opens a pull request that says what the tests showed. Your machine does none of it.
+
+### Set it up once
+
+1. Connect the repository with a token that can push and open pull requests. See [Work on a repository](/sensei/runs/repository-runs#connect-the-repository).
+2. Add the runs server to your coding agent.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http sensei-runs https://runs.sense-lab.ai/mcp/ \
+      --header "Authorization: Bearer amfs_..."
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    export SENSELAB_API_KEY=amfs_...
+    codex mcp add sensei-runs --url https://runs.sense-lab.ai/mcp/ \
+      --bearer-token-env-var SENSELAB_API_KEY
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    Add this to `~/.cursor/mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "sensei-runs": {
+          "url": "https://runs.sense-lab.ai/mcp/",
+          "headers": { "Authorization": "Bearer amfs_..." }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Hand off
+
+Push the branch you are on, then ask in chat:
+
+```
+Hand this to Sensei: remove the unused feature flags in billing/. Start from my branch.
+```
+
+The agent calls `run_start` with the repository, the branch and the task. It answers with the run's address and goes back to what it was doing. Ask it for the result later, or open **Runs** on the dashboard.
+
+<Note>
+A run starts from what is pushed. Work that is only in your working tree is not part of it.
+</Note>
+
+### Tell your agent which tasks to hand off
+
+Put this in `AGENTS.md` for Codex and Cursor, or in `CLAUDE.md` for Claude Code:
+
+```markdown
+## Handing work to Sensei runs
+
+When I ask you to hand a task to Sensei, start it with the `run_start` tool of
+`sensei-runs`. Do not do the task yourself.
+
+Hand off: chores, documentation, a failing build or CI check, a contained
+refactor. The task must stand on its own and have tests that show it worked.
+
+Keep here: work that needs my decisions as it goes, work that depends on
+changes that are not pushed, and tasks whose tests need a database or another
+service.
+
+For each task:
+1. Push the branch first. A run starts from what is pushed.
+2. Call `run_start` with `repo`, `ref` (the branch) and `task`. Write the task
+   so it can be done without this conversation: the files, the behaviour
+   wanted, and how to check it.
+3. Give me the run's address and carry on. Do not wait for the run.
+4. When I ask, read it with `run_status`. Show me the verdict, what the run
+   was not sure about and the pull request as they are.
+
+No more than 5 runs at once.
+```
+
+## What comes back
+
+Each task comes back as a pull request with a verdict.
+
+| Verdict | Meaning |
+| --- | --- |
+| Verified | The tests pass after the change |
+| Failed | A test that passed before now fails |
+| Not verified | Nothing showed the change works: no change was made, the tests did not finish, or the same tests fail before and after |
+
+The pull request is still yours to read and merge. See [Review a run](/sensei/runs/review).
+
+## What a run cannot do today
+
+| Limit | Detail |
+| --- | --- |
+| Services | A run starts no database, cache or other service. Tests that need one fail in the run as they would on a machine without it. |
+| Runs at once | 5 queued or running for an account. A sixth is refused until one finishes. |
+| A single command | 10 minutes. A test suite that takes longer is cut off. |
+| Tasks together | Each run works alone. Two runs that change the same lines give two pull requests that conflict. |
+
+## What it costs
+
+| Way | Cost |
+| --- | --- |
+| An extra session on Sensei | Tokens at the rates on [Usage and cost](/sensei/usage-and-cost#rates) |
+| A run | The same token rates, and $0.005 a minute for its computer. A run stops at its spend limit, $5 unless you set another. |
+
+See [Limits and cost](/sensei/runs/limits).
