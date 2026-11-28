@@ -54,6 +54,7 @@ Sensei picks an image, setup commands and a test command from the repository, an
 | Image | The devcontainer image, the Dockerfile's first `FROM`, a language image chosen from the lockfiles, then a default Python image |
 | Setup | The package manager files in the repository |
 | Test command | The first test step in a CI workflow, then the default for the language: `pytest`, `npm test`, `go test ./...` or `cargo test` |
+| Lint and format checks | The lint and format steps in a CI workflow, such as `ruff check .`, `npm run lint` or `cargo fmt --check`. Up to three. |
 
 Override the test command with `--test-command`. In a definition, `check` sets the test command and `image` sets the image.
 
@@ -64,10 +65,22 @@ The tests run before any change, so Sensei knows what already fails. After the c
 | Verdict | When |
 | --- | --- |
 | Verified | The tests pass after the change. The summary says how many passed and how many that failed before now pass. |
-| Failed | A test that passed before now fails |
+| Failed | A test that passed before now fails, or a lint or format check from your CI that passed before now fails |
 | Not verified | No change was made, the tests timed out, the same tests fail before and after, or the repository has no test command |
 
 If the change edits test files, Sensei restores them to the starting commit before the check and says so on the run. The result is against your original tests. A run whose task is about the tests is told it may edit them, and the same restore applies.
+
+### Lint and format checks
+
+When a CI workflow runs a lint or format check, the run does too: once before any change and once on the finished change, test files included. Each check is listed under the verdict with what it printed when it does not pass.
+
+| The check | What the run does |
+| --- | --- |
+| Passed before, fails after the change | The run is **Failed**. It waits for you and opens no pull request on its own. |
+| Fails before and after | Said under the verdict. The verdict does not change. |
+| Could not run in the run's computer | Said under the verdict. The verdict does not change. |
+
+A command that rewrites code, such as `ruff check --fix` or `prettier --write`, is never run as a check. Type checkers are not run.
 
 ### More than one attempt
 
